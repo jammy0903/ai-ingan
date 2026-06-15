@@ -29,6 +29,12 @@
   .titlebar { display:flex; justify-content:space-between; align-items:baseline; }
   .title { font-weight:700; font-size:18px; color:#54514a; letter-spacing:1px; }
   .tag { font-size:10px; color:#8a857a; border:1px solid #c9c2b3; padding:2px 7px; border-radius:3px; }
+  .rn { font-size:13px; color:#9a7b4a; font-family:'Gaegu',cursive; }
+  .authbtn { font-size:11px; color:#7d6a52; background:rgba(247,243,234,.7); border:1px solid #c9c2b3;
+    border-radius:14px; padding:4px 11px; cursor:pointer; font-family:'Nanum Myeongjo',serif; max-width:130px;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; transition:background .15s; }
+  .authbtn:active { background:#ece3d0; }
+  .authbtn.on { color:#5a7a4a; border-color:#b6c9a8; background:rgba(220,232,200,.4); }
   .stats { display:flex; gap:16px; margin-top:8px; align-items:baseline; }
   .stat b { font-size:22px; font-weight:700; color:#7a6440; }
   .stat span { font-size:11px; color:#8a857a; letter-spacing:.5px; }
@@ -229,8 +235,8 @@
 
   <div class="hud">
     <div class="titlebar">
-      <div class="title">AI인간 <span style="font-size:11px;color:#9a917f">· MVP</span></div>
-      <div class="tag">수채화 · 걸음/그래프</div>
+      <div class="title">AI인간 <span id="robotName" class="rn"></span></div>
+      <button id="authBtn" class="authbtn">구글 로그인</button>
     </div>
     <div class="stats">
       <div class="stat"><b id="walks">0</b> <span class="unit">걸음</span></div>
@@ -387,6 +393,7 @@
   </div></div>
 </div>
 
+<script src="vendor/supabase.js"></script>
 <script>
 /* ===================== 데이터 (3막 깊은 그래프) =====================
    중심 실: 고철 로봇이 자길 만들고 떠난 '그 사람'의 흐릿한 얼굴을 안고 걷는다.
@@ -605,6 +612,7 @@ computeRadialLayout();
 const S = {
   walks: 0, rate: 1.0, current: "start",   // 기본 1초 1걸음 (설계서 §5)
   levels: {},            // nodeId -> 레벨(0=미완료)
+  robotName: "",         // 로봇이 스스로 지은 이름(사람마다 다름)
 };
 NODES.forEach(n => S.levels[n.id] = n.completed ? 1 : 0);
 
@@ -705,6 +713,7 @@ function placeRobot(animate){
 function refreshHUD(){
   elWalks.textContent=fmt(S.walks);
   elRate.textContent=S.rate.toFixed(1);
+  const rn=document.getElementById('robotName'); if(rn) rn.textContent = S.robotName ? ("· "+S.robotName) : "";
   const persons = NODES.filter(n=>n.type==="person");
   const learned = persons.filter(n=>S.levels[n.id]>0).length;   // 마음 온도 = 배운 감정 종류 / 전체
   const p = persons.length ? learned/persons.length : 0;
@@ -884,13 +893,19 @@ setTimeout(spawnBird, 1600);
 
 /* ---------- 세이브 (localStorage 즉시 + 새 Supabase 키 넣으면 클라우드 동기화) ---------- */
 const SAVE_KEY = "aingan_save_v1";
-// ↓ 새로 만든 Supabase 프로젝트 값을 넣으면 자동 클라우드 동기화 (비우면 localStorage만 사용)
-const SUPA = { url:"", anon:"" };   // 예: url:"https://xxxx.supabase.co", anon:"eyJhbG..."
+// 인간사냥과 동일 Supabase 프로젝트(우리 것). publishable 키는 클라 공개용(안전·RLS 보호).
+const SUPA = { url:"https://irpavlciywhjnigqsjxn.supabase.co", anon:"sb_publishable_SNr6tjf-JX5-4NhLBo8oEg_mNqoClDf" };
 const OFFLINE_CAP_H = 4;            // 오프라인 적립 상한(시간)
 
 function devId(){ let id=localStorage.getItem("aingan_dev");
   if(!id){ id="dev_"+Math.random().toString(36).slice(2,10)+Date.now().toString(36); localStorage.setItem("aingan_dev",id);} return id; }
-function snapshot(){ return { walks:S.walks, rate:S.rate, current:S.current, levels:S.levels, t:Date.now() }; }
+function saveKey(){ return authUser ? ("u_"+authUser.id) : devId(); }   // 로그인하면 계정 기준, 아니면 기기 기준
+
+// 로봇이 스스로 짓는 이름 — 사람마다 다르게(첫 플레이에 랜덤, 세이브에 보관)
+const ROBOT_NAMES=["삐삐","또르","깡통이","녹슬이","별이","콩이","또롱","삐릭","깡총","또또","모리","단추","나사","볼트","깜빡이","또각","삐약","동그리","네모","철이","구리","뚜뚜","링링","찌릿","오백","뽀삐","고철이","반짝","덜컹","깡깡"];
+function ensureRobotName(){ if(!S.robotName) S.robotName = ROBOT_NAMES[Math.floor(Math.random()*ROBOT_NAMES.length)]; }
+
+function snapshot(){ return { walks:S.walks, rate:S.rate, current:S.current, levels:S.levels, robotName:S.robotName, t:Date.now() }; }
 function loadLocal(){ try{ const r=localStorage.getItem(SAVE_KEY); return r?JSON.parse(r):null; }catch(e){ return null; } }
 function applyState(d){
   if(!d) return 0;
@@ -898,6 +913,7 @@ function applyState(d){
   S.current= NODES.find(n=>n.id===d.current) ? d.current : "start";
   NODES.forEach(n=>{ S.levels[n.id] = (d.levels && d.levels[n.id]>0) ? d.levels[n.id] : (n.completed?1:0); });
   S.walks  = d.walks || 0;
+  if(d.robotName) S.robotName = d.robotName;
   let off=0; if(d.t){ const sec=Math.max(0,(Date.now()-d.t)/1000); off=Math.min(d.rate*sec, d.rate*3600*OFFLINE_CAP_H); S.walks+=off; }
   wholeWalks=Math.floor(S.walks);
   return off;
@@ -909,23 +925,52 @@ function saveState(){ const d=snapshot();
 async function supaSave(d){ if(!SUPA.url||!SUPA.anon) return;
   try{ await fetch(`${SUPA.url}/rest/v1/saves`, { method:"POST",
     headers:{ apikey:SUPA.anon, Authorization:"Bearer "+SUPA.anon, "Content-Type":"application/json", Prefer:"resolution=merge-duplicates" },
-    body: JSON.stringify({ device_id:devId(), data:d, updated_at:new Date().toISOString() }) }); }catch(e){}
+    body: JSON.stringify({ device_id:saveKey(), data:d, updated_at:new Date().toISOString() }) }); }catch(e){}
 }
 async function supaLoad(){ if(!SUPA.url||!SUPA.anon) return null;
-  try{ const r=await fetch(`${SUPA.url}/rest/v1/saves?device_id=eq.${devId()}&select=data`,
+  try{ const r=await fetch(`${SUPA.url}/rest/v1/saves?device_id=eq.${encodeURIComponent(saveKey())}&select=data`,
     { headers:{ apikey:SUPA.anon, Authorization:"Bearer "+SUPA.anon } });
     const rows=await r.json(); return (rows&&rows[0])?rows[0].data:null; }catch(e){ return null; }
 }
 function bootSave(){
+  const hadSave = !!loadLocal();
   const off = applyState(loadLocal());                 // 로컬 즉시 반영(+오프라인 적립)
-  if(off>=1){ const h=$("#hint"); h.textContent=`당신이 없는 동안 로봇이 ${Math.floor(off)}걸음을 걸었어요`;
+  ensureRobotName();
+  const h=$("#hint");
+  if(!hadSave){ h.textContent=`나는 ${S.robotName}. …반가워.`;
+    setTimeout(()=>{ h.textContent="이 길을 두드릴수록 로봇이 더 빨리 걷는다"; }, 5000); }
+  else if(off>=1){ h.textContent=`당신이 없는 동안 ${S.robotName}가 ${Math.floor(off)}걸음을 걸었어요`;
     setTimeout(()=>{ h.textContent="이 길을 두드릴수록 로봇이 더 빨리 걷는다"; }, 4500); }
   supaLoad().then(d=>{ const l=loadLocal();             // 클라우드가 더 최신이면 덮어쓰기
-    if(d && (d.t||0) > (l?.t||0)){ applyState(d); refreshHUD(); if(curPage==="map") renderAll(); } });
+    if(d && (d.t||0) > (l?.t||0)){ applyState(d); ensureRobotName(); refreshHUD(); if(curPage==="map") renderAll(); } });
 }
 setInterval(saveState, 10000);
 window.addEventListener("beforeunload", saveState);
 document.addEventListener("visibilitychange", ()=>{ if(document.hidden) saveState(); });
+
+/* ---------- 구글 로그인 (인간사냥과 동일 Supabase 프로젝트) ---------- */
+let sb=null, authUser=null, lastKey=null;
+function initAuth(){
+  if(!window.supabase || !SUPA.url || !SUPA.anon){ renderAuth(); return; }
+  try{ sb = window.supabase.createClient(SUPA.url, SUPA.anon, { auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:true } }); }
+  catch(e){ renderAuth(); return; }
+  sb.auth.onAuthStateChange((_e,s)=>{ authUser = s?.user || null; renderAuth(); onAuthChanged(); });
+  sb.auth.getSession().then(({data})=>{ authUser = data?.session?.user || null; renderAuth(); onAuthChanged(); });
+}
+async function googleLogin(){ if(sb) await sb.auth.signInWithOAuth({ provider:"google", options:{ redirectTo: location.origin+location.pathname } }); }
+async function logout(){ if(sb) await sb.auth.signOut(); }
+function renderAuth(){
+  const b=document.getElementById('authBtn'); if(!b) return;
+  if(authUser){ const md=authUser.user_metadata||{}; b.textContent="👤 "+(md.name||md.full_name||"로그인됨"); b.classList.add('on'); b.onclick=logout; }
+  else { b.textContent="구글 로그인"; b.classList.remove('on'); b.onclick=googleLogin; }
+}
+function onAuthChanged(){
+  const k=saveKey(); if(k===lastKey) return; lastKey=k;   // 키(계정/기기) 바뀔 때만 동기화
+  supaLoad().then(d=>{
+    if(d){ applyState(d); ensureRobotName(); refreshHUD(); if(curPage==="map") renderAll(); }
+    else { saveState(); }                                 // 이 계정에 세이브 없으면 현재 진행을 올림
+  });
+}
 
 /* ---------- idle 루프 (기본 1초 1걸음 → 1초 1보) ---------- */
 setInterval(()=>{ S.walks += S.rate*0.1; elWalks.textContent=fmt(S.walks); syncSteps(); }, 100);
@@ -954,6 +999,7 @@ document.querySelectorAll(".tab").forEach(t=> t.addEventListener("click", ()=>sh
 window.addEventListener("resize", ()=>{ if(curPage==="map"){ renderAll(); centerOn(S.current); } });
 bootSave();             // 세이브 불러오기(+오프라인 적립)
 refreshHUD();           // 길 페이지 먼저 보이므로 HUD/온도만 갱신 (지도는 진입 시 렌더)
+initAuth();             // 구글 로그인 초기화(세션 복원/버튼)
 </script>
 </body>
 </html>
