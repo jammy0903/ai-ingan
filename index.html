@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>AI인간 — MVP 프로토</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Nanum+Myeongjo:wght@400;700&family=Nanum+Pen+Script&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Gowun+Batang:wght@400;700&family=Nanum+Myeongjo:wght@400;700&family=Nanum+Pen+Script&display=swap" rel="stylesheet">
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html,body { height:100%; overflow:hidden; }
@@ -60,7 +60,8 @@
     filter:url(#paint); transition:transform .3s, box-shadow .3s; position:relative; }
   .node .ring .ic { font-size:22px; opacity:.85; }
   .node .label { font-size:12px; color:#6a6358; letter-spacing:.3px; white-space:nowrap; opacity:.9; }
-  .node .cost { font-size:11px; color:#9a7b4a; font-family:'Nanum Pen Script',cursive; }
+  .node .cost { font-size:11px; color:#9a7b4a; font-family:'Gaegu',cursive; }
+  .node .cost.rate { color:#6f9a72; font-weight:700; }
 
   /* 빈 원 (예고) */
   .node.empty .ring { background:transparent; border:2px dashed #b3a892; opacity:.55; }
@@ -154,7 +155,11 @@
     border-radius:12px; padding:3px 9px; display:flex; align-items:center; gap:5px; animation:fadein .6s ease; }
   .mindchip .dot { width:9px; height:9px; border-radius:50%; box-shadow:0 0 0 2px rgba(255,255,255,.5); }
   .mindchip b { color:#7a6440; }
-  .mindempty { font-family:'Nanum Pen Script',cursive; font-size:15px; color:#9a917f; opacity:.7; }
+  .mindempty { font-family:'Gaegu',cursive; font-size:15px; color:#9a917f; opacity:.8; }
+  .fragcount { flex-basis:100%; font-family:'Gaegu',cursive; font-size:14px; color:#7a6a4a;
+    background:rgba(247,243,234,.66); border:1px solid rgba(150,140,120,.32); border-radius:12px; padding:2px 11px; }
+  .fragcount b { color:#9a6a3a; font-size:16px; }
+  .fragcount .goal { color:#9a917f; font-size:12px; }
   @keyframes fadein { from{opacity:0; transform:translateY(-4px)} to{opacity:1; transform:none} }
 
   /* 새 (하늘) + 꽃·동물 (땅) */
@@ -189,15 +194,16 @@
   .card .lvtag { font-size:11px; color:#9a7b4a; margin-bottom:12px; }
   .card .situ { font-size:13px; color:#6a6358; line-height:1.6; margin-bottom:14px; border-left:2px solid #b9a98c; padding-left:11px; text-align:left; }
   .card .situ b { color:#9a7b4a; }
-  .card .log { font-family:'Gowun Batang','Nanum Myeongjo',serif; font-size:16px; line-height:1.95; color:#4f4a40;
+  .card .log { font-family:'Gaegu','Nanum Myeongjo',cursive; font-size:19px; line-height:1.65; color:#463f33;
     text-align:left; white-space:pre-line; letter-spacing:.2px; border-top:1px solid #e2d9c6; padding-top:15px; word-break:keep-all; }
   .card .reward { margin-top:14px; font-size:12px; color:#7a6a4a; line-height:1.7; }
   .card .reward .r { display:block; }
-  .card button { margin-top:18px; width:100%; padding:12px; border:1px solid #b9a98c; background:transparent;
-    font-family:'Nanum Myeongjo',serif; font-weight:700; font-size:14px; color:#7a6a4a; letter-spacing:2px; cursor:pointer; transition:background .2s; }
-  .card button:active { background:#ece3d0; }
-  .card button:disabled { opacity:.4; cursor:not-allowed; }
-  .card .sub { margin-top:10px; font-size:11px; color:#9a917f; cursor:pointer; }
+  .card button#mBtn { margin-top:18px; width:100%; padding:13px; border:1px solid #b9a98c; background:#ece3d0;
+    font-family:'Nanum Myeongjo',serif; font-weight:700; font-size:15px; color:#6f5d3c; letter-spacing:2px; cursor:pointer; transition:background .2s; }
+  .card button#mBtn:active { background:#e0d4ba; }
+  .card button.btn2 { margin-top:8px; width:100%; padding:9px; border:1px dashed #c4b79c; background:transparent;
+    font-family:'Nanum Myeongjo',serif; font-weight:400; font-size:12.5px; color:#9a7b4a; letter-spacing:1px; cursor:pointer; transition:background .2s; }
+  .card button.btn2:active { background:#f0e8d6; }
 </style>
 </head>
 <body>
@@ -377,7 +383,7 @@
     <div class="log" id="mLog"></div>
     <div class="reward" id="mReward"></div>
     <button id="mBtn">다음 길로</button>
-    <div class="sub" id="mSub"></div>
+    <button id="mBtn2" class="btn2" style="display:none"></button>
   </div></div>
 </div>
 
@@ -582,14 +588,14 @@ function renderNodes(){
     if(n.type==="teaser") el.className="node teaser empty";
     el.style.left=p.x+"px"; el.style.top=p.y+"px";
     let name = n.type==="person"?PEOPLE[n.key].name : n.type==="sense"?SENSES[n.key].name
-             : (n.type==="start"?"시작" : n.type==="ending"?"사람이 되다" : "…");
+             : (n.type==="start"?"시작" : n.type==="ending"?"샘알트머스크" : "…");
     const reach = !done && n.type!=="teaser";
     const cost = reach ? reachCost(n.id) : null;
     el.innerHTML =
       `<div class="ring"><span class="ic">${n.type==="teaser"?"?":n.icon}</span>${done&&n.gen?`<span class="lv">Lv${lv}</span>`:""}</div>`+
       `<div class="label">${n.type==="teaser"?"안갯속 무언가":name}</div>`+
       (reach?`<div class="cost">${cost} 걸음</div>`:
-        (done&&n.gen?`<div class="cost">재회 ${upCost(n,lv+1)}</div>`:""));
+        (done&&n.gen?`<div class="cost rate">+${(n.gen*lv).toFixed(1)}/초</div>`:""));
     if(reach) el.onclick = ()=>tryUnlock(n);
     else if(done && n.gen) el.onclick = ()=>openNode(n,false);
     world.appendChild(el);
@@ -613,10 +619,11 @@ function refreshHUD(){
 function renderMind(){
   const items=NODES.filter(n=>n.type==="person" && S.levels[n.id]>0)
     .map(n=>({name:PEOPLE[n.key].name, color:PEOPLE[n.key].color, amt:S.levels[n.id]}));
-  if(!items.length){ mindsky.innerHTML='<div class="mindempty">아직 배운 마음이 없다…</div>'; return; }
-  mindsky.innerHTML = items.map(it=>
-    `<div class="mindchip"><span class="dot" style="background:${it.color}"></span>${it.name} <b>×${it.amt}</b></div>`
-  ).join("");
+  let html=`<div class="fragcount">🧩 감정조각 <b>${items.length}</b> / 27 <span class="goal">→ 샘알트머스크</span></div>`;
+  html += items.length
+    ? items.map(it=>`<div class="mindchip"><span class="dot" style="background:${it.color}"></span>${it.name} <b>×${it.amt}</b></div>`).join("")
+    : '<div class="mindempty">아직 배운 마음이 없다…</div>';
+  mindsky.innerHTML=html;
 }
 function renderAll(){ sizeCanvas(); renderEdges(); renderNodes(); placeRobot(); refreshHUD(); }
 
@@ -631,37 +638,48 @@ function tryUnlock(n){
   if(S.walks < cost){ nudge(`걸음이 ${cost-Math.floor(S.walks)|0} 더 필요해`); return; }
   S.walks -= cost; syncSteps();
   travelTo(n, ()=>{
-    S.levels[n.id]=1; S.rate+=n.gen;
-    if(n.type==="person"||n.type==="ending") openNode(n,true);
-    else { spark(); renderAll(); }
+    S.levels[n.id]=1; S.rate+=n.gen; spark();
+    openNode(n,true);
     renderAll();
   });
 }
+function learnedCount(){ return NODES.filter(n=>n.type==="person" && S.levels[n.id]>0).length; }
+const FRAG_TOTAL = 27;   // 인간 감정 27가지 (Cowen & Keltner, 2017)
+function SAM_TEXT(frag){
+  if(frag>=FRAG_TOTAL) return ENDING_TEXT;
+  return "길 끝에, 그 흐릿하던 얼굴이 서 있었다.\n\n'샘 알트머스크.'\n나를 만든 사람.\n\n\"드디어 왔구나.\n네가 사람이 되려면,\n인간의 감정 스물일곱 조각이 필요해.\n학자들이 세어보니 딱 27개더라.*\"\n\n나는 가슴을 더듬었다.\n지금까지 모은 건 "+frag+"개.\n\n\"아직 길은 끝나지 않았어.\n나머지 감정도, 저 길 위 어딘가에 있다.\"\n\n* Cowen & Keltner, 2017 — 인간 감정 27가지";
+}
+
 function openNode(n, firstMeet){
   const lv=S.levels[n.id];
-  if(n.type==="ending"){
-    fillModal({ badge:"끝없던 길의 끝에서", emo:"🕊 사람이 되다", lv:"", situ:"",
-      log: ENDING_TEXT,
-      reward:["지나온 모든 마음이 한꺼번에 밀려온다","💧 …그리고, 사람이 되었다"],
-      btn:"다시, 천천히 걷는다", action:()=>{} });   // (다음: 프레스티지/회차 연결)
+  if(n.type==="ending"){           // 샘알트머스크 — 나를 만든 사람, 사람으로 만들어 줄 이
+    const frag=learnedCount();
+    fillModal({ badge:"길 끝, 흐릿하던 얼굴", emo:"샘 알트머스크", lv:"나를 만든 사람",
+      situ:"", log: SAM_TEXT(frag),
+      reward:[`🧩 감정조각 ${frag} / ${FRAG_TOTAL}`, frag>=FRAG_TOTAL?"💧 …그리고, 사람이 되었다":"아직, 길은 끝나지 않았다"],
+      closeText: frag>=FRAG_TOTAL?"마침내, 사람이 되다":"다시 길 위로" });
     return;
   }
+  const cur=(n.gen*lv), nxt=(n.gen*(lv+1));   // 이 노드의 걸음/초 기여(강할수록 큼)
   if(n.type==="sense"){
     const s=SENSES[n.key];
     fillModal({ badge:firstMeet?"새로운 감각을 얻다":"감각이 깊어지다",
-      emo:s.name, lv:`생성기 Lv${lv}`, situ:"", log:s.flavor,
-      reward:[`📈 걸음/초 +${n.gen.toFixed(2)}`],
-      btn: nextUpLabel(n), action:()=>upgrade(n) });
+      emo:s.name, lv:`생성기 Lv${lv} · 걸음/초 +${cur.toFixed(1)}`, situ:"", log:s.flavor,
+      reward: firstMeet?[`📈 이 감각이 걸음을 +${n.gen.toFixed(2)}/초 빠르게`]
+                       :[`📈 키우면 걸음/초 +${cur.toFixed(1)} → +${nxt.toFixed(1)}`],
+      closeText:"다음 길로",
+      upText: firstMeet?null:`감각 키우기 — ${upCost(n,lv+1)} 걸음`, onUp:()=>upgrade(n) });
   } else {
     const pp=PEOPLE[n.key];
     const lineIdx=Math.min(lv-1, pp.lines.length-1);
     const log = firstMeet ? (pp.lines[0] + "\n\n·   ·   ·\n\n" + pp.mem) : pp.lines[lineIdx];
     fillModal({ badge:firstMeet?"하나의 감정을 알게 되다":"다시 만나, 더 깊이",
-      emo:`『 ${pp.name} 』`, lv:firstMeet?"":`재회 ${lv-1}회 · Lv${lv}`,
+      emo:`『 ${pp.name} 』`, lv:firstMeet?`걸음/초 +${n.gen.toFixed(2)}`:`재회 ${lv-1}회 · 걸음/초 +${cur.toFixed(1)}`,
       situ: firstMeet?pp.situ:"", log,
-      reward: firstMeet?[`📈 걸음/초 +${n.gen.toFixed(2)}`,`🎨 회색 세계에 ${pp.name}의 색이 번진다`,`🧩 그 사람의 얼굴이 조금 또렷해진다`]
-                       :[`📈 걸음/초 +${n.gen.toFixed(2)}`,`📖 ${pp.name}의 더 깊은 이야기`],
-      btn: nextUpLabel(n), action:()=>upgrade(n) });
+      reward: firstMeet?[`🧩 감정조각 +1 (${learnedCount()}/${FRAG_TOTAL})`,`🎨 회색 세계에 ${pp.name}의 색이 번진다`,`🧩 그 사람의 얼굴이 조금 또렷해진다`]
+                       :[`📖 ${pp.name}의 더 깊은 이야기`,`📈 더 깊이 이해하면 걸음/초 +${cur.toFixed(1)} → +${nxt.toFixed(1)}`,`(깊은 마음일수록 걸음이 더 빨라진다)`],
+      closeText:"다음 길로",
+      upText: firstMeet?null:`다시 만나 더 깊이 — ${upCost(n,lv+1)} 걸음`, onUp:()=>upgrade(n) });
   }
 }
 function nextUpLabel(n){
@@ -678,18 +696,20 @@ function upgrade(n){
 }
 
 /* ---------- 모달 ---------- */
-let modalAction=null;
+let modalUp=null;   // 보조(재회) 액션
 function fillModal(o){
   $("#mBadge").textContent=o.badge; $("#mEmo").textContent=o.emo;
   $("#mLv").textContent=o.lv||""; $("#mSitu").innerHTML=o.situ||""; $("#mSitu").style.display=o.situ?"block":"none";
   $("#mLog").textContent=o.log;
   $("#mReward").innerHTML=(o.reward||[]).map(r=>`<span class="r">${r}</span>`).join("");
-  $("#mBtn").textContent=o.btn; modalAction=o.action;
-  $("#mSub").textContent="닫기";
+  $("#mBtn").textContent=o.closeText||"다음 길로";
+  const b2=$("#mBtn2");
+  if(o.upText){ b2.style.display="block"; b2.textContent=o.upText; modalUp=o.onUp; }
+  else { b2.style.display="none"; modalUp=null; }
   modal.classList.add("show");
 }
-$("#mBtn").onclick=()=>{ if(modalAction && modalAction()===false) return; closeModal(); };
-$("#mSub").onclick=closeModal;
+$("#mBtn").onclick=closeModal;                     // 주 버튼 = 다음 길로(닫기)
+$("#mBtn2").onclick=()=>{ if(modalUp) modalUp(); }; // 보조 = 재회(있을 때만)
 function closeModal(){ modal.classList.remove("show"); renderAll(); }
 
 /* ---------- 걸음당 1보(步) : 걸음이 들어올 때만 한 발 ---------- */
