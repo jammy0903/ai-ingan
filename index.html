@@ -39,7 +39,17 @@
   /* ---------- 지도 (스크롤 캔버스) ---------- */
   #map { position:relative; z-index:2; flex:1 1 auto; overflow:auto; touch-action:pan-y; }
   #map::-webkit-scrollbar { width:0; height:0; }
-  #canvas { position:relative; width:100%; }
+  #canvas { position:relative; margin:0 auto; }
+  #world { position:absolute; top:0; left:0; transform-origin:0 0; }
+
+  /* 줌 컨트롤 */
+  .zoomctl { position:absolute; right:14px; bottom:78px; z-index:8; display:flex; flex-direction:column; gap:6px; }
+  .zoomctl button { width:38px; height:38px; border:1px solid #c4bca9; border-radius:50%;
+    background:rgba(247,243,234,.92); color:#7a6a4a; font-size:20px; font-weight:700;
+    font-family:'Nanum Myeongjo',serif; cursor:pointer; box-shadow:0 3px 10px rgba(0,0,0,.12);
+    display:flex; align-items:center; justify-content:center; line-height:1; transition:background .15s; }
+  .zoomctl button:active { background:#ece3d0; }
+  .zoomctl .zlvl { font-size:10px; color:#9a917f; text-align:center; }
   .edges { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
   .edges line { stroke:#bda886; stroke-width:2; stroke-dasharray:5 7; opacity:.5; }
   .edges line.live { stroke:#c98f6a; opacity:.85; stroke-dasharray:none; }
@@ -69,15 +79,22 @@
     font-family:'Nanum Myeongjo',serif; }
 
   /* 로봇 토큰 */
-  #robot { position:absolute; transform:translate(-50%,-58%); z-index:4; width:74px; pointer-events:none;
+  #robot { position:absolute; transform:translate(-50%,-60%); z-index:4; width:92px; pointer-events:none;
     transition:left 1.1s cubic-bezier(.5,.05,.3,1), top 1.1s cubic-bezier(.5,.05,.3,1); }
-  #robot svg { width:100%; filter:url(#paint); animation:bob 3.6s ease-in-out infinite; }
+  #robot svg { width:100%; filter:url(#paintSoft) drop-shadow(0 4px 5px rgba(70,66,60,.22)); animation:bob 3.8s ease-in-out infinite; }
   @keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
-  #robot .body,#robot .head{ fill:#c2c7c4; stroke:#a7aeaa; stroke-width:2.5; }
-  #robot .face{ fill:#5d6a6b; } #robot .ant{ stroke:#9aa19c; stroke-width:3; stroke-linecap:round; }
-  #robot .core{ fill:#8aada6; opacity:calc(.3 + var(--p,0)*.7); }
-  #robot .aura{ fill:#e8cf9f; opacity:calc(var(--p,0)*.45); }
-  #robot .eye{ fill:color-mix(in srgb,#7e9aa6 calc((1 - var(--p,0))*100%),#d9a86a); }
+  #robot .shadow{ fill:rgba(80,76,70,.16); }
+  #robot .visor{ fill:#33464a; }
+  #robot .grille line{ stroke:#4a5b5e; stroke-width:1.3; opacity:.7; }
+  #robot .ant{ stroke:#9aa19c; stroke-width:3; stroke-linecap:round; fill:none; }
+  #robot .aura{ fill:url(#gAura); opacity:calc(var(--p,0)*.55); transition:opacity 1s; }
+  #robot .core{ fill:color-mix(in srgb,#6f9c93 calc((1 - var(--p,0))*100%),#e6a85e); transition:fill 1s; }
+  #robot .coreHi{ opacity:calc(.22 + var(--p,0)*.6); }
+  #robot .spark{ fill:#fff7e6; opacity:calc(var(--p,0)*.9); }
+  #robot .eye{ fill:color-mix(in srgb,#7e9aa6 calc((1 - var(--p,0))*100%),#f0b257); transition:fill 1s; }
+  #robot .eyeHi{ fill:#fff; opacity:.9; }
+  #robot .tip{ fill:color-mix(in srgb,#b6bcae calc((1 - var(--p,0))*100%),#e89a4e); transition:fill 1s; }
+  #robot .tipHalo{ fill:url(#gAura); opacity:calc(var(--p,0)*.5); }
 
   /* 떠오르는 입자 */
   .mote { position:absolute; width:16px; height:16px; border-radius:50%; pointer-events:none; z-index:5;
@@ -124,11 +141,24 @@
 </head>
 <body>
 <div id="app">
-  <svg class="defs"><filter id="paint">
-    <feTurbulence type="fractalNoise" baseFrequency="0.012 0.018" numOctaves="2" seed="7" result="n"/>
-    <feDisplacementMap in="SourceGraphic" in2="n" scale="7" xChannelSelector="R" yChannelSelector="G"/>
-    <feGaussianBlur stdDeviation="0.4"/>
-  </filter></svg>
+  <svg class="defs">
+    <filter id="paint">
+      <feTurbulence type="fractalNoise" baseFrequency="0.012 0.018" numOctaves="2" seed="7" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="7" xChannelSelector="R" yChannelSelector="G"/>
+      <feGaussianBlur stdDeviation="0.4"/>
+    </filter>
+    <filter id="paintSoft" x="-30%" y="-30%" width="160%" height="160%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.02 0.03" numOctaves="2" seed="5" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="2.2"/>
+      <feGaussianBlur stdDeviation="0.22"/>
+    </filter>
+    <linearGradient id="gBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d3d7d3"/><stop offset="1" stop-color="#a6aca7"/></linearGradient>
+    <linearGradient id="gHead" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d7dbd7"/><stop offset="1" stop-color="#abb1ac"/></linearGradient>
+    <linearGradient id="gMid"  x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#bcc2bd"/><stop offset="1" stop-color="#949b96"/></linearGradient>
+    <linearGradient id="gRust" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c9a988"/><stop offset="1" stop-color="#9f7e63"/></linearGradient>
+    <radialGradient id="gCore"><stop offset="0" stop-color="#ffffff" stop-opacity=".95"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></radialGradient>
+    <radialGradient id="gAura"><stop offset="0" stop-color="#f0d9a8"/><stop offset="1" stop-color="#f0d9a8" stop-opacity="0"/></radialGradient>
+  </svg>
 
   <div class="hud">
     <div class="titlebar">
@@ -143,20 +173,70 @@
   </div>
 
   <div id="map">
-    <div id="canvas">
+    <div id="canvas"><div id="world">
       <svg class="edges" id="edges"></svg>
       <div id="robot">
-        <svg viewBox="0 0 120 150">
-          <circle class="aura" cx="60" cy="78" r="52"/>
-          <rect class="body" x="30" y="62" width="60" height="58" rx="22"/>
-          <circle class="core" cx="60" cy="92" r="12"/>
-          <rect class="head" x="34" y="24" width="52" height="46" rx="20"/>
-          <rect class="face" x="42" y="34" width="36" height="26" rx="12"/>
-          <circle class="eye" cx="52" cy="47" r="4.5"/><circle class="eye" cx="68" cy="47" r="4.5"/>
-          <line class="ant" x1="60" y1="24" x2="60" y2="12"/><circle cx="60" cy="9" r="4" fill="#c98f6a"/>
+        <svg viewBox="0 0 140 182">
+          <ellipse class="shadow" cx="70" cy="174" rx="38" ry="7"/>
+          <circle class="aura" cx="70" cy="92" r="62"/>
+          <!-- 다리 -->
+          <rect x="53" y="130" width="13" height="28" rx="6" fill="url(#gMid)"/>
+          <rect x="74" y="130" width="13" height="28" rx="6" fill="url(#gMid)"/>
+          <ellipse cx="59" cy="160" rx="13" ry="6" fill="#8a918c"/>
+          <ellipse cx="81" cy="160" rx="13" ry="6" fill="#8a918c"/>
+          <!-- 팔 -->
+          <rect x="20" y="84" width="13" height="40" rx="6.5" fill="url(#gMid)"/>
+          <rect x="107" y="84" width="13" height="40" rx="6.5" fill="url(#gMid)"/>
+          <circle cx="26" cy="126" r="8" fill="#9aa19c" stroke="#828984" stroke-width="1.5"/>
+          <circle cx="114" cy="126" r="8" fill="#9aa19c" stroke="#828984" stroke-width="1.5"/>
+          <!-- 어깨 관절 -->
+          <circle cx="42" cy="86" r="10" fill="url(#gMid)" stroke="#828984" stroke-width="1.5"/>
+          <circle cx="98" cy="86" r="10" fill="url(#gMid)" stroke="#828984" stroke-width="1.5"/>
+          <circle cx="42" cy="86" r="3" fill="#7d847f"/><circle cx="98" cy="86" r="3" fill="#7d847f"/>
+          <!-- 몸통 -->
+          <rect x="40" y="76" width="60" height="64" rx="20" fill="url(#gBody)" stroke="#9aa19c" stroke-width="2"/>
+          <path d="M44 105 H96" stroke="#9aa19c" stroke-width="1.4" opacity=".55"/>
+          <!-- 고철 패치(스크랩) -->
+          <rect x="46" y="112" width="24" height="20" rx="4" fill="url(#gRust)" stroke="#9c7a5e" stroke-width="1.4" stroke-dasharray="3 2"/>
+          <circle cx="50" cy="116" r="1.5" fill="#7a5e46"/><circle cx="66" cy="116" r="1.5" fill="#7a5e46"/>
+          <circle cx="50" cy="128" r="1.5" fill="#7a5e46"/><circle cx="66" cy="128" r="1.5" fill="#7a5e46"/>
+          <!-- 리벳 -->
+          <circle cx="47" cy="83" r="1.7" fill="#868d88"/><circle cx="93" cy="83" r="1.7" fill="#868d88"/><circle cx="93" cy="133" r="1.7" fill="#868d88"/>
+          <!-- 가슴 코어(심장) -->
+          <circle cx="78" cy="98" r="15" fill="#2c3b3a"/>
+          <circle class="core" cx="78" cy="98" r="11"/>
+          <circle class="coreHi" cx="78" cy="98" r="11" fill="url(#gCore)"/>
+          <path class="spark" d="M78 91 l3.2 5 -3.2 8 -3.2 -8z"/>
+          <!-- 목 -->
+          <rect x="61" y="63" width="18" height="15" rx="4" fill="#9aa19c"/>
+          <!-- 머리 -->
+          <rect x="45" y="24" width="50" height="46" rx="17" fill="url(#gHead)" stroke="#9aa19c" stroke-width="2"/>
+          <path d="M49 36 H91" stroke="#9aa19c" stroke-width="1.3" opacity=".5"/>
+          <!-- 머리 스크랩 자국 -->
+          <path d="M83 28 l8 3 -2 7 -7 -3z" fill="url(#gRust)" opacity=".85" stroke="#9c7a5e" stroke-width="1"/>
+          <!-- 양옆 볼트(귀) -->
+          <circle cx="45" cy="48" r="5" fill="#9aa19c" stroke="#828984" stroke-width="1.5"/>
+          <circle cx="95" cy="48" r="5" fill="#9aa19c" stroke="#828984" stroke-width="1.5"/>
+          <!-- 바이저 -->
+          <rect class="visor" x="51" y="38" width="38" height="22" rx="11"/>
+          <!-- 눈(렌즈) -->
+          <circle class="eye" cx="63" cy="49" r="6"/><circle class="eye" cx="77" cy="49" r="6"/>
+          <circle class="eyeHi" cx="61" cy="47" r="1.8"/><circle class="eyeHi" cx="75" cy="47" r="1.8"/>
+          <!-- 입 그릴 -->
+          <g class="grille"><line x1="66" y1="62" x2="66" y2="66"/><line x1="70" y1="62" x2="70" y2="67"/><line x1="74" y1="62" x2="74" y2="66"/></g>
+          <!-- 안테나 -->
+          <path class="ant" d="M70 24 q-4 -7 0 -13" fill="none"/>
+          <circle class="tipHalo" cx="70" cy="8" r="9"/>
+          <circle class="tip" cx="70" cy="8" r="4.5"/>
         </svg>
       </div>
-    </div>
+    </div></div>
+  </div>
+
+  <div class="zoomctl">
+    <button id="zin" aria-label="확대">+</button>
+    <button id="zout" aria-label="축소">−</button>
+    <div class="zlvl" id="zlvl">1.0×</div>
   </div>
 
   <div class="walkbar" id="walkbar">
@@ -211,17 +291,16 @@ const SENSES = {
   wind: { name:"바람", flavor:"바람의 결을 느낀다.\n등을 미는 바람만큼 더 멀리." },
 };
 
-// 노드 배치 (canvas 비율 좌표: x 0~1, y 0~1, 아래에서 위로 올라가는 여정)
-const CANVAS_H = 1480;
+// 노드 배치 (월드 비율 좌표 x,y 0~1). 행 간격을 촘촘히 → 한 화면에 3~4개.
 const NODES = [
-  { id:"start",  type:"start",  x:.50, y:.96, completed:true,  gen:0,   icon:"·" },
-  { id:"longing",type:"person", x:.30, y:.80, key:"longing",  gen:0.35, icon:"❀" },
-  { id:"rain",   type:"sense",  x:.72, y:.80, key:"rain",     gen:0.25, icon:"☂" },
-  { id:"sorrow", type:"person", x:.22, y:.62, key:"sorrow",   gen:0.4,  icon:"❀" },
-  { id:"warmth", type:"person", x:.74, y:.60, key:"warmth",   gen:0.4,  icon:"❀" },
-  { id:"wind",   type:"sense",  x:.46, y:.46, key:"wind",     gen:0.3,  icon:"≋" },
-  { id:"courage",type:"person", x:.32, y:.28, key:"courage",  gen:0.5,  icon:"❀" },
-  { id:"deep",   type:"teaser", x:.66, y:.14, gen:0,          icon:"?" },
+  { id:"start",  type:"start",  x:.50, y:.93, completed:true,  gen:0,   icon:"·" },
+  { id:"longing",type:"person", x:.31, y:.785,key:"longing",  gen:0.35, icon:"❀" },
+  { id:"rain",   type:"sense",  x:.70, y:.785,key:"rain",     gen:0.25, icon:"☂" },
+  { id:"sorrow", type:"person", x:.24, y:.635,key:"sorrow",   gen:0.4,  icon:"❀" },
+  { id:"warmth", type:"person", x:.73, y:.620,key:"warmth",   gen:0.4,  icon:"❀" },
+  { id:"wind",   type:"sense",  x:.47, y:.475,key:"wind",     gen:0.3,  icon:"≋" },
+  { id:"courage",type:"person", x:.33, y:.320,key:"courage",  gen:0.5,  icon:"❀" },
+  { id:"deep",   type:"teaser", x:.66, y:.155,gen:0,          icon:"?" },
 ];
 const EDGES = [
   ["start","longing",18], ["start","rain",22],
@@ -243,11 +322,30 @@ const upCost = (node, lv) => Math.round((node.type==="sense"?UP_BASE.sense:UP_BA
 
 /* ===================== DOM ===================== */
 const $ = s => document.querySelector(s);
-const map=$("#map"), canvas=$("#canvas"), edgesSvg=$("#edges"), robot=$("#robot");
+const map=$("#map"), canvas=$("#canvas"), world=$("#world"), edgesSvg=$("#edges"), robot=$("#robot");
 const elWalks=$("#walks"), elRate=$("#rate"), elWarm=$("#warm");
 const modal=$("#modal");
-canvas.style.height = CANVAS_H+"px";
-const px = n => ({ x: n.x*canvas.clientWidth, y: n.y*CANVAS_H });
+
+/* ---------- 줌 + 월드 좌표 (월드는 base 좌표, 화면 스케일은 CSS transform) ---------- */
+let zoom = 1;
+const ZMIN=0.55, ZMAX=2.0;
+const baseW = () => map.clientWidth;
+const baseH = () => Math.max(map.clientHeight*1.9, 560);   // 한 화면에 행 3~4개
+const px = n => ({ x: n.x*baseW(), y: n.y*baseH() });       // 미스케일 월드 좌표
+function sizeCanvas(){
+  const bw=baseW(), bh=baseH();
+  world.style.width=bw+"px"; world.style.height=bh+"px"; world.style.transform="scale("+zoom+")";
+  canvas.style.width=(bw*zoom)+"px"; canvas.style.height=(bh*zoom)+"px";
+}
+function centerOn(id, smooth){
+  const n=NODES.find(x=>x.id===id); if(!n) return; const p=px(n);
+  map.scrollTo({ left:p.x*zoom-map.clientWidth/2, top:p.y*zoom-map.clientHeight/2, behavior:smooth?"smooth":"auto" });
+}
+function setZoom(z){
+  zoom = Math.max(ZMIN, Math.min(ZMAX, z));
+  sizeCanvas(); centerOn(S.current);
+  const zl=document.getElementById('zlvl'); if(zl) zl.textContent = zoom.toFixed(1)+"×";
+}
 
 function fmt(n){ return n>=1000 ? (n/1000).toFixed(2)+"k" : Math.floor(n); }
 
@@ -302,7 +400,7 @@ function renderNodes(){
         (done&&n.gen?`<div class="cost">재회 ${upCost(n,lv+1)}</div>`:""));
     if(reach) el.onclick = ()=>tryUnlock(n);
     else if(done && n.gen) el.onclick = ()=>openNode(n,false);
-    canvas.appendChild(el);
+    world.appendChild(el);
   });
 }
 function placeRobot(animate){
@@ -318,13 +416,12 @@ function refreshHUD(){
   elWarm.textContent=Math.round(p*100);
   robot.style.setProperty("--p",p);
 }
-function renderAll(){ renderEdges(); renderNodes(); placeRobot(); refreshHUD(); }
+function renderAll(){ sizeCanvas(); renderEdges(); renderNodes(); placeRobot(); refreshHUD(); }
 
 /* ---------- 이동 + 만남 ---------- */
 function travelTo(n, cb){
   S.current=n.id; placeRobot(true);
-  const p=px(n);
-  map.scrollTo({ top: p.y - map.clientHeight*0.55, behavior:"smooth" });
+  centerOn(n.id, true);
   setTimeout(cb, 1100);
 }
 function tryUnlock(n){
@@ -405,20 +502,30 @@ $("#walkbar").addEventListener("pointerdown",e=>addWalk(e.clientX,e.clientY));
 
 function nudge(msg){ const h=$("#hint"); const old=h.textContent; h.textContent=msg;
   h.style.color="#c0794a"; setTimeout(()=>{h.textContent=old;h.style.color="";},1100); }
-function spark(){ const n=NODES.find(x=>x.id===S.current),p=px(n);
-  const r=canvas.getBoundingClientRect();
+function spark(){ const rb=robot.getBoundingClientRect();
+  const cx=rb.left+rb.width/2, cy=rb.top+rb.height*0.42;
   for(let i=0;i<6;i++){ const m=document.createElement("div"); m.className="mote";
-    m.style.left=(r.left+p.x+(Math.random()*40-20))+"px"; m.style.top=(r.top+p.y-map.scrollTop)+"px";
+    m.style.left=(cx+(Math.random()*40-20))+"px"; m.style.top=cy+"px";
     document.body.appendChild(m); setTimeout(()=>m.remove(),1300); } }
 
 /* ---------- idle 루프 ---------- */
 setInterval(()=>{ S.walks += S.rate*0.1; elWalks.textContent=fmt(S.walks); }, 100);
 
+/* ---------- 줌 입력 ---------- */
+document.getElementById('zin').addEventListener('click', ()=>setZoom(zoom*1.25));
+document.getElementById('zout').addEventListener('click', ()=>setZoom(zoom/1.25));
+map.addEventListener('wheel', e=>{ if(e.ctrlKey){ e.preventDefault(); setZoom(zoom*(e.deltaY<0?1.12:0.9)); } }, {passive:false});
+let pinch=null;
+const tdist=t=>Math.hypot(t[0].clientX-t[1].clientX, t[0].clientY-t[1].clientY);
+map.addEventListener('touchstart', e=>{ if(e.touches.length===2) pinch={d:tdist(e.touches), z:zoom}; }, {passive:true});
+map.addEventListener('touchmove', e=>{ if(pinch&&e.touches.length===2) setZoom(pinch.z * tdist(e.touches)/pinch.d); }, {passive:true});
+map.addEventListener('touchend', e=>{ if(e.touches.length<2) pinch=null; });
+
 /* ---------- 시작 ---------- */
-window.addEventListener("resize", renderAll);
+window.addEventListener("resize", ()=>{ renderAll(); centerOn(S.current); });
 renderAll();
-map.scrollTo({ top: CANVAS_H }); // 시작점(아래)에서 출발
-setTimeout(()=>{ const p=px(NODES[0]); map.scrollTo({top:p.y-map.clientHeight*0.6,behavior:"smooth"}); },300);
+centerOn("start");
+setTimeout(()=>centerOn("start", true), 200);
 </script>
 </body>
 </html>
