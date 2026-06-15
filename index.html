@@ -98,20 +98,18 @@
   #robot svg { width:100%; filter:url(#paintSoft) drop-shadow(0 4px 5px rgba(70,66,60,.22)); animation:bob 3.8s ease-in-out infinite; }
   @keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
 
-  /* 길 페이지 걷기 로봇 (옆모습) */
+  /* 길 페이지 걷기 로봇 (옆모습) — 걸음당 1보(이벤트 구동, 상시 루프 아님) */
   #walkRobot { position:absolute; left:44%; bottom:21%; width:138px; z-index:3; pointer-events:none; transform:translateX(-50%); }
-  #walkRobot svg { width:100%; filter:url(#paintSoft) drop-shadow(0 5px 6px rgba(70,66,60,.20)); animation:walkbob .34s ease-in-out infinite; }
-  @keyframes walkbob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
-  #walkRobot .leg, #walkRobot .arm { transform-box:fill-box; transform-origin:top center; }
-  @keyframes stride { 0%{transform:rotate(20deg)} 50%{transform:rotate(-20deg)} 100%{transform:rotate(20deg)} }
-  @keyframes swing  { 0%{transform:rotate(-16deg)} 50%{transform:rotate(16deg)} 100%{transform:rotate(-16deg)} }
-  #walkRobot .legFront{ animation:stride .68s ease-in-out infinite; }
-  #walkRobot .legBack { animation:stride .68s ease-in-out infinite; animation-delay:-.34s; }
-  #walkRobot .armFront{ animation:swing .68s ease-in-out infinite; animation-delay:-.34s; }
-  #walkRobot .armBack { animation:swing .68s ease-in-out infinite; }
-  #walkRobot .walkshadow{ animation:wsh .68s ease-in-out infinite; transform-box:fill-box; transform-origin:center; }
-  @keyframes wsh { 0%,100%{transform:scaleX(1)} 50%{transform:scaleX(.86)} }
-  #walkRobot .antG{ transform-box:fill-box; transform-origin:bottom center; animation:antsway 1.4s ease-in-out infinite; }
+  #walkRobot svg { width:100%; filter:url(#paintSoft) drop-shadow(0 5px 6px rgba(70,66,60,.20)); }
+  @keyframes stepbob { 0%{transform:translateY(0)} 38%{transform:translateY(-6px)} 100%{transform:translateY(0)} }
+  /* 다리·팔: 한 보마다 전후 스탠스 전환 (걸음이 들어올 때만) */
+  #walkRobot .leg, #walkRobot .arm { transform-box:fill-box; transform-origin:top center; transition:transform .15s ease-out; }
+  #walkRobot.stepA .legFront{ transform:rotate(20deg) }  #walkRobot.stepA .legBack{ transform:rotate(-20deg) }
+  #walkRobot.stepA .armFront{ transform:rotate(-14deg) } #walkRobot.stepA .armBack{ transform:rotate(14deg) }
+  #walkRobot.stepB .legFront{ transform:rotate(-20deg) } #walkRobot.stepB .legBack{ transform:rotate(20deg) }
+  #walkRobot.stepB .armFront{ transform:rotate(14deg) }  #walkRobot.stepB .armBack{ transform:rotate(-14deg) }
+  /* 안테나만 잔잔한 분위기(걷기와 무관) */
+  #walkRobot .antG{ transform-box:fill-box; transform-origin:bottom center; animation:antsway 1.8s ease-in-out infinite; }
   @keyframes antsway { 0%,100%{transform:rotate(-5deg)} 50%{transform:rotate(6deg)} }
 
   /* 떠오르는 입자 */
@@ -141,18 +139,15 @@
       linear-gradient(#eef0ea 0%, #f3efe6 45%); }
   #pageWalk .scene { position:absolute; left:0; bottom:0; width:100%; height:60%; overflow:hidden; }
   #pageWalk .hill { position:absolute; bottom:8%; border-radius:50% 50% 42% 42%; filter:url(#paint); opacity:.78; }
-  #pageWalk .h1 { width:80%; height:42%; left:-12%; background:#aebfa9; animation:drift 26s linear infinite; }
-  #pageWalk .h2 { width:78%; height:56%; left:40%;  background:#9fb1c2; opacity:.7;  animation:drift 19s linear infinite; }
-  #pageWalk .h3 { width:74%; height:34%; left:80%;  background:#c9b3a6; opacity:.66; animation:drift 14s linear infinite; }
+  /* 먼 언덕은 아주 느린 바람(걷기와 무관한 분위기) */
+  #pageWalk .h1 { width:80%; height:42%; left:-12%; background:#aebfa9; animation:drift 70s linear infinite; }
+  #pageWalk .h2 { width:78%; height:56%; left:40%;  background:#9fb1c2; opacity:.7;  animation:drift 90s linear infinite; }
+  #pageWalk .h3 { width:74%; height:34%; left:80%;  background:#c9b3a6; opacity:.66; animation:drift 60s linear infinite; }
   @keyframes drift { from{transform:translateX(0)} to{transform:translateX(-130%)} }
   #pageWalk .ground { position:absolute; left:0; bottom:0; width:100%; height:18%; background:#cdbfa6; filter:url(#paint); opacity:.85; }
+  /* 길 점선: 한 보마다 한 칸 전진 (상시 흐름 아님) */
   #pageWalk .roadline { position:absolute; left:0; bottom:7%; width:100%; height:3px; opacity:.5;
-    background:repeating-linear-gradient(90deg,#bda886 0 26px,transparent 26px 54px); animation:roadrun 1.1s linear infinite; }
-  @keyframes roadrun { from{background-position:0 0} to{background-position:-54px 0} }
-  #pageWalk .tuft { position:absolute; bottom:15%; width:20px; height:14px; border-radius:50% 50% 40% 40%;
-    background:#a7b89f; filter:url(#paint); opacity:.7; animation:tuftrun 4s linear infinite; }
-  #pageWalk .t1 { animation-delay:0s; } #pageWalk .t2 { animation-delay:-1.5s; bottom:13%; } #pageWalk .t3 { animation-delay:-3s; height:10px; }
-  @keyframes tuftrun { from{left:104%} to{left:-10%} }
+    background:repeating-linear-gradient(90deg,#bda886 0 26px,transparent 26px 54px); transition:background-position .16s ease-out; }
   .walkhint { position:absolute; left:0; right:0; bottom:4%; text-align:center; z-index:4;
     font-family:'Nanum Pen Script',cursive; font-size:18px; color:#8a8071; animation:breathe 2.6s ease-in-out infinite; }
   @keyframes breathe { 0%,100%{opacity:.55} 50%{opacity:1} }
@@ -228,7 +223,6 @@
       <div class="hill h1"></div><div class="hill h2"></div><div class="hill h3"></div>
       <div class="ground"></div>
       <div class="roadline"></div>
-      <div class="tuft t1"></div><div class="tuft t2"></div><div class="tuft t3"></div>
     </div>
 
     <div id="walkRobot">
@@ -420,7 +414,7 @@ const EDGES = [
 
 /* ===================== 상태 ===================== */
 const S = {
-  walks: 0, rate: 0.5, current: "start",
+  walks: 0, rate: 1.0, current: "start",   // 기본 1초 1걸음 (설계서 §5)
   levels: {},            // nodeId -> 레벨(0=미완료)
 };
 NODES.forEach(n => S.levels[n.id] = n.completed ? 1 : 0);
@@ -433,6 +427,7 @@ const upCost = (node, lv) => Math.round((node.type==="sense"?UP_BASE.sense:UP_BA
 const $ = s => document.querySelector(s);
 const app=$("#app");
 const map=$("#map"), canvas=$("#canvas"), world=$("#world"), edgesSvg=$("#edges"), robot=$("#robot");
+const walkRobot=$("#walkRobot"), roadEl=$("#pageWalk .roadline");
 const elWalks=$("#walks"), elRate=$("#rate"), elWarm=$("#warm");
 const modal=$("#modal");
 
@@ -537,7 +532,7 @@ function travelTo(n, cb){
 function tryUnlock(n){
   const cost=reachCost(n.id);
   if(S.walks < cost){ nudge(`걸음이 ${cost-Math.floor(S.walks)|0} 더 필요해`); return; }
-  S.walks -= cost;
+  S.walks -= cost; syncSteps();
   travelTo(n, ()=>{
     S.levels[n.id]=1; S.rate+=n.gen;
     if(n.type==="person") openNode(n,true);
@@ -571,7 +566,7 @@ function nextUpLabel(n){
 function upgrade(n){
   const cost=upCost(n, S.levels[n.id]+1);
   if(S.walks<cost){ nudge(`${cost-Math.floor(S.walks)|0} 걸음 더`); return false; }
-  S.walks-=cost; S.levels[n.id]++; S.rate+=n.gen;
+  S.walks-=cost; syncSteps(); S.levels[n.id]++; S.rate+=n.gen;
   spark(); travelTo(n, ()=>openNode(n,false));
   renderAll();
   return true;
@@ -592,7 +587,21 @@ $("#mBtn").onclick=()=>{ if(modalAction && modalAction()===false) return; closeM
 $("#mSub").onclick=closeModal;
 function closeModal(){ modal.classList.remove("show"); renderAll(); }
 
-/* ---------- 탭 = 걸음 가속 ---------- */
+/* ---------- 걸음당 1보(步) : 걸음이 들어올 때만 한 발 ---------- */
+let stepPhase=false, wholeWalks=0, worldX=0;
+function stepOnce(){
+  stepPhase=!stepPhase;
+  walkRobot.classList.remove("stepA","stepB");
+  walkRobot.classList.add(stepPhase?"stepA":"stepB");
+  const svg=walkRobot.querySelector("svg");           // 한 보 bob (재시작)
+  svg.style.animation="none"; void svg.offsetWidth; svg.style.animation="stepbob .26s ease-out";
+  worldX += 27;                                        // 길 한 칸 전진(점선 주기 54 → 반칸씩 교차)
+  roadEl.style.backgroundPosition = (-(worldX%54))+"px 0";
+}
+// S.walks의 정수 자리가 늘 때마다 그만큼 보(步). 줄어들면(소비) 보 없이 동기화만.
+function syncSteps(){ const w=Math.floor(S.walks); if(w>wholeWalks) stepOnce(); wholeWalks=w; }
+
+/* ---------- 탭 = 걸음 ---------- */
 function addWalk(x,y){
   S.walks+=TAP_GAIN;
   if(x!=null){ const m=document.createElement("div"); m.className="mote";
@@ -602,6 +611,7 @@ function addWalk(x,y){
     t.style.left=x+"px"; t.style.top=(y-8)+"px"; document.body.appendChild(t); setTimeout(()=>t.remove(),700);
   }
   elWalks.textContent=fmt(S.walks);
+  syncSteps();                                         // 탭 1회 = 1걸음 = 1보 (연달아 3탭 → 3보)
 }
 // 길 페이지 = 핵심 손맛: 두드리면 걷는다
 $("#pageWalk").addEventListener("pointerdown", e=>addWalk(e.clientX, e.clientY));
@@ -619,8 +629,8 @@ function spark(){ const rb=robot.getBoundingClientRect();
     m.style.left=(cx+(Math.random()*40-20))+"px"; m.style.top=cy+"px";
     document.body.appendChild(m); setTimeout(()=>m.remove(),1300); } }
 
-/* ---------- idle 루프 ---------- */
-setInterval(()=>{ S.walks += S.rate*0.1; elWalks.textContent=fmt(S.walks); }, 100);
+/* ---------- idle 루프 (기본 1초 1걸음 → 1초 1보) ---------- */
+setInterval(()=>{ S.walks += S.rate*0.1; elWalks.textContent=fmt(S.walks); syncSteps(); }, 100);
 
 /* ---------- 줌 입력 ---------- */
 document.getElementById('zin').addEventListener('click', ()=>setZoom(zoom*1.25));
