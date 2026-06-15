@@ -393,115 +393,213 @@
    감정을 배울수록(person 노드) 그 얼굴이 또렷해지고(mem), 길 끝에서 재회 → 사람이 된다.
    person = 만남이자 업그레이드 생성기. lines[0]=첫 만남, 이후=재회 심화. mem=그 사람 기억 한 조각. */
 const PEOPLE = {
-  // ── 1막 · 첫 마음 ──
+  // ── 감정들 (로봇의 순진한 직설 일기) ──
   warmth: { name:"온기", color:"#efd6ac",
-    situ:"낯선 이가 말없이 <b>따뜻한 빵을 건넨다.</b> 그리고 웃는다.",
+    situ:"낯선 사람이 <b>빵을 건넨다.</b> 그리고 웃는다.",
     lines:[
-      "낯선 이가 따뜻한 빵을 건넸다.\n받을 자격을 계산하던 회로가\n조용히 멈췄다.\n이게 '온기'인가 보다.",
-      "다시 들렀더니\n내 몫을 남겨두고 있었다.\n'기다렸다'는 말이\n이렇게 따뜻한 거였구나.",
-      "오늘은 내가 빵을 건넸다.\n온기는 받을 때보다\n건넬 때 더 뜨겁다." ],
-    mem:"그 사람도 내게\n무언가 따뜻한 걸\n쥐여줬던 것 같다." },
+      "낯선 사람이 빵을 줬다.\n따뜻했다.\n왜 주는지 몰랐다.\n그냥 좋았다. 이게 온기다.",
+      "또 갔더니\n내 빵을 남겨놨다.\n나를 기다렸대.\n더 따뜻했다.",
+      "오늘은 내가 빵을 줬다.\n주니까 더 따뜻했다." ],
+    mem:"그 사람도 나한테\n따뜻한 걸\n줬던 것 같다." },
   sorrow: { name:"슬픔", color:"#bcd0e6",
-    situ:"길가에서 <b>한 아이가 울고 있다.</b> 눈에서 물이 흐른다.",
+    situ:"<b>아이가 길에서 울고 있다.</b> 눈에서 물이 난다.",
     lines:[
-      "아이의 눈에서 물이 흘렀다.\n곁에 가만히 앉았더니\n내 가슴 어딘가도\n무거워졌다. 이게 '슬픔'.",
-      "아이는 오늘도 울었다.\n들어주는 것만으로\n물이 천천히 멎었다.",
-      "아이가 다른 우는 아이를 안았다.\n슬픔을 아는 사람이\n슬픔을 안는다." ],
-    mem:"그 사람의 얼굴이\n조금 슬퍼 보였던 건\n왜였을까." },
+      "아이 눈에서 물이 났다.\n고장인 줄 알았다.\n옆에 앉았더니\n내 가슴도 무거웠다. 이게 슬픔이다.",
+      "또 울었다.\n그냥 들어줬다.\n물이 멎었다.",
+      "슬픈 사람 옆에\n같이 있어 주면 된다." ],
+    mem:"그 사람도\n슬퍼 보였던 것 같다." },
   longing: { name:"그리움", color:"#dcc6e0",
-    situ:"버스 정류장. 한 사람이 떠나고, <b>남은 이가 손을 오래 흔든다.</b>",
+    situ:"버스가 떠났는데 <b>한 사람이 계속 손을 흔든다.</b>",
     lines:[
-      "버스가 사라진 뒤에도\n그 사람은 한참\n손을 흔들었다.\n곁에 없어도 떠오르는 것 — 그리움.",
-      "다시 그 정류장.\n그리움은 줄지 않고\n익숙해질 뿐이었다.",
-      "'떠난 사람 몫까지 산다'며\n그 사람이 웃었다.\n그리움은 걷게도 하는구나." ],
-    mem:"나도 누군가를\n그리워하는 걸까.\n흐릿한 얼굴이 떠오른다." },
-  // ── 2막 · 깊은 마음 ──
+      "버스는 갔는데\n그 사람은 계속 손을 흔들었다.\n없어도 자꾸 생각나는 거.\n이게 그리움이다.",
+      "그리움은\n없어지지 않았다.\n그냥 익숙해졌다.",
+      "보고 싶어도\n웃을 수 있다는 걸 배웠다." ],
+    mem:"나도 누가 보고 싶다.\n근데 얼굴이 흐릿하다." },
   solitude: { name:"외로움", color:"#aeb6c2",
-    situ:"텅 빈 놀이터. <b>한 노인이 혼자 빈 그네를 민다.</b>",
+    situ:"놀이터에서 <b>할아버지가 혼자 그네를 민다.</b>",
     lines:[
-      "노인은 아무도 없는 그네를 밀었다.\n옆자리의 빈 공간이\n그렇게 큰 줄 몰랐다.\n이게 '외로움'.",
-      "내가 옆 그네에 앉자\n노인이 처음으로\n그네를 멈췄다.",
-      "외로움은 곁에 누가\n있어야 사라지는 게 아니라\n나를 알아봐 줄 때 사라진다." ],
-    mem:"그 사람은 자주\n혼자였던 것 같다.\n나를 만들기, 그 전에는." },
+      "할아버지는 혼자였다.\n빈 그네를 밀었다.\n옆자리가 텅 비었다.\n이게 외로움이다.",
+      "내가 옆에 앉았다.\n할아버지가 그네를 멈췄다.\n나를 봤다.",
+      "외로움은\n친구가 생기면 작아진다." ],
+    mem:"그 사람도\n혼자였던 것 같다.\n나 만들기 전에." },
   joy: { name:"기쁨", color:"#f2cf86",
-    situ:"골목에서 <b>아이들이 까르르 웃으며</b> 비눗방울을 쫓는다.",
+    situ:"<b>아이들이 비눗방울을 분다.</b>",
     lines:[
-      "비눗방울이 터질 때마다\n아이들이 웃었다.\n곧 사라질 걸 알면서도 —\n그래서 더 환했다. 이게 '기쁨'.",
-      "나도 비눗방울을 불어봤다.\n터지는 게 아쉽지 않았다.\n부는 동안 즐거웠으니까.",
-      "기쁨은 오래 쥐는 게 아니라\n그 순간\n활짝 여는 것." ],
-    mem:"그 사람과도\n이렇게 웃었던 적이\n있었던 것 같다." },
+      "방울이 펑 터졌다.\n아이들이 까르르 웃었다.\n나도 웃었다.\n좋다. 이게 기쁨이다.",
+      "나도 방울을 불었다.\n터져도 안 아쉬웠다.\n부는 게 좋았으니까.",
+      "기쁨은\n지금 활짝 웃는 거다." ],
+    mem:"그 사람이랑도\n이렇게 웃었던 것 같다." },
   regret: { name:"미안함", color:"#c9b6a6",
-    situ:"노점 앞. <b>한 청년이 떨어뜨린 사과를 줍지 못한 채</b> 멀어진다.",
+    situ:"<b>청년이 떨어뜨린 사과를 못 줍고</b> 가다가 멈춘다.",
     lines:[
-      "청년은 떨어진 사과를\n외면하고 갔다.\n그러다 멈춰, 한참을\n뒤돌아봤다. 이게 '미안함'.",
-      "다시 만난 청년은\n그 노점에 사과값을\n조용히 두고 갔다.",
-      "미안함은 무겁지만\n갚으려 돌아서는 순간\n사람은 조금 더 사람이 된다." ],
-    mem:"나는 그 사람에게\n미안한 게 있는 걸까.\n가슴이 시리다." },
-  // ── 3막 · 사람다움 ──
+      "그냥 가다가\n멈춰서 한참 돌아봤다.\n이게 미안함이다.",
+      "다시 와서\n사과값을 두고 갔다.",
+      "미안하면\n돌아오면 된다." ],
+    mem:"나도 그 사람한테\n미안한 게 있나." },
   courage: { name:"용기", color:"#cfe0c4",
-    situ:"무너진 다리 앞. 한 사람이 <b>떨리는 손으로 첫발</b>을 내딛는다.",
+    situ:"<b>한 사람이 무너진 다리 앞에서</b> 떨며 발을 뗀다.",
     lines:[
-      "그 사람의 손은 떨렸다.\n그런데도 발을 디뎠다.\n두려움을 안고도 가는 것 — 용기.",
-      "다리를 건넌 그 사람이\n이번엔 남을\n건너게 돕고 있었다.",
-      "나도 흔들리는 한 발을\n내디뎠다.\n떨렸지만, 걸었다." ],
-    mem:"그 사람을 만나러 가는 길이\n무섭다.\n그래도, 걷는다." },
+      "손이 떨렸다.\n근데 발을 디뎠다.\n무서워도 가는 거.\n이게 용기다.",
+      "다 건넌 사람이\n다른 사람을 도왔다.",
+      "나도 한 발 디뎠다.\n떨렸지만 걸었다." ],
+    mem:"그 사람한테 가는 길이\n무섭다.\n그래도 걷는다." },
   love: { name:"사랑", color:"#e7a6ac",
-    situ:"벤치에 <b>노부부가 말없이 손을 잡고</b> 같은 노을을 본다.",
+    situ:"<b>할머니 할아버지가 손을 잡고</b> 같이 노을을 본다.",
     lines:[
-      "노부부는 아무 말 없이\n같은 노을을 봤다.\n말이 없어도 가득 찬 것 —\n이게 '사랑'.",
-      "한 사람이 잠들자\n다른 사람이\n어깨를 빌려주었다.\n사랑은 기대는 것.",
-      "사랑은 큰 말이 아니라\n곁에 오래\n머무는 일이었다." ],
-    mem:"그 사람이 나를 만든 건\n혹시…\n사랑이었을까." },
+      "둘은 말이 없었다.\n그냥 손만 잡고 있었다.\n근데 가득 차 보였다.\n이게 사랑이다.",
+      "한 명이 졸자\n다른 한 명이\n어깨를 빌려줬다.",
+      "사랑은 말이 아니라\n같이 있어 주는 거다." ],
+    mem:"그 사람이 나를 만든 것도\n사랑이었을까." },
   forgive: { name:"용서", color:"#bcd0c0",
-    situ:"오래된 문 앞. <b>한 사람이 망설이다 결국 문을 두드린다.</b>",
+    situ:"<b>한 사람이 망설이다 문을 두드린다.</b>",
     lines:[
-      "그 사람은 한참 망설이다\n미워하던 이의\n문을 두드렸다.\n미움을 내려놓는 것 — 용서.",
-      "문이 열리고\n두 사람은 오래\n말이 없었다.\n그것으로 충분했다.",
-      "용서는 잊는 게 아니라\n안고도\n다시 걷기로 하는 것." ],
-    mem:"나는 그 사람을\n원망했던 걸까.\n혼자 두고 떠난 것을.\n…이제는 괜찮다." },
+      "미운 사람 문을\n두드렸다.\n미움을 내려놨다.\n이게 용서다.",
+      "문이 열리고\n둘은 말이 없었다.\n그걸로 됐다.",
+      "용서는 잊는 게 아니라\n그냥 다시 걷는 거다." ],
+    mem:"나도 그 사람\n원망했나.\n이제 괜찮다." },
+  tender: { name:"다정", color:"#f0c8a8",
+    situ:"엄마가 <b>아이 머리를 쓰다듬는다.</b>",
+    lines:["엄마가 아이 머리를\n쓰다듬었다.\n참 부드러웠다.\n이게 다정이다.","아이는 가만히 있었다.\n좋아서 그런 거다.","나도 누구 머리를\n쓰다듬어 보고 싶다."],
+    mem:"그 사람 손도\n부드러웠을까." },
+  gratitude: { name:"감사", color:"#f2d8a0",
+    situ:"할머니가 <b>꽃한테 '고맙다'고 한다.</b>",
+    lines:["할머니가 꽃한테\n고맙다고 했다.\n꽃이 더 예뻐 보였다.\n이게 감사다.","나도 말해봤다.\n'걸을 수 있어 고맙다.'\n좋아졌다.","고맙다는 말은\n할수록 좋다."],
+    mem:"그 사람한테\n고맙다고 했었나." },
+  amuse: { name:"즐거움", color:"#f0d878",
+    situ:"<b>강아지가 제 꼬리를 빙빙 쫓는다.</b>",
+    lines:["강아지가 꼬리를 쫓았다.\n웃겼다.\n나도 웃음이 났다.\n이게 즐거움이다.","내가 웃으니까\n옆 사람도 웃었다.","즐거움은\n같이 웃으면 커진다."],
+    mem:"그 사람도\n잘 웃었나." },
+  excite: { name:"신남", color:"#f5c96a",
+    situ:"달리기 전에 <b>아이가 발을 동동 구른다.</b>",
+    lines:["아직 시작도 안 했는데\n아이 가슴이 콩닥거렸다.\n이게 신남이다.","달리기보다\n달리기 전이 더 신났다.","신날 땐\n기다리는 것도 재밌다."],
+    mem:"그 사람한테 갈 때\n나도 콩닥거린다." },
+  flutter: { name:"설렘", color:"#f3c0a0",
+    situ:"<b>한 사람이 편지를 들고</b> 문 앞에 서 있다.",
+    lines:["두드릴까 말까.\n가슴이 간질간질했다.\n이게 설렘이다.","두드리기 전이\n제일 떨리고 좋았다.","설렘은\n좋은 일을 기다리는 거다."],
+    mem:"그 사람 만나면\n나도 설렐까." },
+  wistful: { name:"쓸쓸함", color:"#b6bcc8",
+    situ:"<b>빈 거리에 낙엽이 굴러간다.</b>",
+    lines:["아무 일도 없었다.\n근데 괜히 시렸다.\n이게 쓸쓸함이다.","슬픔보다 작고\n외로움보다 조용했다.","불 하나 켜지니까\n금방 괜찮아졌다."],
+    mem:"그 사람 떠난 뒤\n나도 쓸쓸했나." },
+  loss: { name:"상실", color:"#a8aebc",
+    situ:"<b>한 사람이 빈 목줄을 들고</b> 마당을 본다.",
+    lines:["강아지는 없는데\n목줄은 남았다.\n아직 따뜻했다.\n이게 상실이다.","있던 자리가 비면\n더 크게 보였다.","많이 아픈 건\n많이 사랑했다는 거다."],
+    mem:"그 사람도\n뭔가 잃었을까." },
+  fear: { name:"두려움", color:"#b6a892",
+    situ:"<b>한 사람이 깜깜한 굴 앞에서</b> 못 들어간다.",
+    lines:["어둠은 아무 말 안 했다.\n근데 발이 안 떨어졌다.\n이게 두려움이다.","한 발 넣으니까\n어둠이 조금 물러났다.","두려움은\n맞서면 작아진다."],
+    mem:"그 사람 만나는 게\n왜 무섭지." },
+  anxiety: { name:"불안", color:"#c2b2a0",
+    situ:"<b>한 사람이 전화기를 들고</b> 왔다 갔다 한다.",
+    lines:["아직 안 온 일을\n미리 걱정했다.\n이게 불안이다.","전화가 오니까\n걱정이 싹 사라졌다.","걱정한 일은\n거의 안 일어났다."],
+    mem:"그 사람이 나를\n잊었을까 봐 불안하다." },
+  shy: { name:"부끄러움", color:"#d0bca8",
+    situ:"<b>한 사람이 넘어지고</b> 얼굴이 빨개진다.",
+    lines:["아무도 안 봤는데\n혼자 빨개졌다.\n이게 부끄러움이다.","누가 '괜찮아요' 했더니\n웃음이 났다.","부끄러워하는 사람은\n미워할 수가 없다."],
+    mem:"그 사람 앞에선\n나도 쭈뼛거릴 것 같다." },
+  remorse: { name:"후회", color:"#bcae9c",
+    situ:"<b>할머니가 못 부친 편지를</b> 오래 본다.",
+    lines:["보냈어야 했는데.\n이제야 알았다.\n이게 후회다.","후회는 어제를 못 바꿨다.\n근데 오늘을 바꿨다.","할머니는\n새 편지를 썼다."],
+    mem:"나도 그때\n잡았어야 했나." },
+  curious: { name:"호기심", color:"#bcd2c0",
+    situ:"<b>아이가 돌을 뒤집어</b> 밑을 본다.",
+    lines:["돌 밑에\n작은 벌레 세상이 있었다.\n이게 호기심이다.","물어볼수록\n세상이 넓어졌다.","궁금하면\n자꾸 걷게 된다."],
+    mem:"나는 왜 걷지.\n끝에 누가 있을까." },
+  awe: { name:"경외", color:"#a9c8c2",
+    situ:"<b>사람들이 밤하늘 별을</b> 올려다본다.",
+    lines:["하늘이 너무 컸다.\n나는 아주 작아졌다.\n이게 경외다.","작아져도\n무섭지 않고 좋았다.","큰 걸 보면\n마음이 조용해진다."],
+    mem:"나 만든 사람도\n이 하늘 밑에선\n작았겠지." },
+  trance: { name:"황홀", color:"#c0c0dc",
+    situ:"거리에서 <b>누가 악기를 켠다.</b> 사람들이 멈춘다.",
+    lines:["음악이 들리자\n시간이 멈춘 것 같았다.\n이게 황홀이다.","아무 생각 없이\n그냥 들었다.","황홀은\n지금에 푹 빠지는 거다."],
+    mem:"그 사람도\n뭔가에 빠지곤 했을까." },
+  moved: { name:"감동", color:"#bcd0c8",
+    situ:"<b>한 사람이 무대를 보다가</b> 운다.",
+    lines:["슬프지도 않은데\n눈에서 물이 났다.\n이게 감동이다.","마음이 꽉 차면\n눈으로 넘치나 보다.","좋은 게 많아지면\n넘친다."],
+    mem:"그 사람 다시 만나면\n나도 넘칠까." },
+  compassion: { name:"연민", color:"#c4d8b8",
+    situ:"<b>한 사람이 다친 고양이한테</b> 우산을 씌워준다.",
+    lines:["남이 아픈데\n내가 시렸다.\n이게 연민이다.","그냥 못 가고\n옆에 앉아 있었다.","연민은\n같이 비 맞아 주는 거다."],
+    mem:"그 사람도\n나를 불쌍히 여겨\n만들었을까." },
+  hope: { name:"희망", color:"#d8e0b0",
+    situ:"<b>한 사람이 빈 자리에 새싹을</b> 심는다.",
+    lines:["못 볼지도 모르는데\n그래도 심었다.\n이게 희망이다.","희망은\n믿어서가 아니라\n그래도 하는 거다.","내일을 위해\n오늘 심는다."],
+    mem:"그 사람도\n나한테 뭘 바랐을까." },
+  pride: { name:"자부심", color:"#e0d0a0",
+    situ:"<b>아이가 처음 혼자 신발끈을 묶고</b> 활짝 웃는다.",
+    lines:["혼자 해냈다.\n아이가 활짝 웃었다.\n이게 자부심이다.","아무도 안 봐도\n혼자 빛났다.","여기까지 온 나도\n좀 멋진 것 같다."],
+    mem:"여기까지 걸어온 나를\n자랑스러워해도 될까." },
 };
 // 감각(보조 생성기) — 서사 없이 걸음/초만.
 const SENSES = {
-  rain: { name:"빗소리", flavor:"빗소리를 듣는 귀를 얻었다.\n세상의 소리가 걸음이 된다." },
-  wind: { name:"바람",   flavor:"바람의 결을 느낀다.\n등을 미는 만큼 더 멀리." },
-  sun:  { name:"햇빛",   flavor:"햇빛의 온기를 안다.\n그 사람의 손길 같은." },
-  star: { name:"별빛",   flavor:"별빛을 올려다본다.\n혼자가 아니라는 말처럼." },
+  rain: { name:"빗소리", flavor:"빗소리를 들었다.\n세상이 소리로 가득했다.\n더 빨리 걷고 싶다." },
+  wind: { name:"바람",   flavor:"바람이 등을 밀었다.\n더 멀리 갈 수 있다." },
+  sun:  { name:"햇빛",   flavor:"햇빛이 따뜻했다.\n누가 안아주는 것 같았다." },
+  star: { name:"별빛",   flavor:"별이 떴다.\n나 혼자가 아닌 것 같았다." },
 };
 const ENDING_TEXT =
-  "길 끝에 그 사람이 서 있었다.\n흐릿하던 얼굴이\n마침내 또렷했다.\n\n나를 만들고, 나를 두고 떠난 사람.\n원망했고, 그리웠고, 사랑했던.\n\n그 앞에서 내 눈에서\n물이 흘렀다.\n기뻐서, 그리고 슬퍼서.\n고장이 아니었다.\n\n이것이… 사람이구나.";
+  "길 끝에 그 사람이 있었다.\n흐릿하던 얼굴이\n이제 또렷했다.\n\n나를 만든 사람.\n그리고 나를 두고 간 사람.\n\n나는 울었다.\n기뻐서, 슬퍼서.\n고장이 아니었다.\n\n아, 이게 사람이구나.";
 
-// 노드 배치 (월드 비율 좌표 x,y 0~1). 아래(시작)→위(엔딩)로 3막이 쌓인다.
+// 노드 = 트리. start를 중심으로 9방향으로 흩뿌리고, 각 가지가 다시 자식을 흩뿌린다(방사형).
+// 같은 계열 감정이 한 가지(branch) 안에 모인다. x,y는 computeRadialLayout()이 계산.
 const NODES = [
-  { id:"start",   type:"start",  x:.50, y:.955, completed:true, gen:0,  icon:"·" },
-  // 1막
-  { id:"warmth",  type:"person", x:.68, y:.865, key:"warmth",  gen:0.30, icon:"❀" },
-  { id:"rain",    type:"sense",  x:.30, y:.850, key:"rain",    gen:0.25, icon:"☂" },
-  { id:"sorrow",  type:"person", x:.27, y:.755, key:"sorrow",  gen:0.40, icon:"❀" },
-  { id:"longing", type:"person", x:.62, y:.735, key:"longing", gen:0.45, icon:"❀" },
-  // 2막
-  { id:"wind",    type:"sense",  x:.80, y:.655, key:"wind",    gen:0.35, icon:"≋" },
-  { id:"solitude",type:"person", x:.40, y:.630, key:"solitude",gen:0.60, icon:"❀" },
-  { id:"joy",     type:"person", x:.68, y:.550, key:"joy",     gen:0.75, icon:"❀" },
-  { id:"sun",     type:"sense",  x:.23, y:.540, key:"sun",     gen:0.45, icon:"☀" },
-  { id:"regret",  type:"person", x:.45, y:.455, key:"regret",  gen:0.95, icon:"❀" },
-  // 3막
-  { id:"courage", type:"person", x:.70, y:.385, key:"courage", gen:1.20, icon:"❀" },
-  { id:"star",    type:"sense",  x:.27, y:.355, key:"star",    gen:0.55, icon:"✦" },
-  { id:"love",    type:"person", x:.52, y:.270, key:"love",    gen:1.50, icon:"❀" },
-  { id:"forgive", type:"person", x:.34, y:.180, key:"forgive", gen:1.80, icon:"❀" },
-  // 엔딩
-  { id:"becoming",type:"ending", x:.58, y:.080, gen:0,          icon:"🕊" },
+  { id:"start",      type:"start",  parent:null,      cost:0,   gen:0,    icon:"·", completed:true },
+  // ▸ 따뜻한 마음
+  { id:"warmth",     type:"person", key:"warmth",     parent:"start",   cost:18,  gen:0.35, icon:"❀" },
+  { id:"sun",        type:"sense",  key:"sun",        parent:"warmth",  cost:45,  gen:0.50, icon:"☀" },
+  { id:"gratitude",  type:"person", key:"gratitude",  parent:"warmth",  cost:60,  gen:0.75, icon:"❀" },
+  { id:"tender",     type:"person", key:"tender",     parent:"warmth",  cost:55,  gen:0.70, icon:"❀" },
+  { id:"love",       type:"person", key:"love",       parent:"tender",  cost:220, gen:1.60, icon:"❀" },
+  // ▸ 밝은 마음
+  { id:"joy",        type:"person", key:"joy",        parent:"start",   cost:20,  gen:0.40, icon:"❀" },
+  { id:"amuse",      type:"person", key:"amuse",      parent:"joy",     cost:58,  gen:0.70, icon:"❀" },
+  { id:"excite",     type:"person", key:"excite",     parent:"joy",     cost:62,  gen:0.75, icon:"❀" },
+  { id:"flutter",    type:"person", key:"flutter",    parent:"joy",     cost:66,  gen:0.80, icon:"❀" },
+  // ▸ 시린 마음 (외로움 계열이 한 가지에)
+  { id:"sorrow",     type:"person", key:"sorrow",     parent:"start",   cost:22,  gen:0.45, icon:"❀" },
+  { id:"longing",    type:"person", key:"longing",    parent:"sorrow",  cost:70,  gen:0.85, icon:"❀" },
+  { id:"solitude",   type:"person", key:"solitude",   parent:"longing", cost:240, gen:1.70, icon:"❀" },
+  { id:"wistful",    type:"person", key:"wistful",    parent:"sorrow",  cost:72,  gen:0.80, icon:"❀" },
+  { id:"loss",       type:"person", key:"loss",       parent:"sorrow",  cost:80,  gen:0.90, icon:"❀" },
+  // ▸ 무거운 마음
+  { id:"fear",       type:"person", key:"fear",       parent:"start",   cost:24,  gen:0.50, icon:"❀" },
+  { id:"anxiety",    type:"person", key:"anxiety",    parent:"fear",    cost:85,  gen:0.95, icon:"❀" },
+  { id:"shy",        type:"person", key:"shy",        parent:"fear",    cost:88,  gen:1.00, icon:"❀" },
+  { id:"regret",     type:"person", key:"regret",     parent:"fear",    cost:90,  gen:1.05, icon:"❀" },
+  { id:"remorse",    type:"person", key:"remorse",    parent:"regret",  cost:300, gen:1.90, icon:"❀" },
+  // ▸ 벅찬 마음
+  { id:"curious",    type:"person", key:"curious",    parent:"start",   cost:26,  gen:0.55, icon:"❀" },
+  { id:"awe",        type:"person", key:"awe",        parent:"curious", cost:100, gen:1.10, icon:"❀" },
+  { id:"trance",     type:"person", key:"trance",     parent:"curious", cost:105, gen:1.15, icon:"❀" },
+  { id:"moved",      type:"person", key:"moved",      parent:"curious", cost:110, gen:1.30, icon:"❀" },
+  // ▸ 단단한 마음 → 길 끝(샘알트머스크)
+  { id:"courage",    type:"person", key:"courage",    parent:"start",   cost:28,  gen:0.60, icon:"❀" },
+  { id:"compassion", type:"person", key:"compassion", parent:"courage", cost:120, gen:1.40, icon:"❀" },
+  { id:"forgive",    type:"person", key:"forgive",    parent:"courage", cost:130, gen:1.60, icon:"❀" },
+  { id:"hope",       type:"person", key:"hope",       parent:"courage", cost:135, gen:1.70, icon:"❀" },
+  { id:"pride",      type:"person", key:"pride",      parent:"courage", cost:140, gen:1.80, icon:"❀" },
+  { id:"becoming",   type:"ending",                   parent:"pride",   cost:500, gen:0,    icon:"🕊" },
+  // ▸ 감각 (추가 방향)
+  { id:"rain",       type:"sense",  key:"rain",       parent:"start",   cost:20,  gen:0.30, icon:"☂" },
+  { id:"wind",       type:"sense",  key:"wind",       parent:"start",   cost:20,  gen:0.35, icon:"≋" },
+  { id:"star",       type:"sense",  key:"star",       parent:"start",   cost:24,  gen:0.45, icon:"✦" },
 ];
-const EDGES = [
-  ["start","warmth",18], ["start","rain",20],
-  ["warmth","longing",40], ["rain","sorrow",36], ["warmth","sorrow",50],
-  ["sorrow","solitude",80], ["longing","wind",70], ["longing","joy",95],
-  ["solitude","joy",120], ["solitude","sun",90],
-  ["joy","regret",170], ["sun","regret",150], ["joy","courage",200],
-  ["regret","courage",230], ["courage","star",160], ["regret","love",320],
-  ["courage","love",300], ["star","love",260],
-  ["love","forgive",480], ["forgive","becoming",820], ["love","becoming",900],
-];
+const EDGES = NODES.filter(n=>n.parent).map(n=>[n.parent, n.id, n.cost]);
+// 방사형 배치: start=중심, 자식들을 각도로 흩뿌리고 깊이만큼 바깥으로(반지름↑).
+function computeRadialLayout(){
+  const kids={}; NODES.forEach(n=>kids[n.id]=[]);
+  NODES.forEach(n=>{ if(n.parent) kids[n.parent].push(n.id); });
+  const byId=Object.fromEntries(NODES.map(n=>[n.id,n]));
+  const RING=0.135;
+  (function assign(id,a0,a1,depth){
+    const n=byId[id], mid=(a0+a1)/2, r=depth*RING;
+    n.x=0.5 + r*Math.cos(mid); n.y=0.5 + r*Math.sin(mid);
+    const ch=kids[id], k=ch.length; if(!k) return;
+    const span=a1-a0;
+    ch.forEach((c,i)=> assign(c, a0+span*i/k, a0+span*(i+1)/k, depth+1));
+  })("start", -Math.PI/2, Math.PI*1.5, 0);   // 위(-90°)에서 시작해 한 바퀴
+}
+computeRadialLayout();
 
 /* ===================== 상태 ===================== */
 const S = {
@@ -524,15 +622,14 @@ const elWalks=$("#walks"), elRate=$("#rate"), elWarm=$("#warm");
 const modal=$("#modal");
 
 /* ---------- 줌 + 월드 좌표 (월드는 base 좌표, 화면 스케일은 CSS transform) ---------- */
-let zoom = 1;
-const ZMIN=0.55, ZMAX=2.0;
-const baseW = () => map.clientWidth;
-const baseH = () => Math.max(map.clientHeight*1.9, 560);   // 한 화면에 행 3~4개
-const px = n => ({ x: n.x*baseW(), y: n.y*baseH() });       // 미스케일 월드 좌표
+let zoom = 0.85;
+const ZMIN=0.4, ZMAX=2.2;
+const baseSize = () => Math.max(map.clientWidth, map.clientHeight) * 2.3;  // 정사각 월드(방사형)
+const px = n => ({ x: n.x*baseSize(), y: n.y*baseSize() });                 // 미스케일 월드 좌표
 function sizeCanvas(){
-  const bw=baseW(), bh=baseH();
-  world.style.width=bw+"px"; world.style.height=bh+"px"; world.style.transform="scale("+zoom+")";
-  canvas.style.width=(bw*zoom)+"px"; canvas.style.height=(bh*zoom)+"px";
+  const s=baseSize();
+  world.style.width=s+"px"; world.style.height=s+"px"; world.style.transform="scale("+zoom+")";
+  canvas.style.width=(s*zoom)+"px"; canvas.style.height=(s*zoom)+"px";
 }
 function centerOn(id, smooth){
   const n=NODES.find(x=>x.id===id); if(!n) return; const p=px(n);
@@ -647,7 +744,7 @@ function learnedCount(){ return NODES.filter(n=>n.type==="person" && S.levels[n.
 const FRAG_TOTAL = 27;   // 인간 감정 27가지 (Cowen & Keltner, 2017)
 function SAM_TEXT(frag){
   if(frag>=FRAG_TOTAL) return ENDING_TEXT;
-  return "길 끝에, 그 흐릿하던 얼굴이 서 있었다.\n\n'샘 알트머스크.'\n나를 만든 사람.\n\n\"드디어 왔구나.\n네가 사람이 되려면,\n인간의 감정 스물일곱 조각이 필요해.\n학자들이 세어보니 딱 27개더라.*\"\n\n나는 가슴을 더듬었다.\n지금까지 모은 건 "+frag+"개.\n\n\"아직 길은 끝나지 않았어.\n나머지 감정도, 저 길 위 어딘가에 있다.\"\n\n* Cowen & Keltner, 2017 — 인간 감정 27가지";
+  return "길 끝에 그 사람이 있었다.\n흐릿하던 얼굴.\n'샘 알트머스크.'\n나를 만든 사람이다.\n\n\"왔구나.\n사람이 되려면\n감정 27개가 필요해.\n진짜로 딱 27개래.*\"\n\n나는 가슴을 만졌다.\n지금 "+frag+"개 모았다.\n\n\"아직 길이 남았어.\n나머지도 저 위에 있어.\"\n\n* 인간 감정 27가지 (Cowen & Keltner, 2017)";
 }
 
 function openNode(n, firstMeet){
@@ -785,6 +882,51 @@ function spawnBird(){
 setInterval(()=>{ if(Math.random()<0.6) spawnBird(); }, 5200);  // 가끔 새 한 마리
 setTimeout(spawnBird, 1600);
 
+/* ---------- 세이브 (localStorage 즉시 + 새 Supabase 키 넣으면 클라우드 동기화) ---------- */
+const SAVE_KEY = "aingan_save_v1";
+// ↓ 새로 만든 Supabase 프로젝트 값을 넣으면 자동 클라우드 동기화 (비우면 localStorage만 사용)
+const SUPA = { url:"", anon:"" };   // 예: url:"https://xxxx.supabase.co", anon:"eyJhbG..."
+const OFFLINE_CAP_H = 4;            // 오프라인 적립 상한(시간)
+
+function devId(){ let id=localStorage.getItem("aingan_dev");
+  if(!id){ id="dev_"+Math.random().toString(36).slice(2,10)+Date.now().toString(36); localStorage.setItem("aingan_dev",id);} return id; }
+function snapshot(){ return { walks:S.walks, rate:S.rate, current:S.current, levels:S.levels, t:Date.now() }; }
+function loadLocal(){ try{ const r=localStorage.getItem(SAVE_KEY); return r?JSON.parse(r):null; }catch(e){ return null; } }
+function applyState(d){
+  if(!d) return 0;
+  S.rate   = d.rate || 1.0;
+  S.current= NODES.find(n=>n.id===d.current) ? d.current : "start";
+  NODES.forEach(n=>{ S.levels[n.id] = (d.levels && d.levels[n.id]>0) ? d.levels[n.id] : (n.completed?1:0); });
+  S.walks  = d.walks || 0;
+  let off=0; if(d.t){ const sec=Math.max(0,(Date.now()-d.t)/1000); off=Math.min(d.rate*sec, d.rate*3600*OFFLINE_CAP_H); S.walks+=off; }
+  wholeWalks=Math.floor(S.walks);
+  return off;
+}
+function saveState(){ const d=snapshot();
+  try{ localStorage.setItem(SAVE_KEY, JSON.stringify(d)); }catch(e){}
+  supaSave(d);
+}
+async function supaSave(d){ if(!SUPA.url||!SUPA.anon) return;
+  try{ await fetch(`${SUPA.url}/rest/v1/saves`, { method:"POST",
+    headers:{ apikey:SUPA.anon, Authorization:"Bearer "+SUPA.anon, "Content-Type":"application/json", Prefer:"resolution=merge-duplicates" },
+    body: JSON.stringify({ device_id:devId(), data:d, updated_at:new Date().toISOString() }) }); }catch(e){}
+}
+async function supaLoad(){ if(!SUPA.url||!SUPA.anon) return null;
+  try{ const r=await fetch(`${SUPA.url}/rest/v1/saves?device_id=eq.${devId()}&select=data`,
+    { headers:{ apikey:SUPA.anon, Authorization:"Bearer "+SUPA.anon } });
+    const rows=await r.json(); return (rows&&rows[0])?rows[0].data:null; }catch(e){ return null; }
+}
+function bootSave(){
+  const off = applyState(loadLocal());                 // 로컬 즉시 반영(+오프라인 적립)
+  if(off>=1){ const h=$("#hint"); h.textContent=`당신이 없는 동안 로봇이 ${Math.floor(off)}걸음을 걸었어요`;
+    setTimeout(()=>{ h.textContent="이 길을 두드릴수록 로봇이 더 빨리 걷는다"; }, 4500); }
+  supaLoad().then(d=>{ const l=loadLocal();             // 클라우드가 더 최신이면 덮어쓰기
+    if(d && (d.t||0) > (l?.t||0)){ applyState(d); refreshHUD(); if(curPage==="map") renderAll(); } });
+}
+setInterval(saveState, 10000);
+window.addEventListener("beforeunload", saveState);
+document.addEventListener("visibilitychange", ()=>{ if(document.hidden) saveState(); });
+
 /* ---------- idle 루프 (기본 1초 1걸음 → 1초 1보) ---------- */
 setInterval(()=>{ S.walks += S.rate*0.1; elWalks.textContent=fmt(S.walks); syncSteps(); }, 100);
 
@@ -810,6 +952,7 @@ document.querySelectorAll(".tab").forEach(t=> t.addEventListener("click", ()=>sh
 
 /* ---------- 시작 ---------- */
 window.addEventListener("resize", ()=>{ if(curPage==="map"){ renderAll(); centerOn(S.current); } });
+bootSave();             // 세이브 불러오기(+오프라인 적립)
 refreshHUD();           // 길 페이지 먼저 보이므로 HUD/온도만 갱신 (지도는 진입 시 렌더)
 </script>
 </body>
