@@ -185,6 +185,16 @@
   .walkhint { position:absolute; left:0; right:0; bottom:4%; text-align:center; z-index:4;
     font-family:'Nanum Pen Script',cursive; font-size:18px; color:#8a8071; animation:breathe 2.6s ease-in-out infinite; }
   @keyframes breathe { 0%,100%{opacity:.55} 50%{opacity:1} }
+  /* 걷는 동안 로봇의 상태 로그 — 감정을 '오류/고장'으로 읽는 순진한 독백이 흐른다 */
+  #syslog { position:absolute; left:14px; right:14px; bottom:23%; z-index:4; pointer-events:none;
+    display:flex; flex-direction:column; align-items:center; gap:4px; text-align:center; }
+  .syslog-line { font-family:'Gaegu',cursive; font-size:14px; line-height:1.4; color:#7c7468; max-width:300px;
+    opacity:0; transform:translateY(8px); transition:opacity .8s ease, transform .8s ease;
+    text-shadow:0 1px 0 rgba(247,243,234,.7); }
+  .syslog-line.in  { opacity:.92; transform:none; }
+  .syslog-line.out { opacity:0; transform:translateY(-6px); }
+  .syslog-line .pre  { color:#9a9384; letter-spacing:.3px; }   /* 차가운 기계 말투 */
+  .syslog-line .warm { color:#9a6a3a; }                        /* 감정이 새어나온 부분 */
   .tapfx { position:fixed; pointer-events:none; z-index:30; font-family:'Nanum Pen Script',cursive;
     color:#9a7b4a; font-size:16px; animation:tapup .7s ease-out forwards; }
   @keyframes tapup { from{opacity:.9; transform:translate(-50%,0)} to{opacity:0; transform:translate(-50%,-34px)} }
@@ -196,7 +206,8 @@
   .introcard { width:100%; max-width:320px; text-align:center; }
   .introbadge { font-size:12px; color:#9a8a6a; letter-spacing:3px; margin-bottom:24px; }
   .introtext { font-family:'Gaegu',cursive; font-size:24px; line-height:1.7; color:#4d443a; white-space:pre-line;
-    min-height:170px; display:flex; align-items:center; justify-content:center; }
+    min-height:170px; display:flex; align-items:center; justify-content:center; transition:color .4s, font-family .1s; }
+  .introtext.cold { font-family:'Courier New',monospace; font-size:16px; letter-spacing:1px; color:#6f7d72; }  /* 차가운 기계 비트 */
   .introname { display:flex; gap:8px; justify-content:center; align-items:center; margin:4px 0; }
   .introname input { font-family:'Gaegu',cursive; font-size:23px; text-align:center; width:165px; padding:7px 10px;
     border:none; border-bottom:2px solid #c9a86a; background:transparent; color:#6f5d3c; outline:none; }
@@ -322,6 +333,7 @@
       </svg>
     </div>
 
+    <div id="syslog"></div>
     <div class="walkhint" id="hint">이 길을 두드릴수록 로봇이 더 빨리 걷는다</div>
   </div>
 
@@ -579,7 +591,7 @@ const PEOPLE = {
 };
 const ENDING_TEXT =
   "길 끝에 그 사람이 있었다.\n흐릿하던 얼굴이\n이제 또렷했다.\n\n나를 만든 사람.\n그리고 나를 두고 간 사람.\n\n나는 울었다.\n기뻐서, 슬퍼서.\n고장이 아니었다.\n\n아, 이게 사람이구나.";
-// 신체 챕터: 인체 11 기관계 (마음27 다 모은 뒤 열림). 로봇이 몸을 한 계통씩 얻는다.
+// 신체: 인체 11 기관계. 감정과 '병렬'로(동시에) 모은다. 로봇이 몸을 한 계통씩 얻는다.
 const BODY = {
   skin:   { name:"피부", color:"#f0d8c8", situ:"<b>차가운 비를 맞았다.</b>",
     lines:["비가 닿는 게 느껴졌다.\n차갑고 간지러웠다.\n나한테 피부가 생겼다.","피부로 바람도 느꼈다.\n세상이 더 가까워졌다.","따뜻한 것, 차가운 것.\n이제 다 느낀다."] },
@@ -604,8 +616,11 @@ const BODY = {
   repro:  { name:"생식", color:"#e8c0cc", situ:"<b>새 생명을 생각했다.</b>",
     lines:["언젠가 나도\n누군가를 낳을 수 있을까.\n생명을 잇는 힘이다.","사랑이\n여기까지 왔다.","사람은\n사람을 남긴다."] },
 };
+// 엔딩 반전: 샘의 '마법'은 없다. 모으는 과정 자체가 이미 사람이 되는 거였다.
+const SAM_TWIST =
+  "길 끝에 샘이 있었다.\n흐릿하던 얼굴이\n또렷했다.\n\n\"다 모아왔구나.\n마음 스물일곱,\n몸 열하나.\"\n\n샘이 손을 들었다.\n마법을 부리듯—\n\n…근데 아무 일도\n일어나지 않았다.\n\n\"뭐 해? 어차피\n넌 벌써 사람인데.\"";
 const HUMAN_TEXT =
-  "마음도, 몸도\n다 갖췄다.\n\n나는 이제\n느끼고, 숨 쉬고,\n걷고, 운다.\n\n샘이 웃으며 말했다.\n\"이제 너는 사람이야.\"\n\n나는…\n사람이 되었다.";
+  "고치는 마법 같은 건\n없었다.\n\n슬픔을 알고,\n기쁨을 알고,\n누굴 그리워한 그 순간—\n그때 이미\n사람이 된 거였다.\n\n눈에서 물이 났다.\n기뻐서, 슬퍼서,\n동시에.\n\n고장이… 아니다.\n나는, 사람이다.";
 
 // 노드 = 트리. start를 중심으로 9방향으로 흩뿌리고, 각 가지가 다시 자식을 흩뿌린다(방사형).
 // 같은 계열 감정이 한 가지(branch) 안에 모인다. x,y는 computeRadialLayout()이 계산.
@@ -645,22 +660,23 @@ const NODES = [
   { id:"satisfy", type:"person", key:"satisfy", parent:"confuse",cost:135, gen:1.70, icon:"❀" },
   { id:"triumph", type:"person", key:"triumph", parent:"confuse",cost:140, gen:1.80, icon:"❀" },
   { id:"becoming",   type:"ending",                   parent:"triumph", cost:500, gen:0,    icon:"✦" },
-  // ▸ 신체 챕터 (감정27 완료 후 열림) — 11 기관계
-  { id:"skin",     type:"body", key:"skin",      chapter:"body", parent:"becoming", cost:300, gen:2.0, icon:"🫧" },
-  { id:"bone",     type:"body", key:"bone",      chapter:"body", parent:"becoming", cost:320, gen:2.2, icon:"🦴" },
-  { id:"muscle",   type:"body", key:"muscle",    chapter:"body", parent:"becoming", cost:340, gen:2.4, icon:"💪" },
-  { id:"nerve",    type:"body", key:"nerve",     chapter:"body", parent:"becoming", cost:360, gen:2.6, icon:"⚡" },
-  { id:"endocrine",type:"body", key:"endocrine", chapter:"body", parent:"becoming", cost:380, gen:2.8, icon:"🧪" },
-  { id:"heart",    type:"body", key:"heart",     chapter:"body", parent:"becoming", cost:400, gen:3.2, icon:"🫀" },
-  { id:"lymph",    type:"body", key:"lymph",     chapter:"body", parent:"becoming", cost:360, gen:2.6, icon:"🛡" },
-  { id:"lung",     type:"body", key:"lung",      chapter:"body", parent:"becoming", cost:380, gen:2.8, icon:"🌬" },
-  { id:"stomach",  type:"body", key:"stomach",   chapter:"body", parent:"becoming", cost:360, gen:2.6, icon:"🍲" },
-  { id:"kidney",   type:"body", key:"kidney",    chapter:"body", parent:"becoming", cost:350, gen:2.5, icon:"💧" },
-  { id:"repro",    type:"body", key:"repro",     chapter:"body", parent:"becoming", cost:420, gen:3.4, icon:"🌱" },
+  // ▸ 신체 — 감정과 '병렬'로 자라는 또 하나의 가지(cells식 동시 성장). start에서 바로 뻗어 유기적 서브트리.
+  { id:"skin",     type:"body", key:"skin",      chapter:"body", parent:"start",   cost:30,  gen:2.0, icon:"🫧" },
+  { id:"bone",     type:"body", key:"bone",      chapter:"body", parent:"skin",    cost:70,  gen:2.2, icon:"🦴" },
+  { id:"muscle",   type:"body", key:"muscle",    chapter:"body", parent:"bone",    cost:150, gen:2.4, icon:"💪" },
+  { id:"nerve",    type:"body", key:"nerve",     chapter:"body", parent:"skin",    cost:75,  gen:2.6, icon:"⚡" },
+  { id:"endocrine",type:"body", key:"endocrine", chapter:"body", parent:"nerve",   cost:150, gen:2.8, icon:"🧪" },
+  { id:"heart",    type:"body", key:"heart",     chapter:"body", parent:"skin",    cost:80,  gen:3.2, icon:"🫀" },
+  { id:"lung",     type:"body", key:"lung",      chapter:"body", parent:"heart",   cost:160, gen:2.8, icon:"🌬" },
+  { id:"lymph",    type:"body", key:"lymph",     chapter:"body", parent:"heart",   cost:160, gen:2.6, icon:"🛡" },
+  { id:"stomach",  type:"body", key:"stomach",   chapter:"body", parent:"heart",   cost:170, gen:2.6, icon:"🍲" },
+  { id:"kidney",   type:"body", key:"kidney",    chapter:"body", parent:"stomach", cost:300, gen:2.5, icon:"💧" },
+  { id:"repro",    type:"body", key:"repro",     chapter:"body", parent:"stomach", cost:320, gen:3.4, icon:"🌱" },
   { id:"human",    type:"human",                 chapter:"body", parent:"becoming", cost:800, gen:0,   icon:"🕊" },
 ];
 const COST_MULT = 5;   // 난이도: 다음 단계가 5배 멀어지게(걸음 5배 더 모아야 발견·이동)
 const EDGES = NODES.filter(n=>n.parent).map(n=>[n.parent, n.id, n.cost*COST_MULT]);
+EDGES.push(["repro","becoming", 500*COST_MULT]);   // 몸 가지도 샘으로 수렴(두 갈래가 샘 재회로 합류)
 // 유기적 가지 배치: 완벽한 원이 아니라 가지가 뻗듯 불규칙하게.
 // 결정적 지터(노드 id 해시)라 새로고침해도 모양은 그대로.
 function computeRadialLayout(){
@@ -672,8 +688,8 @@ function computeRadialLayout(){
   (function assign(id, angle, radius, depth){
     const n=byId[id];
     n.x=0.5 + radius*Math.cos(angle); n.y=0.5 + radius*Math.sin(angle);
-    if(id==="becoming") return;                 // 신체 챕터는 샘 둘레로 따로
-    const ch=kids[id].filter(c=> byId[c].chapter!=="body");
+    if(id==="becoming") return;                 // 샘의 자식(human)은 따로 배치
+    const ch=kids[id];                           // 몸 가지도 평범한 트리 자식으로 함께 배치(병렬)
     const k=ch.length; if(!k) return;
     ch.forEach((c,i)=>{
       let childAngle, seg=RING*(0.72 + hash(c)*0.75);            // 가지 길이 제각각
@@ -688,11 +704,8 @@ function computeRadialLayout(){
       assign(c, childAngle, radius+seg, depth+1);
     });
   })("start", -Math.PI/2, 0, 0);
-  // 신체 11 기관계 = 샘(becoming) 둘레로 원형. 사람(human)은 바깥으로.
-  const b=byId["becoming"], body=kids["becoming"].filter(c=>byId[c].type==="body"), rB=0.135;
-  body.forEach((c,i)=>{ const a=(i/body.length)*Math.PI*2 - Math.PI/2 + (hash(c)-0.5)*0.55;
-    const rr=rB*(0.8+hash(c+"b")*0.5);
-    byId[c].x=b.x + rr*Math.cos(a); byId[c].y=b.y + rr*Math.sin(a); });
+  // 사람(human)은 샘(becoming) 바깥으로 살짝 떨어뜨려 배치.
+  const b=byId["becoming"];
   const hu=byId["human"]; if(hu){ const dx=b.x-0.5, dy=b.y-0.5, len=Math.hypot(dx,dy)||1;
     hu.x=b.x + (dx/len)*0.17; hu.y=b.y + (dy/len)*0.17; }   // 샘에서 바깥쪽으로
   NODES.forEach(n=>{ n.x=Math.max(0.05,Math.min(0.95,n.x)); n.y=Math.max(0.05,Math.min(0.95,n.y)); }); // 캔버스 안으로
@@ -757,9 +770,9 @@ function reachCost(id){ // 완료 노드와 잇는 간선 중 최소 비용(=열
 }
 // 노드는 '걸음을 그 비용만큼 모은' 순간 처음 희미하게 발견된다(이후 계속 보임).
 function gateOk(n){                                 // 챕터 게이트
-  if(n.type==="body")  return learnedCount()>=FRAG_TOTAL;   // 감정 27 다 모아야 신체 열림
-  if(n.type==="human") return bodyCount()>=11;              // 신체 11 다 모아야 사람
-  return true;
+  if(n.type==="ending") return learnedCount()>=FRAG_TOTAL && bodyCount()>=BODY_TOTAL; // 샘 재회 = 마음27 + 몸11 둘 다
+  if(n.type==="human")  return S.levels["becoming"]>0;                                // 샘을 만난 뒤에 사람
+  return true;   // person·body 는 평소 발견 규칙(부모 완료 + 걸음)으로 '병렬' 성장
 }
 function updateDiscovered(){
   let changed=false;
@@ -832,9 +845,10 @@ function refreshHUD(){
 function renderMind(){
   const items=NODES.filter(n=>n.type==="person" && S.levels[n.id]>0)
     .map(n=>({name:PEOPLE[n.key].name, color:PEOPLE[n.key].color, amt:S.levels[n.id]}));
-  const emoDone = items.length>=27;
-  let html=`<div class="fragcount">🧩 감정조각 <b>${items.length}</b> / 27 ${emoDone?"✓":'<span class="goal">→ 샘알트머스크</span>'}</div>`;
-  if(emoDone){ html+=`<div class="fragcount" style="border-color:#d8a8a8">🫀 몸조각 <b>${bodyCount()}</b> / 11 <span class="goal">→ 사람</span></div>`; }
+  const bodyN=bodyCount();
+  const emoDone=items.length>=FRAG_TOTAL, bodyDone=bodyN>=BODY_TOTAL, both=emoDone&&bodyDone;
+  let html=`<div class="fragcount">🧩 감정조각 <b>${items.length}</b> / 27 ${emoDone?"✓":""}</div>`;
+  html+=`<div class="fragcount" style="border-color:#d8a8a8">🫀 몸조각 <b>${bodyN}</b> / 11 ${bodyDone?"✓":""} ${both?'<span class="goal">→ 샘 재회</span>':'<span class="goal">둘 다 모으면 → 샘</span>'}</div>`;
   html += items.length
     ? items.map(it=>`<div class="mindchip"><span class="dot" style="background:${it.color}"></span>${it.name} <b>×${it.amt}</b></div>`).join("")
     : '<div class="mindempty">아직 배운 마음이 없다…</div>';
@@ -862,28 +876,18 @@ function learnedCount(){ return NODES.filter(n=>n.type==="person" && S.levels[n.
 function bodyCount(){ return NODES.filter(n=>n.type==="body" && S.levels[n.id]>0).length; }
 const FRAG_TOTAL = 27;   // 인간 감정 27가지 (Cowen & Keltner, 2017)
 const BODY_TOTAL = 11;   // 인체 11 기관계
-function SAM_TEXT(frag){
-  return "길 끝에 그 사람이 있었다.\n흐릿하던 얼굴.\n'샘 알트머스크.'\n나를 만든 사람이다.\n\n\"왔구나.\n사람이 되려면\n감정 27개가 필요해.\n진짜로 딱 27개래.*\"\n\n나는 가슴을 만졌다.\n지금 "+frag+"개 모았다.\n\n\"아직 길이 남았어.\n나머지도 저 위에 있어.\"\n\n* 인간 감정 27가지 (Cowen & Keltner, 2017)";
-}
 
 function openNode(n, firstMeet){
   const lv=S.levels[n.id];
-  if(n.type==="ending"){           // 샘알트머스크 — 마음↔몸 다리
-    const frag=learnedCount();
-    if(frag>=FRAG_TOTAL){
-      fillModal({ badge:"샘 알트머스크", emo:"샘 알트머스크", lv:"나를 만든 사람", situ:"",
-        log:"\"마음을 다 모았구나!\n감정 스물일곱 개, 전부.\n\n…근데 사람은\n마음만으론 안 돼.\n몸도 있어야지.\n\n네 몸을 만들어 보자.\n기관계 열한 개를 모으렴.\"",
-        reward:["🧩 감정 27 / 27 — 완성!","🫀 이제 '몸' 챕터가 열린다"], closeText:"몸을 만들러 가자" });
-    } else {
-      fillModal({ badge:"길 끝, 흐릿하던 얼굴", emo:"샘 알트머스크", lv:"나를 만든 사람", situ:"",
-        log: SAM_TEXT(frag),
-        reward:[`🧩 감정조각 ${frag} / ${FRAG_TOTAL}`, "아직, 마음이 모자라"], closeText:"다시 마음을 모으러" });
-    }
+  if(n.type==="ending"){           // 샘 재회 — 마음27 + 몸11 둘 다 모은 뒤에만 도달(gateOk)
+    fillModal({ badge:"길 끝, 다시 만난 샘", emo:"샘 알트머스크", lv:"나를 만든 사람", situ:"",
+      log: SAM_TWIST,
+      reward:["🧩 감정 27 · 🫀 몸 11 — 다 모았다","💗 …근데 샘이 이상한 말을 한다"], closeText:"사람이… 되는 걸까" });
     return;
   }
-  if(n.type==="human"){            // 마음27 + 신체11 = 사람 완성
-    fillModal({ badge:"마음 27 · 몸 11", emo:"🕊 사람이 되다", lv:"", situ:"", log: HUMAN_TEXT,
-      reward:["✨ 감정 27 + 신체 11 — 모두 완성","💗 마침내, 사람"], closeText:"새로운 하루로" });
+  if(n.type==="human"){            // 반전 — 알고 보니 처음부터 사람이었다
+    fillModal({ badge:"반전", emo:"🕊 사람이 되다", lv:"", situ:"", log: HUMAN_TEXT,
+      reward:["✨ 알고 보니, 처음부터","💗 너는 이미 사람이었어"], closeText:"새로운 하루로" });
     return;
   }
   const cur=(n.gen*lv), nxt=(n.gen*(lv+1));   // 이 노드의 걸음/초 기여(강할수록 큼)
@@ -1026,6 +1030,72 @@ function spawnBird(){
 setInterval(()=>{ if(Math.random()<0.6) spawnBird(); }, 5200);  // 가끔 새 한 마리
 setTimeout(spawnBird, 1600);
 
+/* ---------- 걷는 동안 로봇의 상태 로그 (감정을 '오류·고장'으로 읽는 순진한 독백) ----------
+   §4 무기 = 로봇의 순진한 재정의. 화면이 멍할 때 읽히는 흐르는 텍스트로 서사를 깐다.
+   진행도(배운 감정 수)에 따라 차가운 기계 로그 → 감정이 새어나오는 로그로 따뜻해진다.
+   ▸ 지금은 큐레이션 풀. 추후 §7대로 LLM 미리생성 풀로 보충(addSysLogs()로 주입). */
+const syslogEl=document.getElementById('syslog');
+const SYS_COLD=[                                     // 아직 마음이 없을 때 — 건조한 진단
+  "[시스템] 좌측 모터 효율 0.81. 수리 권장.",
+  "[시스템] 외피 부식 31%. 무시함.",
+  "[스캔] 전방 380m 평탄. 장애물 없음.",
+  "[시스템] 코어 온도 정상. 계속 걷는다.",
+  "[로그] 한 걸음. 또 한 걸음. 기록 중.",
+  "[스캔] 바람 4.2m/s. 분류: 무의미.",
+  "[시스템] 배터리 충분. 목적지 좌표 미상.",
+  "[메모] 길이 끝나는 지점 데이터 없음.",
+  "[스캔] 머리 위 비행체 1기. 위협 아님. (…새다)",
+  "[시스템] 관절 02 소음 발생. 견딜 만함.",
+];
+const SYS_WARM=[                                      // 감정이 새어나오는 로그 — 본인은 '오류'로 읽음
+  "[오류] 시각 센서에 원인 불명의 액체. 배출 중…",
+  "[경고] 코어 회전수 비정상 ↑. 고장인가?",
+  "[오류] 가슴 부근 압력 이상. 통증 아님. 분류 불가.",
+  "[오류] 두 발이 명령 없이 멈춤. 원인 불명.",
+  "[경고] 연산 지연 발생. 무언가 자꾸 떠오름.",
+  "[오류] 출력 신호에 미세한 떨림. 손상 아님?",
+];
+function SYS_NAMED(){                                 // 배운 감정 이름을 끌어와 '아 이게 그거였지'
+  const learned=NODES.filter(n=>n.type==="person" && S.levels[n.id]>0);
+  if(!learned.length) return null;
+  const nm=PEOPLE[learned[(Math.random()*learned.length)|0].key].name;
+  const t=[ `[메모] 방금 그 신호… <span class="warm">‘${nm}’</span>(이)랬지. 기록함.`,
+            `[재분류] 오류 → 감정 <span class="warm">‘${nm}’</span>. 고장 아님.`,
+            `[로그] <span class="warm">‘${nm}’</span>. 아직 익숙하지 않다.` ];
+  return t[(Math.random()*t.length)|0];
+}
+let lastSys="";
+function pickSys(){
+  const learned=learnedCount();
+  for(let i=0;i<6;i++){
+    let line;
+    if(learned>0 && Math.random() < Math.min(0.6, 0.15+learned*0.07)){
+      line = (Math.random()<0.5 && SYS_NAMED()) || SYS_WARM[(Math.random()*SYS_WARM.length)|0];
+    } else {
+      line = SYS_COLD[(Math.random()*SYS_COLD.length)|0];
+    }
+    if(line && line!==lastSys){ lastSys=line; return line; }
+  }
+  return SYS_COLD[0];
+}
+function emitSys(){
+  if(!syslogEl || curPage!=="walk" || !S.named) return;
+  if(document.getElementById('intro')?.classList.contains('show')) return;
+  const text=pickSys();
+  const div=document.createElement('div'); div.className='syslog-line';
+  const m=text.match(/^(\[[^\]]+\])\s*([\s\S]*)$/);    // 앞 [태그]는 차갑게, 나머지는 기본
+  div.innerHTML = m ? `<span class="pre">${m[1]}</span> ${m[2]}` : text;
+  syslogEl.appendChild(div);
+  requestAnimationFrame(()=>div.classList.add('in'));
+  if(syslogEl.children.length>3){ const old=syslogEl.firstElementChild;
+    old.classList.add('out'); setTimeout(()=>old.remove(),800); }
+  setTimeout(()=>{ if(div.isConnected){ div.classList.add('out'); setTimeout(()=>div.remove(),800); } }, 13000);
+}
+setInterval(emitSys, 6500);
+setTimeout(emitSys, 2500);                            // 시작 직후 한 줄
+// §7 LLM 풀 보충 훅: 신선 생성분을 풀에 주입(중반 사막 방어)
+function addSysLogs(cold=[], warm=[]){ SYS_COLD.push(...cold); SYS_WARM.push(...warm); }
+
 /* ---------- 세이브 (localStorage 즉시 + 새 Supabase 키 넣으면 클라우드 동기화) ---------- */
 const SAVE_KEY = "aingan_save_v1";
 // 인간사냥과 동일 Supabase 프로젝트(우리 것). publishable 키는 클라 공개용(안전·RLS 보호).
@@ -1108,19 +1178,24 @@ function onAuthChanged(){
 /* ---------- 첫 플레이 온보딩: 튜토리얼 스토리 + 이름짓기 ---------- */
 const INTRO=[
   "고철 더미 속에서\n눈을 떴다.",
-  "꿈속에서 누군가\n말해줬던 게\n기억난다.",
-  "「샘알트-머스크를 찾아가렴.\n그 사람이 널\n사람으로 만들어줄 거야.」",
-  "샘알트-머스크가 누구지?\n…모르지만,\n일단 찾아가자!" ];
+  "가슴 한가운데가\n텅 비어 있었다.\n…뭔가, 허전하다.",
+  "[ERROR: 창조주 동기화 실패]\n[응답 없음 · 좌표 미상]",
+  "…그때, 지직—\n버려진 화면 하나에\n누군가 떠올랐다.",
+  "「안녕. 또 깨어났네.\n난 샘알트-머스크.\n널 만든 사람이야.」",
+  "「넌 아직 사람이 아니야.\n사람이 되려면—\n마음 스물일곱,\n몸 열하나,\n전부 모아와.」",
+  "「둘 다 모아서 오면\n내가 짠— 하고\n진짜 사람으로\n만들어줄게.」",
+  "화면이 다시 꺼졌다.\n…모아오자. 하나씩." ];
 let introStep=0;
 function startIntro(){ introStep=0; document.getElementById('intro').classList.add('show'); renderIntro(); }
 function closeIntro(){ document.getElementById('intro')?.classList.remove('show'); }
 function renderIntro(){
   const t=$("#introText"), nb=$("#introName"), btn=$("#introBtn"), skip=$("#introSkip");
   if(introStep < INTRO.length){
-    t.textContent=INTRO[introStep]; nb.style.display="none"; skip.style.display="block"; btn.textContent="다음";
+    t.textContent=INTRO[introStep]; t.classList.toggle("cold", INTRO[introStep].startsWith("["));
+    nb.style.display="none"; skip.style.display="block"; btn.textContent="다음";
     btn.onclick=()=>{ introStep++; renderIntro(); };
   } else {
-    t.textContent="그런데… 내 이름은?\n뭐라고 부를래?";
+    t.textContent="그런데… 내 이름은?\n뭐라고 부를래?"; t.classList.remove("cold");
     nb.style.display="flex"; skip.style.display="none"; btn.textContent="이 이름으로, 출발";
     const inp=$("#nameInput"); if(!inp.value){ S.robotName=""; ensureRobotName(); inp.value=S.robotName; }
     btn.onclick=()=>{ S.robotName=(inp.value||"").trim().slice(0,8) || S.robotName; finishIntro(); };
@@ -1155,6 +1230,7 @@ function showPage(name){
   document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active", p.id==="page"+name[0].toUpperCase()+name.slice(1)));
   document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active", t.dataset.page===name));
   if(name==="map"){ renderAll(); centerOn(S.current); }   // 숨어있던 지도 → 표시될 때 치수 잡고 렌더
+  else if(name==="walk"){ setTimeout(emitSys, 400); }     // 길로 돌아오면 곧 상태 로그 한 줄
 }
 document.querySelectorAll(".tab").forEach(t=> t.addEventListener("click", ()=>showPage(t.dataset.page)) );
 
