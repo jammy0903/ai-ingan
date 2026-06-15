@@ -72,11 +72,14 @@
   /* 빈 원 (예고) */
   .node.empty .ring { background:transparent; border:2px dashed #b3a892; opacity:.55; }
   .node.empty .label { color:#9a917f; font-style:italic; }
-  /* 도달 가능 */
-  .node.reachable .ring { border:2px solid #c98f6a; background:rgba(201,143,106,.10);
-    animation:pulse 1.8s ease-in-out infinite; cursor:pointer; }
+  /* 발견됨(아직 안 엶) = 희미하게. 열면 .done 으로 뚜렷해짐 */
   .node.reachable { cursor:pointer; }
-  @keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(201,143,106,.35)} 50%{box-shadow:0 0 0 8px rgba(201,143,106,0)} }
+  .node.reachable .ring { border:2px dashed #bcaa8c; background:rgba(201,143,106,.05);
+    animation:faintpulse 2.6s ease-in-out infinite; cursor:pointer; }
+  .node.reachable .ring .ic { opacity:.5; }
+  .node.reachable .label { color:#9a917f; opacity:.6; font-style:italic; }
+  .node.reachable .cost { opacity:.7; }
+  @keyframes faintpulse { 0%,100%{opacity:.4} 50%{opacity:.66} }
   /* 완료 */
   .node.done .ring { background:radial-gradient(circle,#fbf6e8,#e7d3b3); border:2px solid #c9a86a; opacity:1; cursor:pointer; }
   .node.done { cursor:pointer; }
@@ -184,6 +187,24 @@
   .tapfx { position:fixed; pointer-events:none; z-index:30; font-family:'Nanum Pen Script',cursive;
     color:#9a7b4a; font-size:16px; animation:tapup .7s ease-out forwards; }
   @keyframes tapup { from{opacity:.9; transform:translate(-50%,0)} to{opacity:0; transform:translate(-50%,-34px)} }
+
+  /* ---------- 온보딩(튜토리얼 + 이름짓기) ---------- */
+  .intro { position:absolute; inset:0; z-index:40; display:none; flex-direction:column; align-items:center; justify-content:center;
+    padding:30px; background:linear-gradient(160deg,#eef0ea,#e6e1d4); }
+  .intro.show { display:flex; animation:fade .6s ease; }
+  .introcard { width:100%; max-width:320px; text-align:center; }
+  .introbadge { font-size:12px; color:#9a8a6a; letter-spacing:3px; margin-bottom:24px; }
+  .introtext { font-family:'Gaegu',cursive; font-size:24px; line-height:1.7; color:#4d443a; white-space:pre-line;
+    min-height:170px; display:flex; align-items:center; justify-content:center; }
+  .introname { display:flex; gap:8px; justify-content:center; align-items:center; margin:4px 0; }
+  .introname input { font-family:'Gaegu',cursive; font-size:23px; text-align:center; width:165px; padding:7px 10px;
+    border:none; border-bottom:2px solid #c9a86a; background:transparent; color:#6f5d3c; outline:none; }
+  .introname button { font-size:19px; background:rgba(247,243,234,.7); border:1px solid #c9c2b3; border-radius:50%;
+    width:42px; height:42px; cursor:pointer; }
+  .intro #introBtn { margin-top:26px; width:100%; max-width:280px; padding:13px; border:1px solid #b9a98c; background:#ece3d0;
+    font-family:'Nanum Myeongjo',serif; font-weight:700; font-size:15px; color:#6f5d3c; letter-spacing:2px; cursor:pointer; border-radius:2px; }
+  .intro #introBtn:active { background:#e0d4ba; }
+  .introskip { margin-top:15px; font-size:12px; color:#a59b8a; cursor:pointer; }
 
   /* ---------- 모달 (만남/재회) ---------- */
   .modal { position:absolute; inset:0; z-index:20; display:none; align-items:center; justify-content:center; padding:26px;
@@ -390,6 +411,18 @@
     <div class="reward" id="mReward"></div>
     <button id="mBtn">다음 길로</button>
     <button id="mBtn2" class="btn2" style="display:none"></button>
+  </div></div>
+
+  <!-- 첫 플레이 온보딩: 튜토리얼 + 이름짓기 -->
+  <div class="intro" id="intro"><div class="introcard">
+    <div class="introbadge">— 어느 고철 로봇의 시작 —</div>
+    <div class="introtext" id="introText"></div>
+    <div class="introname" id="introName" style="display:none">
+      <input id="nameInput" maxlength="8" autocomplete="off" placeholder="이름을 지어줘"/>
+      <button id="rerollBtn" type="button" title="다른 이름 추천">🎲</button>
+    </div>
+    <button id="introBtn" type="button">다음</button>
+    <div class="introskip" id="introSkip">바로 이름 짓기 ›</div>
   </div></div>
 </div>
 
@@ -612,7 +645,9 @@ computeRadialLayout();
 const S = {
   walks: 0, rate: 1.0, current: "start",   // 기본 1초 1걸음 (설계서 §5)
   levels: {},            // nodeId -> 레벨(0=미완료)
-  robotName: "",         // 로봇이 스스로 지은 이름(사람마다 다름)
+  discovered: {},        // nodeId -> true (걸음을 비용만큼 모아 희미하게 발견됨)
+  robotName: "",         // 로봇 이름(사람마다 다름)
+  named: false,          // 플레이어가 온보딩에서 직접 확정했는가
 };
 NODES.forEach(n => S.levels[n.id] = n.completed ? 1 : 0);
 
@@ -657,15 +692,22 @@ function neighbors(id){
   EDGES.forEach(([a,b,c])=>{ if(a===id) out.push([b,c]); if(b===id) out.push([a,c]); });
   return out;
 }
-function isRevealed(id){ // 완료 노드의 이웃이면 보임
-  if(S.levels[id]>0) return true;
-  return neighbors(id).some(([nb])=> S.levels[nb]>0);
-}
-function reachCost(id){ // 완료 노드와 잇는 간선 중 최소 비용
+function reachCost(id){ // 완료 노드와 잇는 간선 중 최소 비용(=열 수 있는 비용)
   let c=Infinity;
   neighbors(id).forEach(([nb,cost])=>{ if(S.levels[nb]>0) c=Math.min(c,cost); });
   return c;
 }
+// 노드는 '걸음을 그 비용만큼 모은' 순간 처음 희미하게 발견된다(이후 계속 보임).
+function updateDiscovered(){
+  let changed=false;
+  NODES.forEach(n=>{
+    if(n.id==="start" || S.levels[n.id]>0 || S.discovered[n.id]) return;
+    const c=reachCost(n.id);                       // 부모가 완료돼야 비용이 유한
+    if(c!==Infinity && S.walks>=c){ S.discovered[n.id]=true; changed=true; }
+  });
+  return changed;
+}
+function isRevealed(id){ return S.levels[id]>0 || !!S.discovered[id]; }
 
 /* ---------- 렌더 ---------- */
 function renderEdges(){
@@ -684,6 +726,7 @@ function renderEdges(){
   });
 }
 function renderNodes(){
+  updateDiscovered();
   document.querySelectorAll(".node").forEach(e=>e.remove());
   NODES.forEach(n=>{
     if(!isRevealed(n.id)) return;
@@ -905,15 +948,17 @@ function saveKey(){ return authUser ? ("u_"+authUser.id) : devId(); }   // 로�
 const ROBOT_NAMES=["삐삐","또르","깡통이","녹슬이","별이","콩이","또롱","삐릭","깡총","또또","모리","단추","나사","볼트","깜빡이","또각","삐약","동그리","네모","철이","구리","뚜뚜","링링","찌릿","오백","뽀삐","고철이","반짝","덜컹","깡깡"];
 function ensureRobotName(){ if(!S.robotName) S.robotName = ROBOT_NAMES[Math.floor(Math.random()*ROBOT_NAMES.length)]; }
 
-function snapshot(){ return { walks:S.walks, rate:S.rate, current:S.current, levels:S.levels, robotName:S.robotName, t:Date.now() }; }
+function snapshot(){ return { walks:S.walks, rate:S.rate, current:S.current, levels:S.levels, discovered:S.discovered, robotName:S.robotName, named:S.named, t:Date.now() }; }
 function loadLocal(){ try{ const r=localStorage.getItem(SAVE_KEY); return r?JSON.parse(r):null; }catch(e){ return null; } }
 function applyState(d){
   if(!d) return 0;
   S.rate   = d.rate || 1.0;
   S.current= NODES.find(n=>n.id===d.current) ? d.current : "start";
   NODES.forEach(n=>{ S.levels[n.id] = (d.levels && d.levels[n.id]>0) ? d.levels[n.id] : (n.completed?1:0); });
+  S.discovered = d.discovered || {};
   S.walks  = d.walks || 0;
   if(d.robotName) S.robotName = d.robotName;
+  S.named = !!d.named;
   let off=0; if(d.t){ const sec=Math.max(0,(Date.now()-d.t)/1000); off=Math.min(d.rate*sec, d.rate*3600*OFFLINE_CAP_H); S.walks+=off; }
   wholeWalks=Math.floor(S.walks);
   return off;
@@ -933,16 +978,12 @@ async function supaLoad(){ if(!SUPA.url||!SUPA.anon) return null;
     const rows=await r.json(); return (rows&&rows[0])?rows[0].data:null; }catch(e){ return null; }
 }
 function bootSave(){
-  const hadSave = !!loadLocal();
   const off = applyState(loadLocal());                 // 로컬 즉시 반영(+오프라인 적립)
-  ensureRobotName();
-  const h=$("#hint");
-  if(!hadSave){ h.textContent=`나는 ${S.robotName}. …반가워.`;
-    setTimeout(()=>{ h.textContent="이 길을 두드릴수록 로봇이 더 빨리 걷는다"; }, 5000); }
-  else if(off>=1){ h.textContent=`당신이 없는 동안 ${S.robotName}가 ${Math.floor(off)}걸음을 걸었어요`;
+  if(!S.named){ startIntro(); }                        // 아직 직접 이름 안 지었으면 → 튜토리얼+이름짓기
+  else if(off>=1){ const h=$("#hint"); h.textContent=`당신이 없는 동안 ${S.robotName}가 ${Math.floor(off)}걸음을 걸었어요`;
     setTimeout(()=>{ h.textContent="이 길을 두드릴수록 로봇이 더 빨리 걷는다"; }, 4500); }
   supaLoad().then(d=>{ const l=loadLocal();             // 클라우드가 더 최신이면 덮어쓰기
-    if(d && (d.t||0) > (l?.t||0)){ applyState(d); ensureRobotName(); refreshHUD(); if(curPage==="map") renderAll(); } });
+    if(d && (d.t||0) > (l?.t||0)){ applyState(d); if(S.named) closeIntro(); refreshHUD(); if(curPage==="map") renderAll(); } });
 }
 setInterval(saveState, 10000);
 window.addEventListener("beforeunload", saveState);
@@ -967,13 +1008,43 @@ function renderAuth(){
 function onAuthChanged(){
   const k=saveKey(); if(k===lastKey) return; lastKey=k;   // 키(계정/기기) 바뀔 때만 동기화
   supaLoad().then(d=>{
-    if(d){ applyState(d); ensureRobotName(); refreshHUD(); if(curPage==="map") renderAll(); }
+    if(d){ applyState(d); if(S.named) closeIntro(); refreshHUD(); if(curPage==="map") renderAll(); }
     else { saveState(); }                                 // 이 계정에 세이브 없으면 현재 진행을 올림
   });
 }
 
+/* ---------- 첫 플레이 온보딩: 튜토리얼 스토리 + 이름짓기 ---------- */
+const INTRO=[
+  "고철 더미 속에서\n눈을 떴다.",
+  "꿈속에서 누군가\n말해줬던 게\n기억난다.",
+  "「샘알트-머스크를 찾아가렴.\n그 사람이 널\n사람으로 만들어줄 거야.」",
+  "샘알트-머스크가 누구지?\n…모르지만,\n일단 찾아가자!" ];
+let introStep=0;
+function startIntro(){ introStep=0; document.getElementById('intro').classList.add('show'); renderIntro(); }
+function closeIntro(){ document.getElementById('intro')?.classList.remove('show'); }
+function renderIntro(){
+  const t=$("#introText"), nb=$("#introName"), btn=$("#introBtn"), skip=$("#introSkip");
+  if(introStep < INTRO.length){
+    t.textContent=INTRO[introStep]; nb.style.display="none"; skip.style.display="block"; btn.textContent="다음";
+    btn.onclick=()=>{ introStep++; renderIntro(); };
+  } else {
+    t.textContent="그런데… 내 이름은?\n뭐라고 부를래?";
+    nb.style.display="flex"; skip.style.display="none"; btn.textContent="이 이름으로, 출발";
+    const inp=$("#nameInput"); if(!inp.value){ S.robotName=""; ensureRobotName(); inp.value=S.robotName; }
+    btn.onclick=()=>{ S.robotName=(inp.value||"").trim().slice(0,8) || S.robotName; finishIntro(); };
+  }
+}
+function finishIntro(){
+  ensureRobotName(); S.named=true; closeIntro(); refreshHUD(); saveState();
+  const h=$("#hint"); h.textContent=`그렇게, ${S.robotName}의 모험이 시작된다!`;
+  setTimeout(()=>{ h.textContent="이 길을 두드릴수록 로봇이 더 빨리 걷는다"; }, 5000);
+}
+$("#rerollBtn").addEventListener("click",()=>{ S.robotName=""; ensureRobotName(); $("#nameInput").value=S.robotName; });
+$("#introSkip").addEventListener("click",()=>{ introStep=INTRO.length; renderIntro(); });
+
 /* ---------- idle 루프 (기본 1초 1걸음 → 1초 1보) ---------- */
-setInterval(()=>{ S.walks += S.rate*0.1; elWalks.textContent=fmt(S.walks); syncSteps(); }, 100);
+setInterval(()=>{ S.walks += S.rate*0.1; elWalks.textContent=fmt(S.walks); syncSteps();
+  if(updateDiscovered() && curPage==="map"){ renderEdges(); renderNodes(); placeRobot(); } }, 100);
 
 /* ---------- 줌 입력 ---------- */
 document.getElementById('zin').addEventListener('click', ()=>setZoom(zoom*1.25));
