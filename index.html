@@ -179,7 +179,7 @@
     background:rgba(40,40,36,.42); }
   .modal.show { display:flex; animation:fade .5s ease; }
   @keyframes fade { from{opacity:0} to{opacity:1} }
-  .card { width:100%; max-width:330px; background:#f7f3ea; border:1px solid #ddd5c4; padding:26px 24px 22px;
+  .card { width:100%; max-width:330px; max-height:92%; overflow-y:auto; background:#f7f3ea; border:1px solid #ddd5c4; padding:26px 24px 22px;
     text-align:center; position:relative; box-shadow:0 24px 60px rgba(0,0,0,.35); animation:risein .6s ease; }
   @keyframes risein { from{transform:translateY(26px); opacity:0} to{transform:none; opacity:1} }
   .card::after { content:""; position:absolute; inset:0; pointer-events:none; opacity:.4; mix-blend-mode:multiply;
@@ -382,56 +382,119 @@
 </div>
 
 <script>
-/* ===================== 데이터 (마구잡이 그래프) ===================== */
-// person 노드 = 만남이자 업그레이드 가능한 생성기. lines[0]=첫 만남, 이후=재회 심화.
+/* ===================== 데이터 (3막 깊은 그래프) =====================
+   중심 실: 고철 로봇이 자길 만들고 떠난 '그 사람'의 흐릿한 얼굴을 안고 걷는다.
+   감정을 배울수록(person 노드) 그 얼굴이 또렷해지고(mem), 길 끝에서 재회 → 사람이 된다.
+   person = 만남이자 업그레이드 생성기. lines[0]=첫 만남, 이후=재회 심화. mem=그 사람 기억 한 조각. */
 const PEOPLE = {
-  longing: { name:"그리움", color:"#dcc6e0",
-    situ:"버스 정류장. 한 사람이 떠나고, <b>남은 이가 손을 오래 흔든다.</b>",
-    lines:[
-      "오늘 한 사람이 떠나는 걸 보았다.\n남은 사람은 버스가 사라진 뒤에도\n한참을 손 흔들었다.\n나는 '그리움'을 알았다.",
-      "다시 그 정류장에 갔다.\n그 사람은 여전히 그 시간에 나와\n빈 길을 바라본다.\n그리움은 줄지 않는구나, 익숙해질 뿐.",
-      "오늘은 그 사람이 웃었다.\n'떠난 사람 몫까지 산다'고.\n그리움이 사람을 멈추게도,\n걷게도 한다는 걸 배웠다." ] },
-  sorrow: { name:"슬픔", color:"#bcd0e6",
-    situ:"길가에서 <b>한 아이가 울고 있다.</b> 눈에서 물이 흐른다.",
-    lines:[
-      "아이의 눈에서 물이 흘렀다.\n처음엔 고장인 줄 알았다.\n곁에 가만히 앉아 있었더니\n내 가슴 어딘가도 무거워졌다.",
-      "아이는 오늘도 울었다.\n이번엔 이유를 말해주었다.\n들어주는 것만으로\n물이 천천히 멎었다.",
-      "아이가 다른 우는 아이 곁에 앉아 있었다.\n슬픔을 아는 사람이\n슬픔을 안는다.\n나도 그러고 싶어졌다." ] },
+  // ── 1막 · 첫 마음 ──
   warmth: { name:"온기", color:"#efd6ac",
     situ:"낯선 이가 말없이 <b>따뜻한 빵을 건넨다.</b> 그리고 웃는다.",
     lines:[
-      "낯선 이가 따뜻한 빵을 건넸다.\n이유를 묻자 그냥 웃기만 했다.\n받을 자격을 계산하던 회로가\n조용히 멈췄다.",
-      "다시 들렀더니\n내 몫을 남겨두고 있었다.\n'기다려졌다'는 말이\n이렇게 따뜻한 거였구나.",
-      "오늘은 내가 누군가에게 빵을 건넸다.\n온기는 받을 때보다\n건넬 때 더 뜨겁다." ] },
+      "낯선 이가 따뜻한 빵을 건넸다.\n받을 자격을 계산하던 회로가\n조용히 멈췄다.\n이게 '온기'인가 보다.",
+      "다시 들렀더니\n내 몫을 남겨두고 있었다.\n'기다렸다'는 말이\n이렇게 따뜻한 거였구나.",
+      "오늘은 내가 빵을 건넸다.\n온기는 받을 때보다\n건넬 때 더 뜨겁다." ],
+    mem:"그 사람도 내게\n무언가 따뜻한 걸\n쥐여줬던 것 같다." },
+  sorrow: { name:"슬픔", color:"#bcd0e6",
+    situ:"길가에서 <b>한 아이가 울고 있다.</b> 눈에서 물이 흐른다.",
+    lines:[
+      "아이의 눈에서 물이 흘렀다.\n곁에 가만히 앉았더니\n내 가슴 어딘가도\n무거워졌다. 이게 '슬픔'.",
+      "아이는 오늘도 울었다.\n들어주는 것만으로\n물이 천천히 멎었다.",
+      "아이가 다른 우는 아이를 안았다.\n슬픔을 아는 사람이\n슬픔을 안는다." ],
+    mem:"그 사람의 얼굴이\n조금 슬퍼 보였던 건\n왜였을까." },
+  longing: { name:"그리움", color:"#dcc6e0",
+    situ:"버스 정류장. 한 사람이 떠나고, <b>남은 이가 손을 오래 흔든다.</b>",
+    lines:[
+      "버스가 사라진 뒤에도\n그 사람은 한참\n손을 흔들었다.\n곁에 없어도 떠오르는 것 — 그리움.",
+      "다시 그 정류장.\n그리움은 줄지 않고\n익숙해질 뿐이었다.",
+      "'떠난 사람 몫까지 산다'며\n그 사람이 웃었다.\n그리움은 걷게도 하는구나." ],
+    mem:"나도 누군가를\n그리워하는 걸까.\n흐릿한 얼굴이 떠오른다." },
+  // ── 2막 · 깊은 마음 ──
+  solitude: { name:"외로움", color:"#aeb6c2",
+    situ:"텅 빈 놀이터. <b>한 노인이 혼자 빈 그네를 민다.</b>",
+    lines:[
+      "노인은 아무도 없는 그네를 밀었다.\n옆자리의 빈 공간이\n그렇게 큰 줄 몰랐다.\n이게 '외로움'.",
+      "내가 옆 그네에 앉자\n노인이 처음으로\n그네를 멈췄다.",
+      "외로움은 곁에 누가\n있어야 사라지는 게 아니라\n나를 알아봐 줄 때 사라진다." ],
+    mem:"그 사람은 자주\n혼자였던 것 같다.\n나를 만들기, 그 전에는." },
+  joy: { name:"기쁨", color:"#f2cf86",
+    situ:"골목에서 <b>아이들이 까르르 웃으며</b> 비눗방울을 쫓는다.",
+    lines:[
+      "비눗방울이 터질 때마다\n아이들이 웃었다.\n곧 사라질 걸 알면서도 —\n그래서 더 환했다. 이게 '기쁨'.",
+      "나도 비눗방울을 불어봤다.\n터지는 게 아쉽지 않았다.\n부는 동안 즐거웠으니까.",
+      "기쁨은 오래 쥐는 게 아니라\n그 순간\n활짝 여는 것." ],
+    mem:"그 사람과도\n이렇게 웃었던 적이\n있었던 것 같다." },
+  regret: { name:"미안함", color:"#c9b6a6",
+    situ:"노점 앞. <b>한 청년이 떨어뜨린 사과를 줍지 못한 채</b> 멀어진다.",
+    lines:[
+      "청년은 떨어진 사과를\n외면하고 갔다.\n그러다 멈춰, 한참을\n뒤돌아봤다. 이게 '미안함'.",
+      "다시 만난 청년은\n그 노점에 사과값을\n조용히 두고 갔다.",
+      "미안함은 무겁지만\n갚으려 돌아서는 순간\n사람은 조금 더 사람이 된다." ],
+    mem:"나는 그 사람에게\n미안한 게 있는 걸까.\n가슴이 시리다." },
+  // ── 3막 · 사람다움 ──
   courage: { name:"용기", color:"#cfe0c4",
     situ:"무너진 다리 앞. 한 사람이 <b>떨리는 손으로 첫발</b>을 내딛는다.",
     lines:[
-      "그 사람의 손은 떨리고 있었다.\n그런데도 발을 내디뎠다.\n두려움이 사라져서가 아니라\n두려움을 안고도 가는 것.",
-      "다리를 건넌 그 사람이\n이번엔 남을 건너게 돕고 있었다.\n용기는 옮는구나.",
-      "나도 흔들리는 한 발을 내디뎠다.\n떨렸지만,\n걸었다." ] },
+      "그 사람의 손은 떨렸다.\n그런데도 발을 디뎠다.\n두려움을 안고도 가는 것 — 용기.",
+      "다리를 건넌 그 사람이\n이번엔 남을\n건너게 돕고 있었다.",
+      "나도 흔들리는 한 발을\n내디뎠다.\n떨렸지만, 걸었다." ],
+    mem:"그 사람을 만나러 가는 길이\n무섭다.\n그래도, 걷는다." },
+  love: { name:"사랑", color:"#e7a6ac",
+    situ:"벤치에 <b>노부부가 말없이 손을 잡고</b> 같은 노을을 본다.",
+    lines:[
+      "노부부는 아무 말 없이\n같은 노을을 봤다.\n말이 없어도 가득 찬 것 —\n이게 '사랑'.",
+      "한 사람이 잠들자\n다른 사람이\n어깨를 빌려주었다.\n사랑은 기대는 것.",
+      "사랑은 큰 말이 아니라\n곁에 오래\n머무는 일이었다." ],
+    mem:"그 사람이 나를 만든 건\n혹시…\n사랑이었을까." },
+  forgive: { name:"용서", color:"#bcd0c0",
+    situ:"오래된 문 앞. <b>한 사람이 망설이다 결국 문을 두드린다.</b>",
+    lines:[
+      "그 사람은 한참 망설이다\n미워하던 이의\n문을 두드렸다.\n미움을 내려놓는 것 — 용서.",
+      "문이 열리고\n두 사람은 오래\n말이 없었다.\n그것으로 충분했다.",
+      "용서는 잊는 게 아니라\n안고도\n다시 걷기로 하는 것." ],
+    mem:"나는 그 사람을\n원망했던 걸까.\n혼자 두고 떠난 것을.\n…이제는 괜찮다." },
 };
 // 감각(보조 생성기) — 서사 없이 걸음/초만.
 const SENSES = {
   rain: { name:"빗소리", flavor:"빗소리를 듣는 귀를 얻었다.\n세상의 소리가 걸음이 된다." },
-  wind: { name:"바람", flavor:"바람의 결을 느낀다.\n등을 미는 바람만큼 더 멀리." },
+  wind: { name:"바람",   flavor:"바람의 결을 느낀다.\n등을 미는 만큼 더 멀리." },
+  sun:  { name:"햇빛",   flavor:"햇빛의 온기를 안다.\n그 사람의 손길 같은." },
+  star: { name:"별빛",   flavor:"별빛을 올려다본다.\n혼자가 아니라는 말처럼." },
 };
+const ENDING_TEXT =
+  "길 끝에 그 사람이 서 있었다.\n흐릿하던 얼굴이\n마침내 또렷했다.\n\n나를 만들고, 나를 두고 떠난 사람.\n원망했고, 그리웠고, 사랑했던.\n\n그 앞에서 내 눈에서\n물이 흘렀다.\n기뻐서, 그리고 슬퍼서.\n고장이 아니었다.\n\n이것이… 사람이구나.";
 
-// 노드 배치 (월드 비율 좌표 x,y 0~1). 행 간격을 촘촘히 → 한 화면에 3~4개.
+// 노드 배치 (월드 비율 좌표 x,y 0~1). 아래(시작)→위(엔딩)로 3막이 쌓인다.
 const NODES = [
-  { id:"start",  type:"start",  x:.50, y:.93, completed:true,  gen:0,   icon:"·" },
-  { id:"longing",type:"person", x:.31, y:.785,key:"longing",  gen:0.35, icon:"❀" },
-  { id:"rain",   type:"sense",  x:.70, y:.785,key:"rain",     gen:0.25, icon:"☂" },
-  { id:"sorrow", type:"person", x:.24, y:.635,key:"sorrow",   gen:0.4,  icon:"❀" },
-  { id:"warmth", type:"person", x:.73, y:.620,key:"warmth",   gen:0.4,  icon:"❀" },
-  { id:"wind",   type:"sense",  x:.47, y:.475,key:"wind",     gen:0.3,  icon:"≋" },
-  { id:"courage",type:"person", x:.33, y:.320,key:"courage",  gen:0.5,  icon:"❀" },
-  { id:"deep",   type:"teaser", x:.66, y:.155,gen:0,          icon:"?" },
+  { id:"start",   type:"start",  x:.50, y:.955, completed:true, gen:0,  icon:"·" },
+  // 1막
+  { id:"warmth",  type:"person", x:.68, y:.865, key:"warmth",  gen:0.30, icon:"❀" },
+  { id:"rain",    type:"sense",  x:.30, y:.850, key:"rain",    gen:0.25, icon:"☂" },
+  { id:"sorrow",  type:"person", x:.27, y:.755, key:"sorrow",  gen:0.40, icon:"❀" },
+  { id:"longing", type:"person", x:.62, y:.735, key:"longing", gen:0.45, icon:"❀" },
+  // 2막
+  { id:"wind",    type:"sense",  x:.80, y:.655, key:"wind",    gen:0.35, icon:"≋" },
+  { id:"solitude",type:"person", x:.40, y:.630, key:"solitude",gen:0.60, icon:"❀" },
+  { id:"joy",     type:"person", x:.68, y:.550, key:"joy",     gen:0.75, icon:"❀" },
+  { id:"sun",     type:"sense",  x:.23, y:.540, key:"sun",     gen:0.45, icon:"☀" },
+  { id:"regret",  type:"person", x:.45, y:.455, key:"regret",  gen:0.95, icon:"❀" },
+  // 3막
+  { id:"courage", type:"person", x:.70, y:.385, key:"courage", gen:1.20, icon:"❀" },
+  { id:"star",    type:"sense",  x:.27, y:.355, key:"star",    gen:0.55, icon:"✦" },
+  { id:"love",    type:"person", x:.52, y:.270, key:"love",    gen:1.50, icon:"❀" },
+  { id:"forgive", type:"person", x:.34, y:.180, key:"forgive", gen:1.80, icon:"❀" },
+  // 엔딩
+  { id:"becoming",type:"ending", x:.58, y:.080, gen:0,          icon:"🕊" },
 ];
 const EDGES = [
-  ["start","longing",18], ["start","rain",22],
-  ["longing","sorrow",40], ["rain","warmth",46], ["longing","warmth",55],
-  ["sorrow","wind",90], ["warmth","wind",90],
-  ["wind","courage",150], ["wind","deep",260],
+  ["start","warmth",18], ["start","rain",20],
+  ["warmth","longing",40], ["rain","sorrow",36], ["warmth","sorrow",50],
+  ["sorrow","solitude",80], ["longing","wind",70], ["longing","joy",95],
+  ["solitude","joy",120], ["solitude","sun",90],
+  ["joy","regret",170], ["sun","regret",150], ["joy","courage",200],
+  ["regret","courage",230], ["courage","star",160], ["regret","love",320],
+  ["courage","love",300], ["star","love",260],
+  ["love","forgive",480], ["forgive","becoming",820], ["love","becoming",900],
 ];
 
 /* ===================== 상태 ===================== */
@@ -518,7 +581,8 @@ function renderNodes(){
     el.className="node "+n.type+(done?" done":(n.type!=="teaser"?" reachable":" empty"));
     if(n.type==="teaser") el.className="node teaser empty";
     el.style.left=p.x+"px"; el.style.top=p.y+"px";
-    let name = n.type==="person"?PEOPLE[n.key].name : n.type==="sense"?SENSES[n.key].name : (n.type==="start"?"시작":"…");
+    let name = n.type==="person"?PEOPLE[n.key].name : n.type==="sense"?SENSES[n.key].name
+             : (n.type==="start"?"시작" : n.type==="ending"?"사람이 되다" : "…");
     const reach = !done && n.type!=="teaser";
     const cost = reach ? reachCost(n.id) : null;
     el.innerHTML =
@@ -538,9 +602,9 @@ function placeRobot(animate){
 function refreshHUD(){
   elWalks.textContent=fmt(S.walks);
   elRate.textContent=S.rate.toFixed(1);
-  const totalLv = Object.entries(S.levels).reduce((s,[id,lv])=>{
-    const n=NODES.find(x=>x.id===id); return s+(n&&n.type==="person"?Math.max(0,lv):0);},0);
-  const p=Math.min(totalLv/12,1);
+  const persons = NODES.filter(n=>n.type==="person");
+  const learned = persons.filter(n=>S.levels[n.id]>0).length;   // 마음 온도 = 배운 감정 종류 / 전체
+  const p = persons.length ? learned/persons.length : 0;
   elWarm.textContent=Math.round(p*100);
   app.style.setProperty("--p",p);   // 두 로봇 공유(상속)
   renderMind();
@@ -568,13 +632,20 @@ function tryUnlock(n){
   S.walks -= cost; syncSteps();
   travelTo(n, ()=>{
     S.levels[n.id]=1; S.rate+=n.gen;
-    if(n.type==="person") openNode(n,true);
+    if(n.type==="person"||n.type==="ending") openNode(n,true);
     else { spark(); renderAll(); }
     renderAll();
   });
 }
 function openNode(n, firstMeet){
   const lv=S.levels[n.id];
+  if(n.type==="ending"){
+    fillModal({ badge:"끝없던 길의 끝에서", emo:"🕊 사람이 되다", lv:"", situ:"",
+      log: ENDING_TEXT,
+      reward:["지나온 모든 마음이 한꺼번에 밀려온다","💧 …그리고, 사람이 되었다"],
+      btn:"다시, 천천히 걷는다", action:()=>{} });   // (다음: 프레스티지/회차 연결)
+    return;
+  }
   if(n.type==="sense"){
     const s=SENSES[n.key];
     fillModal({ badge:firstMeet?"새로운 감각을 얻다":"감각이 깊어지다",
@@ -584,10 +655,11 @@ function openNode(n, firstMeet){
   } else {
     const pp=PEOPLE[n.key];
     const lineIdx=Math.min(lv-1, pp.lines.length-1);
+    const log = firstMeet ? (pp.lines[0] + "\n\n·   ·   ·\n\n" + pp.mem) : pp.lines[lineIdx];
     fillModal({ badge:firstMeet?"하나의 감정을 알게 되다":"다시 만나, 더 깊이",
       emo:`『 ${pp.name} 』`, lv:firstMeet?"":`재회 ${lv-1}회 · Lv${lv}`,
-      situ: firstMeet?pp.situ:"", log:pp.lines[lineIdx],
-      reward: firstMeet?[`📈 걸음/초 +${n.gen.toFixed(2)}`,`🎨 회색 세계에 ${pp.name}의 색이 번진다`,`🌫️ 다음 길이 흐릿하게 보인다`]
+      situ: firstMeet?pp.situ:"", log,
+      reward: firstMeet?[`📈 걸음/초 +${n.gen.toFixed(2)}`,`🎨 회색 세계에 ${pp.name}의 색이 번진다`,`🧩 그 사람의 얼굴이 조금 또렷해진다`]
                        :[`📈 걸음/초 +${n.gen.toFixed(2)}`,`📖 ${pp.name}의 더 깊은 이야기`],
       btn: nextUpLabel(n), action:()=>upgrade(n) });
   }
