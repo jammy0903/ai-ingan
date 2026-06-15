@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>AI인간 — MVP 프로토</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700&family=Nanum+Pen+Script&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Nanum+Myeongjo:wght@400;700&family=Nanum+Pen+Script&display=swap" rel="stylesheet">
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html,body { height:100%; overflow:hidden; }
@@ -99,7 +99,7 @@
   @keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
 
   /* 길 페이지 걷기 로봇 (옆모습) — 걸음당 1보(이벤트 구동, 상시 루프 아님) */
-  #walkRobot { position:absolute; left:44%; bottom:9%; width:132px; z-index:4; pointer-events:none; transform:translateX(-50%); }
+  #walkRobot { position:absolute; left:44%; bottom:2%; width:130px; z-index:4; pointer-events:none; transform:translateX(-50%); }
   #walkRobot svg { width:100%; filter:url(#paintSoft) drop-shadow(0 5px 6px rgba(70,66,60,.20)); }
   @keyframes stepbob { 0%{transform:translateY(0)} 38%{transform:translateY(-6px)} 100%{transform:translateY(0)} }
   /* 다리·팔: 한 보마다 전후 스탠스 전환 (걸음이 들어올 때만) */
@@ -189,8 +189,8 @@
   .card .lvtag { font-size:11px; color:#9a7b4a; margin-bottom:12px; }
   .card .situ { font-size:13px; color:#6a6358; line-height:1.6; margin-bottom:14px; border-left:2px solid #b9a98c; padding-left:11px; text-align:left; }
   .card .situ b { color:#9a7b4a; }
-  .card .log { font-family:'Nanum Pen Script',cursive; font-size:21px; line-height:1.55; color:#544f45;
-    text-align:left; white-space:pre-line; border-top:1px solid #e2d9c6; padding-top:14px; }
+  .card .log { font-family:'Gowun Batang','Nanum Myeongjo',serif; font-size:16px; line-height:1.95; color:#4f4a40;
+    text-align:left; white-space:pre-line; letter-spacing:.2px; border-top:1px solid #e2d9c6; padding-top:15px; word-break:keep-all; }
   .card .reward { margin-top:14px; font-size:12px; color:#7a6a4a; line-height:1.7; }
   .card .reward .r { display:block; }
   .card button { margin-top:18px; width:100%; padding:12px; border:1px solid #b9a98c; background:transparent;
