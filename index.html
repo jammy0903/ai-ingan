@@ -43,7 +43,8 @@
   .warm b { color:#9a7b4a; }
 
   /* ---------- 지도 (스크롤 캔버스) ---------- */
-  #map { position:absolute; inset:0; z-index:2; overflow:auto; touch-action:pan-y; }
+  #map { position:absolute; inset:0; z-index:2; overflow:auto; touch-action:none; cursor:grab; }
+  #map.grabbing { cursor:grabbing; }
   #map::-webkit-scrollbar { width:0; height:0; }
   #canvas { position:relative; margin:0 auto; }
   #world { position:absolute; top:0; left:0; transform-origin:0 0; }
@@ -891,10 +892,22 @@ function addWalk(x,y){
 }
 // 길 페이지 = 핵심 손맛: 두드리면 걷는다
 $("#pageWalk").addEventListener("pointerdown", e=>addWalk(e.clientX, e.clientY));
-// 지도 페이지도 빈 공간 탭하면 걷기(노드/모달 제외)
+// 지도: 끌면 팬(이동), 짧게 누르면 걷기. 노드는 클릭(별도).
+let dragOn=false, dragMoved=false, dsx=0, dsy=0, dscL=0, dscT=0;
 map.addEventListener("pointerdown",e=>{
   if(e.target.closest(".node")) return;
-  addWalk(e.clientX, e.clientY);
+  if(window.__pinch) return;
+  dragOn=true; dragMoved=false; dsx=e.clientX; dsy=e.clientY; dscL=map.scrollLeft; dscT=map.scrollTop;
+});
+map.addEventListener("pointermove",e=>{
+  if(!dragOn || window.__pinch) return;
+  const dx=e.clientX-dsx, dy=e.clientY-dsy;
+  if(!dragMoved && Math.abs(dx)+Math.abs(dy)>6) { dragMoved=true; map.classList.add("grabbing"); }
+  if(dragMoved){ map.scrollLeft=dscL-dx; map.scrollTop=dscT-dy; }
+});
+window.addEventListener("pointerup",e=>{
+  if(dragOn && !dragMoved) addWalk(e.clientX, e.clientY);   // 안 끌었으면 = 탭 = 걷기
+  dragOn=false; map.classList.remove("grabbing");
 });
 
 function nudge(msg){ const h=$("#hint"); const old=h.textContent; h.textContent=msg;
@@ -1052,9 +1065,9 @@ document.getElementById('zout').addEventListener('click', ()=>setZoom(zoom/1.25)
 map.addEventListener('wheel', e=>{ if(e.ctrlKey){ e.preventDefault(); setZoom(zoom*(e.deltaY<0?1.12:0.9)); } }, {passive:false});
 let pinch=null;
 const tdist=t=>Math.hypot(t[0].clientX-t[1].clientX, t[0].clientY-t[1].clientY);
-map.addEventListener('touchstart', e=>{ if(e.touches.length===2) pinch={d:tdist(e.touches), z:zoom}; }, {passive:true});
+map.addEventListener('touchstart', e=>{ if(e.touches.length===2){ pinch={d:tdist(e.touches), z:zoom}; window.__pinch=true; } }, {passive:true});
 map.addEventListener('touchmove', e=>{ if(pinch&&e.touches.length===2) setZoom(pinch.z * tdist(e.touches)/pinch.d); }, {passive:true});
-map.addEventListener('touchend', e=>{ if(e.touches.length<2) pinch=null; });
+map.addEventListener('touchend', e=>{ if(e.touches.length<2){ pinch=null; window.__pinch=false; } });
 
 /* ---------- 페이지 전환 (거지키우기식: 길 ↔ 지도) ---------- */
 let curPage = "walk";
