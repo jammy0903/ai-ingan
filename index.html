@@ -667,25 +667,38 @@ const NODES = [
 ];
 const COST_MULT = 5;   // 난이도: 다음 단계가 5배 멀어지게(걸음 5배 더 모아야 발견·이동)
 const EDGES = NODES.filter(n=>n.parent).map(n=>[n.parent, n.id, n.cost*COST_MULT]);
-// 방사형 배치: start=중심, 자식들을 각도로 흩뿌리고 깊이만큼 바깥으로(반지름↑).
+// 유기적 가지 배치: 완벽한 원이 아니라 가지가 뻗듯 불규칙하게.
+// 결정적 지터(노드 id 해시)라 새로고침해도 모양은 그대로.
 function computeRadialLayout(){
   const kids={}; NODES.forEach(n=>kids[n.id]=[]);
   NODES.forEach(n=>{ if(n.parent) kids[n.parent].push(n.id); });
   const byId=Object.fromEntries(NODES.map(n=>[n.id,n]));
-  const RING=0.135;
-  (function assign(id,a0,a1,depth){
-    const n=byId[id], mid=(a0+a1)/2, r=depth*RING;
-    n.x=0.5 + r*Math.cos(mid); n.y=0.5 + r*Math.sin(mid);
-    if(id==="becoming") return;                 // 신체 챕터는 샘 둘레로 따로 배치
+  const hash=s=>{ let h=2166136261; for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619);} return ((h>>>0)%100000)/100000; }; // [0,1)
+  const RING=0.115;
+  (function assign(id, angle, radius, depth){
+    const n=byId[id];
+    n.x=0.5 + radius*Math.cos(angle); n.y=0.5 + radius*Math.sin(angle);
+    if(id==="becoming") return;                 // 신체 챕터는 샘 둘레로 따로
     const ch=kids[id].filter(c=> byId[c].chapter!=="body");
     const k=ch.length; if(!k) return;
-    const span=a1-a0;
-    ch.forEach((c,i)=> assign(c, a0+span*i/k, a0+span*(i+1)/k, depth+1));
-  })("start", -Math.PI/2, Math.PI*1.5, 0);   // 위(-90°)에서 시작해 한 바퀴
+    ch.forEach((c,i)=>{
+      let childAngle, seg=RING*(0.72 + hash(c)*0.75);            // 가지 길이 제각각
+      if(depth===0){                                            // 첫 고리: 원형이되 크게 흐트러뜨림
+        childAngle = (i/k)*Math.PI*2 - Math.PI/2 + (hash(c)-0.5)*1.0;
+        seg = RING*(0.95 + hash(c+"r")*0.85);
+      } else {                                                  // 깊은 가지: 부모 방향으로 자라며 갈라짐
+        const cone = Math.min(Math.PI*0.85, 0.5 + k*0.42);
+        const frac = k===1 ? 0 : (i/(k-1)-0.5);
+        childAngle = angle + frac*cone + (hash(c)-0.5)*cone*0.65;
+      }
+      assign(c, childAngle, radius+seg, depth+1);
+    });
+  })("start", -Math.PI/2, 0, 0);
   // 신체 11 기관계 = 샘(becoming) 둘레로 원형. 사람(human)은 바깥으로.
   const b=byId["becoming"], body=kids["becoming"].filter(c=>byId[c].type==="body"), rB=0.135;
-  body.forEach((c,i)=>{ const a=(i/body.length)*Math.PI*2 - Math.PI/2;
-    byId[c].x=b.x + rB*Math.cos(a); byId[c].y=b.y + rB*Math.sin(a); });
+  body.forEach((c,i)=>{ const a=(i/body.length)*Math.PI*2 - Math.PI/2 + (hash(c)-0.5)*0.55;
+    const rr=rB*(0.8+hash(c+"b")*0.5);
+    byId[c].x=b.x + rr*Math.cos(a); byId[c].y=b.y + rr*Math.sin(a); });
   const hu=byId["human"]; if(hu){ const dx=b.x-0.5, dy=b.y-0.5, len=Math.hypot(dx,dy)||1;
     hu.x=b.x + (dx/len)*0.17; hu.y=b.y + (dy/len)*0.17; }   // 샘에서 바깥쪽으로
   NODES.forEach(n=>{ n.x=Math.max(0.05,Math.min(0.95,n.x)); n.y=Math.max(0.05,Math.min(0.95,n.y)); }); // 캔버스 안으로
