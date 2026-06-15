@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>마음을 줍는 로봇 — 아트톤 C (수채화풍 잔잔)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700&family=Nanum+Pen+Script&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { height:100%; overflow:hidden; }
+  body {
+    font-family:'Nanum Myeongjo','Apple SD Gothic Neo','Batang',serif;
+    background:#1c1d1a; display:flex; justify-content:center; align-items:center;
+    color:#5a5750; user-select:none;
+  }
+  #app {
+    position:relative; width:100%; max-width:420px; height:100%; max-height:880px;
+    overflow:hidden;
+    background:#f3efe6;
+    box-shadow:0 24px 80px rgba(0,0,0,.5);
+  }
+  /* 종이 질감 (SVG 노이즈) */
+  #app::before { content:""; position:absolute; inset:0; pointer-events:none; opacity:.5; mix-blend-mode:multiply;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.35'/></svg>"); }
+  /* 위쪽 옅은 하늘 번짐 */
+  .sky { position:absolute; inset:0; pointer-events:none;
+    background:
+      radial-gradient(120% 60% at 70% 8%, rgba(180,200,210,.45), transparent 60%),
+      radial-gradient(90% 50% at 20% 0%, rgba(205,185,180,.35), transparent 55%),
+      linear-gradient(#eef0ea 0%, #f3efe6 45%); }
+
+  /* 수채 번짐 필터 */
+  svg.defs { position:absolute; width:0; height:0; }
+
+  /* 언덕 — 부드럽게 흐름 */
+  .scene { position:absolute; left:0; bottom:0; width:100%; height:62%; overflow:hidden; }
+  .hill { position:absolute; bottom:-2%; border-radius:50% 50% 42% 42%; filter:url(#paint) blur(.4px); opacity:.78; }
+  .h1 { width:80%; height:46%; left:-12%; background:#aebfa9; animation:drift 30s linear infinite; }
+  .h2 { width:78%; height:60%; left:40%;  background:#9fb1c2; animation:drift 22s linear infinite; opacity:.7; }
+  .h3 { width:74%; height:38%; left:78%;  background:#c9b3a6; animation:drift 16s linear infinite; opacity:.66; }
+  @keyframes drift { from{transform:translateX(0)} to{transform:translateX(-130%)} }
+  .ground { position:absolute; left:0; bottom:0; width:100%; height:18%;
+    background:#cdbfa6; filter:url(#paint); opacity:.8; }
+  .path { position:absolute; left:50%; bottom:0; transform:translateX(-50%); width:50%; height:20%;
+    background:#bda886; clip-path:polygon(44% 0,56% 0,100% 100%,0 100%); filter:url(#paint); opacity:.55; }
+
+  /* 만나는 사람 */
+  .person { position:absolute; bottom:20%; left:75%; transform:translateX(-50%); transition:opacity .8s; }
+  .person svg { display:block; filter:url(#paint); opacity:.9; }
+
+  /* 로봇 */
+  .robot-wrap { position:absolute; bottom:19%; left:33%; transform:translateX(-50%);
+    --p:0; animation:bob 4s ease-in-out infinite; }
+  @keyframes bob { 0%,100%{transform:translateX(-50%) translateY(0)} 50%{transform:translateX(-50%) translateY(-7px)} }
+  .robot { width:150px; height:auto; overflow:visible; filter:url(#paint); }
+  .robot .aura { fill:#e8cf9f; opacity:calc(var(--p)*.5); transition:opacity 1s; }
+  .robot .shadow { fill:rgba(90,87,80,.18); filter:none; }
+  .robot .body, .robot .head { fill:#c2c7c4; stroke:#a7aeaa; stroke-width:2.5; }
+  .robot .limb { fill:#a9b0ac; }
+  .robot .part { fill:#9aa19c; }
+  .robot .face { fill:#5d6a6b; }
+  .robot .eye  { fill:#7e9aa6; transition:fill 1s; }
+  .robot[style] .eye { fill:color-mix(in srgb,#7e9aa6 calc((1 - var(--p))*100%),#d9a86a); }
+  .robot .core { fill:#8aada6; opacity:calc(.3 + var(--p)*.7); transition:opacity 1s; }
+  .robot .core-inner { fill:#fbf6e8; opacity:calc(var(--p)*.85); }
+  .robot .antenna { stroke:#9aa19c; stroke-width:3.5; stroke-linecap:round; }
+  .robot .antenna-tip { fill:#c98f6a; }
+
+  /* 떠오르는 감정 입자 — 옅은 물방울 */
+  .mote { position:absolute; width:18px; height:18px; border-radius:50%; pointer-events:none;
+    background:radial-gradient(circle, rgba(255,255,255,.9), rgba(216,168,106,.55) 55%, transparent);
+    animation:rise 1.5s ease-out forwards; }
+  @keyframes rise { 0%{transform:translate(-50%,-50%) scale(.4); opacity:0}
+    25%{opacity:.9} 100%{transform:translate(-50%,-170px) scale(1); opacity:0} }
+
+  /* HUD */
+  .hud { position:absolute; top:0; left:0; right:0; padding:18px 20px 10px; z-index:5;
+    display:flex; flex-direction:column; gap:8px; }
+  .titlebar { display:flex; justify-content:space-between; align-items:baseline; }
+  .title { font-weight:700; font-size:19px; color:#54514a; letter-spacing:1px; }
+  .tone { font-size:11px; color:#8a857a; border:1px solid #c9c2b3; padding:3px 9px; border-radius:3px; }
+  .warm { font-size:13px; color:#7d756a; letter-spacing:.5px; }
+  .chips { display:flex; gap:7px; flex-wrap:wrap; }
+  .chip { font-size:12px; color:#7d6a52; border-bottom:1.5px solid #c9a86a;
+    padding:1px 3px; animation:fadein .8s ease; }
+  @keyframes fadein { from{opacity:0} to{opacity:1} }
+
+  .caption { position:absolute; left:22px; right:22px; bottom:23%; z-index:4;
+    font-size:15px; color:#5a564d; line-height:1.7; letter-spacing:.3px;
+    border-left:2px solid #b9a98c; padding-left:13px; transition:opacity .7s; }
+  .caption b { color:#9a7b4a; font-weight:700; }
+
+  .hint { position:absolute; left:0; right:0; bottom:5.5%; text-align:center; z-index:4;
+    font-family:'Nanum Pen Script',cursive; font-size:19px; color:#8a8071;
+    animation:breathe 2.6s ease-in-out infinite; }
+  @keyframes breathe { 0%,100%{opacity:.5} 50%{opacity:.95} }
+
+  .meter { position:absolute; left:22px; right:22px; bottom:13%; height:3px; z-index:4;
+    background:rgba(120,110,90,.2); }
+  .meter > i { display:block; height:100%; width:0%;
+    background:linear-gradient(90deg,#c9b08a,#c98f6a); transition:width .25s ease; }
+
+  /* 일기 카드 */
+  .diary { position:absolute; inset:0; z-index:20; display:none;
+    align-items:center; justify-content:center; padding:28px;
+    background:rgba(40,40,36,.42); }
+  .diary.show { display:flex; animation:fade .6s ease; }
+  @keyframes fade { from{opacity:0} to{opacity:1} }
+  .card { width:100%; max-width:330px; background:#f7f3ea; border:1px solid #ddd5c4;
+    padding:30px 26px 24px; text-align:center; position:relative;
+    box-shadow:0 24px 60px rgba(0,0,0,.35);
+    animation:risein .7s ease; }
+  .card::after { content:""; position:absolute; inset:0; pointer-events:none; opacity:.4; mix-blend-mode:multiply;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.3'/></svg>"); }
+  @keyframes risein { from{transform:translateY(30px); opacity:0} to{transform:none; opacity:1} }
+  .card .badge { font-size:12px; color:#9a8a6a; letter-spacing:3px; }
+  .card .emo { font-size:28px; font-weight:700; color:#7a6440; margin:8px 0 16px;
+    border-bottom:1px solid #d8cdb6; padding-bottom:14px; }
+  .card .log { font-family:'Nanum Pen Script',cursive; font-size:23px; line-height:1.6; color:#544f45;
+    text-align:left; white-space:pre-line; }
+  .card button { margin-top:24px; width:100%; padding:13px; border:1px solid #b9a98c;
+    background:transparent; font-family:'Nanum Myeongjo',serif; font-weight:700; font-size:15px;
+    color:#7a6a4a; letter-spacing:2px; cursor:pointer; transition:background .2s; }
+  .card button:active { background:#ece3d0; }
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- 수채 번짐 필터 정의 -->
+  <svg class="defs">
+    <filter id="paint">
+      <feTurbulence type="fractalNoise" baseFrequency="0.012 0.018" numOctaves="2" seed="7" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="9" xChannelSelector="R" yChannelSelector="G"/>
+      <feGaussianBlur stdDeviation="0.5"/>
+    </filter>
+  </svg>
+
+  <div class="sky"></div>
+  <div class="scene">
+    <div class="hill h1"></div><div class="hill h2"></div><div class="hill h3"></div>
+    <div class="ground"></div>
+    <div class="path"></div>
+  </div>
+
+  <div class="hud">
+    <div class="titlebar">
+      <div class="title">마음을 줍는 로봇 <span style="font-size:12px;color:#9a917f">(가제)</span></div>
+      <div class="tone">아트톤 C · 수채화</div>
+    </div>
+    <div class="warm">마음 온도 · <span id="warmPct">0</span>%</div>
+    <div class="chips" id="chips"></div>
+  </div>
+
+  <div class="person" id="person">
+    <svg width="80" height="124" viewBox="0 0 80 124">
+      <ellipse cx="40" cy="118" rx="24" ry="5" fill="rgba(90,87,80,.18)"/>
+      <rect x="22" y="50" width="36" height="60" rx="14" id="pBody" fill="#a7b3a0"/>
+      <circle cx="40" cy="36" r="19" fill="#e8d6c2"/>
+      <path d="M21 33 a19 19 0 0 1 38 0 v-3 a19 19 0 0 0 -38 0z" id="pHair" fill="#766253"/>
+    </svg>
+  </div>
+
+  <div class="robot-wrap" id="robotWrap" style="--p:0">
+    <svg class="robot" viewBox="0 0 220 270">
+      <circle class="aura" cx="110" cy="150" r="96"/>
+      <ellipse class="shadow" cx="110" cy="256" rx="54" ry="11"/>
+      <rect class="limb" x="44" y="124" width="15" height="64" rx="7"/>
+      <rect class="limb" x="161" y="124" width="15" height="64" rx="7"/>
+      <rect class="limb" x="86" y="200" width="15" height="38" rx="7"/>
+      <rect class="limb" x="119" y="200" width="15" height="38" rx="7"/>
+      <ellipse class="part" cx="88" cy="240" rx="17" ry="9"/>
+      <ellipse class="part" cx="132" cy="240" rx="17" ry="9"/>
+      <rect class="body" x="62" y="120" width="96" height="96" rx="34"/>
+      <circle class="core" cx="110" cy="166" r="19"/>
+      <circle class="core-inner" cx="110" cy="166" r="9"/>
+      <rect class="head" x="68" y="44" width="84" height="74" rx="32"/>
+      <rect class="face" x="80" y="58" width="60" height="44" rx="20"/>
+      <circle class="eye" cx="100" cy="80" r="7.5"/>
+      <circle class="eye" cx="124" cy="80" r="7.5"/>
+      <line class="antenna" x1="110" y1="44" x2="110" y2="24"/>
+      <circle class="antenna-tip" cx="110" cy="20" r="6"/>
+    </svg>
+  </div>
+
+  <div class="caption" id="caption"></div>
+  <div class="meter"><i id="meterFill"></i></div>
+  <div class="hint" id="hint">화면을 가만히 두드려, 이 순간을 느껴보세요</div>
+
+  <div class="diary" id="diary">
+    <div class="card">
+      <div class="badge">하나의 감정을 알게 되다</div>
+      <div class="emo" id="cardEmo"></div>
+      <div class="log" id="cardLog"></div>
+      <button id="nextBtn">다음 길로</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const EMOTIONS = [
+  { name:"그리움", color:"#b39ac0", hair:"#766253",
+    situation:"버스 정류장. 한 사람이 떠나고, <b>남은 이가 손을 오래 흔든다.</b>",
+    log:"오늘 한 사람이 떠나는 걸 보았다.\n남은 사람은 버스가 사라진 뒤에도\n한참을 손 흔들었다.\n\n나는 '그리움'을 알았다.\n— 곁에 없어도 자꾸 떠오르는 것.\n\n나는… 누구를 그리워하게 될까." },
+  { name:"슬픔", color:"#8fa8c2", hair:"#454545",
+    situation:"길가에서 <b>한 아이가 울고 있다.</b> 눈에서 물이 흐른다.",
+    log:"아이의 눈에서 물이 흘렀다.\n처음엔 고장인 줄 알았다.\n\n곁에 가만히 앉아 있었더니\n내 가슴 어딘가도 무거워졌다.\n\n이게… '슬픔'이구나." },
+  { name:"온기", color:"#cda877", hair:"#5a4030",
+    situation:"낯선 이가 말없이 <b>따뜻한 빵을 건넨다.</b> 그리고 웃는다.",
+    log:"낯선 이가 따뜻한 빵을 건넸다.\n이유를 묻자 그냥 웃기만 했다.\n\n받을 자격을 계산하던 회로가\n조용히 멈췄다.\n\n이게 '온기'인가 보다." },
+  { name:"용기", color:"#9bb59a", hair:"#4a4a2a",
+    situation:"무너진 다리 앞. 한 사람이 <b>떨리는 손으로 첫발</b>을 내딛는다.",
+    log:"그 사람의 손은 떨리고 있었다.\n그런데도 발을 내디뎠다.\n\n두려움이 사라져서가 아니라\n두려움을 안고도 가는 것 —\n\n그걸 '용기'라 부른다고 적어둔다." },
+];
+
+let idx = 0, fill = 0, unlocked = 0;
+const NEED = 10;
+const app = document.getElementById('app');
+const meterFill = document.getElementById('meterFill');
+const caption = document.getElementById('caption');
+const robotWrap = document.getElementById('robotWrap');
+const chips = document.getElementById('chips');
+const warmPct = document.getElementById('warmPct');
+const diary = document.getElementById('diary');
+const hint = document.getElementById('hint');
+
+function loadScene() {
+  const e = EMOTIONS[idx];
+  caption.innerHTML = e.situation;
+  document.getElementById('pBody').setAttribute('fill', e.color);
+  document.getElementById('pHair').setAttribute('fill', e.hair);
+  caption.style.opacity = 1; hint.style.opacity = '';
+}
+
+function feel(x, y) {
+  if (diary.classList.contains('show')) return;
+  if (fill >= NEED) return;
+  fill++;
+  meterFill.style.width = (fill / NEED * 100) + '%';
+  const m = document.createElement('div');
+  m.className = 'mote';
+  m.style.left = x + 'px'; m.style.top = y + 'px';
+  app.appendChild(m);
+  setTimeout(() => m.remove(), 1500);
+  if (fill >= NEED) unlock();
+}
+
+function unlock() {
+  const e = EMOTIONS[idx];
+  unlocked++;
+  const p = Math.min(unlocked / EMOTIONS.length, 1);
+  robotWrap.style.setProperty('--p', p);
+  warmPct.textContent = Math.round(p * 100);
+  const chip = document.createElement('div');
+  chip.className = 'chip'; chip.textContent = e.name;
+  chips.appendChild(chip);
+  document.getElementById('cardEmo').textContent = '『 ' + e.name + ' 』';
+  document.getElementById('cardLog').textContent = e.log;
+  caption.style.opacity = 0; hint.style.opacity = 0;
+  setTimeout(() => diary.classList.add('show'), 350);
+}
+
+document.getElementById('nextBtn').addEventListener('click', () => {
+  diary.classList.remove('show');
+  idx = (idx + 1) % EMOTIONS.length;
+  fill = 0; meterFill.style.width = '0%';
+  loadScene();
+});
+
+app.addEventListener('pointerdown', (ev) => {
+  const r = app.getBoundingClientRect();
+  feel(ev.clientX - r.left, ev.clientY - r.top);
+});
+
+loadScene();
+</script>
+</body>
+</html>
