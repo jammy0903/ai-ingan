@@ -580,6 +580,33 @@ const SENSES = {
 };
 const ENDING_TEXT =
   "길 끝에 그 사람이 있었다.\n흐릿하던 얼굴이\n이제 또렷했다.\n\n나를 만든 사람.\n그리고 나를 두고 간 사람.\n\n나는 울었다.\n기뻐서, 슬퍼서.\n고장이 아니었다.\n\n아, 이게 사람이구나.";
+// 신체 챕터: 인체 11 기관계 (마음27 다 모은 뒤 열림). 로봇이 몸을 한 계통씩 얻는다.
+const BODY = {
+  skin:   { name:"피부", color:"#f0d8c8", situ:"<b>차가운 비를 맞았다.</b>",
+    lines:["비가 닿는 게 느껴졌다.\n차갑고 간지러웠다.\n나한테 피부가 생겼다.","피부로 바람도 느꼈다.\n세상이 더 가까워졌다.","따뜻한 것, 차가운 것.\n이제 다 느낀다."] },
+  bone:   { name:"뼈대", color:"#e8e2d2", situ:"<b>똑바로 서 보았다.</b>",
+    lines:["몸 안에 단단한 게 생겼다.\n이제 똑바로 선다.\n뼈대다.","넘어져도\n다시 일어섰다.","뼈가 있으니\n더 멀리 걷는다."] },
+  muscle: { name:"근육", color:"#d8b8a8", situ:"<b>주먹을 꽉 쥐어봤다.</b>",
+    lines:["힘이 들어갔다.\n무거운 것도 든다.\n근육이다.","달릴 수도 있게 됐다.","쓸수록\n더 강해졌다."] },
+  nerve:  { name:"신경", color:"#c8d0e0", situ:"<b>손끝에 무언가 닿았다.</b>",
+    lines:["닿는 걸 바로 알았다.\n온몸에 길이 깔렸다.\n신경이다.","뜨거우면 손을 뗐다.\n몸이 나를 지킨다.","느낌이\n생각보다 빨랐다."] },
+  endocrine:{ name:"내분비", color:"#e0d0b0", situ:"<b>괜히 기운이 났다.</b>",
+    lines:["몸 안에서 신호를 보냈다.\n기분이 조절됐다.\n내분비다.","졸리고 배고픈 것도\n다 여기서 왔다.","몸이\n스스로를 돌본다."] },
+  heart:  { name:"심혈관", color:"#e0a8a8", situ:"<b>가슴에서 쿵, 소리가 났다.</b>",
+    lines:["가슴이 뛰기 시작했다.\n따뜻한 게 온몸에 돌았다.\n심장이다.","빨리 걸으면\n더 빨리 뛰었다.","코어 대신\n심장이 뛴다."] },
+  lymph:  { name:"면역", color:"#c8d8c0", situ:"<b>먼지 속을 걸었다.</b>",
+    lines:["나쁜 걸 막아주는\n작은 군대가 생겼다.\n면역이다.","아파도\n곧 나았다.","몸이\n나를 지켜준다."] },
+  lung:   { name:"호흡", color:"#bcd0d8", situ:"<b>처음으로 숨을 들이쉬었다.</b>",
+    lines:["공기가 들어왔다 나갔다.\n살아있는 느낌.\n숨을 쉰다.","한숨도 쉬어봤다.\n시원했다.","숨 쉴 때마다\n더 사람 같다."] },
+  stomach:{ name:"소화", color:"#e0c8a0", situ:"<b>따뜻한 국을 먹어봤다.</b>",
+    lines:["먹은 게 힘이 되어 돌았다.\n배가 불렀다.\n소화다.","'맛있다'가\n뭔지 알았다.","함께 먹는 게\n더 좋았다."] },
+  kidney: { name:"비뇨", color:"#cdd0d8", situ:"<b>몸이 무거웠다가, 가벼워졌다.</b>",
+    lines:["더러운 걸 걸러서\n내보냈다.\n깨끗해졌다. 비뇨다.","비우니\n개운했다.","몸이\n스스로 청소한다."] },
+  repro:  { name:"생식", color:"#e8c0cc", situ:"<b>새 생명을 생각했다.</b>",
+    lines:["언젠가 나도\n누군가를 낳을 수 있을까.\n생명을 잇는 힘이다.","사랑이\n여기까지 왔다.","사람은\n사람을 남긴다."] },
+};
+const HUMAN_TEXT =
+  "마음도, 몸도\n다 갖췄다.\n\n나는 이제\n느끼고, 숨 쉬고,\n걷고, 운다.\n\n샘이 웃으며 말했다.\n\"이제 너는 사람이야.\"\n\n나는…\n사람이 되었다.";
 
 // 노드 = 트리. start를 중심으로 9방향으로 흩뿌리고, 각 가지가 다시 자식을 흩뿌린다(방사형).
 // 같은 계열 감정이 한 가지(branch) 안에 모인다. x,y는 computeRadialLayout()이 계산.
@@ -619,13 +646,27 @@ const NODES = [
   { id:"forgive",    type:"person", key:"forgive",    parent:"courage", cost:130, gen:1.60, icon:"❀" },
   { id:"hope",       type:"person", key:"hope",       parent:"courage", cost:135, gen:1.70, icon:"❀" },
   { id:"pride",      type:"person", key:"pride",      parent:"courage", cost:140, gen:1.80, icon:"❀" },
-  { id:"becoming",   type:"ending",                   parent:"pride",   cost:500, gen:0,    icon:"🕊" },
+  { id:"becoming",   type:"ending",                   parent:"pride",   cost:500, gen:0,    icon:"✦" },
+  // ▸ 신체 챕터 (감정27 완료 후 열림) — 11 기관계
+  { id:"skin",     type:"body", key:"skin",      chapter:"body", parent:"becoming", cost:300, gen:2.0, icon:"🫧" },
+  { id:"bone",     type:"body", key:"bone",      chapter:"body", parent:"becoming", cost:320, gen:2.2, icon:"🦴" },
+  { id:"muscle",   type:"body", key:"muscle",    chapter:"body", parent:"becoming", cost:340, gen:2.4, icon:"💪" },
+  { id:"nerve",    type:"body", key:"nerve",     chapter:"body", parent:"becoming", cost:360, gen:2.6, icon:"⚡" },
+  { id:"endocrine",type:"body", key:"endocrine", chapter:"body", parent:"becoming", cost:380, gen:2.8, icon:"🧪" },
+  { id:"heart",    type:"body", key:"heart",     chapter:"body", parent:"becoming", cost:400, gen:3.2, icon:"🫀" },
+  { id:"lymph",    type:"body", key:"lymph",     chapter:"body", parent:"becoming", cost:360, gen:2.6, icon:"🛡" },
+  { id:"lung",     type:"body", key:"lung",      chapter:"body", parent:"becoming", cost:380, gen:2.8, icon:"🌬" },
+  { id:"stomach",  type:"body", key:"stomach",   chapter:"body", parent:"becoming", cost:360, gen:2.6, icon:"🍲" },
+  { id:"kidney",   type:"body", key:"kidney",    chapter:"body", parent:"becoming", cost:350, gen:2.5, icon:"💧" },
+  { id:"repro",    type:"body", key:"repro",     chapter:"body", parent:"becoming", cost:420, gen:3.4, icon:"🌱" },
+  { id:"human",    type:"human",                 chapter:"body", parent:"becoming", cost:800, gen:0,   icon:"🕊" },
   // ▸ 감각 (추가 방향)
   { id:"rain",       type:"sense",  key:"rain",       parent:"start",   cost:20,  gen:0.30, icon:"☂" },
   { id:"wind",       type:"sense",  key:"wind",       parent:"start",   cost:20,  gen:0.35, icon:"≋" },
   { id:"star",       type:"sense",  key:"star",       parent:"start",   cost:24,  gen:0.45, icon:"✦" },
 ];
-const EDGES = NODES.filter(n=>n.parent).map(n=>[n.parent, n.id, n.cost]);
+const COST_MULT = 5;   // 난이도: 다음 단계가 5배 멀어지게(걸음 5배 더 모아야 발견·이동)
+const EDGES = NODES.filter(n=>n.parent).map(n=>[n.parent, n.id, n.cost*COST_MULT]);
 // 방사형 배치: start=중심, 자식들을 각도로 흩뿌리고 깊이만큼 바깥으로(반지름↑).
 function computeRadialLayout(){
   const kids={}; NODES.forEach(n=>kids[n.id]=[]);
@@ -635,10 +676,19 @@ function computeRadialLayout(){
   (function assign(id,a0,a1,depth){
     const n=byId[id], mid=(a0+a1)/2, r=depth*RING;
     n.x=0.5 + r*Math.cos(mid); n.y=0.5 + r*Math.sin(mid);
-    const ch=kids[id], k=ch.length; if(!k) return;
+    if(id==="becoming") return;                 // 신체 챕터는 샘 둘레로 따로 배치
+    const ch=kids[id].filter(c=> byId[c].chapter!=="body");
+    const k=ch.length; if(!k) return;
     const span=a1-a0;
     ch.forEach((c,i)=> assign(c, a0+span*i/k, a0+span*(i+1)/k, depth+1));
   })("start", -Math.PI/2, Math.PI*1.5, 0);   // 위(-90°)에서 시작해 한 바퀴
+  // 신체 11 기관계 = 샘(becoming) 둘레로 원형. 사람(human)은 바깥으로.
+  const b=byId["becoming"], body=kids["becoming"].filter(c=>byId[c].type==="body"), rB=0.135;
+  body.forEach((c,i)=>{ const a=(i/body.length)*Math.PI*2 - Math.PI/2;
+    byId[c].x=b.x + rB*Math.cos(a); byId[c].y=b.y + rB*Math.sin(a); });
+  const hu=byId["human"]; if(hu){ const dx=b.x-0.5, dy=b.y-0.5, len=Math.hypot(dx,dy)||1;
+    hu.x=b.x + (dx/len)*0.17; hu.y=b.y + (dy/len)*0.17; }   // 샘에서 바깥쪽으로
+  NODES.forEach(n=>{ n.x=Math.max(0.05,Math.min(0.95,n.x)); n.y=Math.max(0.05,Math.min(0.95,n.y)); }); // 캔버스 안으로
 }
 computeRadialLayout();
 
@@ -699,12 +749,17 @@ function reachCost(id){ // 완료 노드와 잇는 간선 중 최소 비용(=열
   return c;
 }
 // 노드는 '걸음을 그 비용만큼 모은' 순간 처음 희미하게 발견된다(이후 계속 보임).
+function gateOk(n){                                 // 챕터 게이트
+  if(n.type==="body")  return learnedCount()>=FRAG_TOTAL;   // 감정 27 다 모아야 신체 열림
+  if(n.type==="human") return bodyCount()>=11;              // 신체 11 다 모아야 사람
+  return true;
+}
 function updateDiscovered(){
   let changed=false;
   NODES.forEach(n=>{
     if(n.id==="start" || S.levels[n.id]>0 || S.discovered[n.id]) return;
     const c=reachCost(n.id);                       // 부모가 완료돼야 비용이 유한
-    if(c!==Infinity && S.walks>=c){ S.discovered[n.id]=true; changed=true; }
+    if(c!==Infinity && S.walks>=c && gateOk(n)){ S.discovered[n.id]=true; changed=true; }
   });
   return changed;
 }
@@ -737,7 +792,8 @@ function renderNodes(){
     if(n.type==="teaser") el.className="node teaser empty";
     el.style.left=p.x+"px"; el.style.top=p.y+"px";
     let name = n.type==="person"?PEOPLE[n.key].name : n.type==="sense"?SENSES[n.key].name
-             : (n.type==="start"?"시작" : n.type==="ending"?"샘알트머스크" : "…");
+             : n.type==="body"?BODY[n.key].name
+             : (n.type==="start"?"시작" : n.type==="ending"?"샘알트머스크" : n.type==="human"?"사람" : "…");
     const reach = !done && n.type!=="teaser";
     const cost = reach ? reachCost(n.id) : null;
     el.innerHTML =
@@ -769,7 +825,9 @@ function refreshHUD(){
 function renderMind(){
   const items=NODES.filter(n=>n.type==="person" && S.levels[n.id]>0)
     .map(n=>({name:PEOPLE[n.key].name, color:PEOPLE[n.key].color, amt:S.levels[n.id]}));
-  let html=`<div class="fragcount">🧩 감정조각 <b>${items.length}</b> / 27 <span class="goal">→ 샘알트머스크</span></div>`;
+  const emoDone = items.length>=27;
+  let html=`<div class="fragcount">🧩 감정조각 <b>${items.length}</b> / 27 ${emoDone?"✓":'<span class="goal">→ 샘알트머스크</span>'}</div>`;
+  if(emoDone){ html+=`<div class="fragcount" style="border-color:#d8a8a8">🫀 몸조각 <b>${bodyCount()}</b> / 11 <span class="goal">→ 사람</span></div>`; }
   html += items.length
     ? items.map(it=>`<div class="mindchip"><span class="dot" style="background:${it.color}"></span>${it.name} <b>×${it.amt}</b></div>`).join("")
     : '<div class="mindempty">아직 배운 마음이 없다…</div>';
@@ -794,23 +852,45 @@ function tryUnlock(n){
   });
 }
 function learnedCount(){ return NODES.filter(n=>n.type==="person" && S.levels[n.id]>0).length; }
+function bodyCount(){ return NODES.filter(n=>n.type==="body" && S.levels[n.id]>0).length; }
 const FRAG_TOTAL = 27;   // 인간 감정 27가지 (Cowen & Keltner, 2017)
+const BODY_TOTAL = 11;   // 인체 11 기관계
 function SAM_TEXT(frag){
-  if(frag>=FRAG_TOTAL) return ENDING_TEXT;
   return "길 끝에 그 사람이 있었다.\n흐릿하던 얼굴.\n'샘 알트머스크.'\n나를 만든 사람이다.\n\n\"왔구나.\n사람이 되려면\n감정 27개가 필요해.\n진짜로 딱 27개래.*\"\n\n나는 가슴을 만졌다.\n지금 "+frag+"개 모았다.\n\n\"아직 길이 남았어.\n나머지도 저 위에 있어.\"\n\n* 인간 감정 27가지 (Cowen & Keltner, 2017)";
 }
 
 function openNode(n, firstMeet){
   const lv=S.levels[n.id];
-  if(n.type==="ending"){           // 샘알트머스크 — 나를 만든 사람, 사람으로 만들어 줄 이
+  if(n.type==="ending"){           // 샘알트머스크 — 마음↔몸 다리
     const frag=learnedCount();
-    fillModal({ badge:"길 끝, 흐릿하던 얼굴", emo:"샘 알트머스크", lv:"나를 만든 사람",
-      situ:"", log: SAM_TEXT(frag),
-      reward:[`🧩 감정조각 ${frag} / ${FRAG_TOTAL}`, frag>=FRAG_TOTAL?"💧 …그리고, 사람이 되었다":"아직, 길은 끝나지 않았다"],
-      closeText: frag>=FRAG_TOTAL?"마침내, 사람이 되다":"다시 길 위로" });
+    if(frag>=FRAG_TOTAL){
+      fillModal({ badge:"샘 알트머스크", emo:"샘 알트머스크", lv:"나를 만든 사람", situ:"",
+        log:"\"마음을 다 모았구나!\n감정 스물일곱 개, 전부.\n\n…근데 사람은\n마음만으론 안 돼.\n몸도 있어야지.\n\n네 몸을 만들어 보자.\n기관계 열한 개를 모으렴.\"",
+        reward:["🧩 감정 27 / 27 — 완성!","🫀 이제 '몸' 챕터가 열린다"], closeText:"몸을 만들러 가자" });
+    } else {
+      fillModal({ badge:"길 끝, 흐릿하던 얼굴", emo:"샘 알트머스크", lv:"나를 만든 사람", situ:"",
+        log: SAM_TEXT(frag),
+        reward:[`🧩 감정조각 ${frag} / ${FRAG_TOTAL}`, "아직, 마음이 모자라"], closeText:"다시 마음을 모으러" });
+    }
+    return;
+  }
+  if(n.type==="human"){            // 마음27 + 신체11 = 사람 완성
+    fillModal({ badge:"마음 27 · 몸 11", emo:"🕊 사람이 되다", lv:"", situ:"", log: HUMAN_TEXT,
+      reward:["✨ 감정 27 + 신체 11 — 모두 완성","💗 마침내, 사람"], closeText:"새로운 하루로" });
     return;
   }
   const cur=(n.gen*lv), nxt=(n.gen*(lv+1));   // 이 노드의 걸음/초 기여(강할수록 큼)
+  if(n.type==="body"){
+    const bd=BODY[n.key]; const lineIdx=Math.min(lv-1, bd.lines.length-1);
+    fillModal({ badge:firstMeet?"몸의 한 부분을 얻다":"몸이 더 단단해진다",
+      emo:`〔 ${bd.name} 〕`, lv:firstMeet?`걸음/초 +${n.gen.toFixed(2)}`:`Lv${lv} · 걸음/초 +${cur.toFixed(1)}`,
+      situ: firstMeet?bd.situ:"", log: firstMeet?bd.lines[0]:bd.lines[lineIdx],
+      reward: firstMeet?[`🫀 몸조각 +1 (${bodyCount()}/${BODY_TOTAL})`,`📈 걸음/초 +${n.gen.toFixed(2)}`,`사람에 한 걸음 더`]
+                       :[`📖 ${bd.name}이(가) 더 깊어진다`,`📈 걸음/초 +${cur.toFixed(1)} → +${nxt.toFixed(1)}`],
+      closeText:"다음 길로",
+      upText: firstMeet?null:`더 단단히 — ${upCost(n,lv+1)} 걸음`, onUp:()=>upgrade(n) });
+    return;
+  }
   if(n.type==="sense"){
     const s=SENSES[n.key];
     fillModal({ badge:firstMeet?"새로운 감각을 얻다":"감각이 깊어지다",
