@@ -99,7 +99,7 @@
   @keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
 
   /* 길 페이지 걷기 로봇 (옆모습) — 걸음당 1보(이벤트 구동, 상시 루프 아님) */
-  #walkRobot { position:absolute; left:44%; bottom:21%; width:138px; z-index:3; pointer-events:none; transform:translateX(-50%); }
+  #walkRobot { position:absolute; left:44%; bottom:9%; width:132px; z-index:4; pointer-events:none; transform:translateX(-50%); }
   #walkRobot svg { width:100%; filter:url(#paintSoft) drop-shadow(0 5px 6px rgba(70,66,60,.20)); }
   @keyframes stepbob { 0%{transform:translateY(0)} 38%{transform:translateY(-6px)} 100%{transform:translateY(0)} }
   /* 다리·팔: 한 보마다 전후 스탠스 전환 (걸음이 들어올 때만) */
@@ -148,6 +148,25 @@
   /* 길 점선: 한 보마다 한 칸 전진 (상시 흐름 아님) */
   #pageWalk .roadline { position:absolute; left:0; bottom:7%; width:100%; height:3px; opacity:.5;
     background:repeating-linear-gradient(90deg,#bda886 0 26px,transparent 26px 54px); transition:background-position .16s ease-out; }
+  /* 하늘의 마음 보유 표시 */
+  #mindsky { position:absolute; top:10px; left:14px; right:14px; z-index:5; display:flex; flex-wrap:wrap; gap:6px; pointer-events:none; }
+  .mindchip { font-size:12px; color:#6a6358; background:rgba(247,243,234,.62); border:1px solid rgba(150,140,120,.32);
+    border-radius:12px; padding:3px 9px; display:flex; align-items:center; gap:5px; animation:fadein .6s ease; }
+  .mindchip .dot { width:9px; height:9px; border-radius:50%; box-shadow:0 0 0 2px rgba(255,255,255,.5); }
+  .mindchip b { color:#7a6440; }
+  .mindempty { font-family:'Nanum Pen Script',cursive; font-size:15px; color:#9a917f; opacity:.7; }
+  @keyframes fadein { from{opacity:0; transform:translateY(-4px)} to{opacity:1; transform:none} }
+
+  /* 새 (하늘) + 꽃·동물 (땅) */
+  #birds, #gprops { position:absolute; left:0; right:0; pointer-events:none; }
+  #birds { top:0; height:46%; z-index:3; }
+  #gprops { bottom:0; height:20%; z-index:3; }
+  .bird { position:absolute; animation-name:birdfly; animation-timing-function:linear; animation-fill-mode:forwards; }
+  @keyframes birdfly { from{ left:106%; } to{ left:-16%; } }
+  .bird svg { display:block; animation:flap .5s ease-in-out infinite; }
+  @keyframes flap { 0%,100%{transform:scaleY(1)} 50%{transform:scaleY(.6)} }
+  .gprop { position:absolute; bottom:8%; left:0; filter:url(#paint); transition:transform .16s ease-out; will-change:transform; }
+
   .walkhint { position:absolute; left:0; right:0; bottom:4%; text-align:center; z-index:4;
     font-family:'Nanum Pen Script',cursive; font-size:18px; color:#8a8071; animation:breathe 2.6s ease-in-out infinite; }
   @keyframes breathe { 0%,100%{opacity:.55} 50%{opacity:1} }
@@ -219,11 +238,14 @@
   <!-- ============ 길 페이지 (옆모습 걷기 현장) ============ -->
   <div id="pageWalk" class="page active">
     <div class="sky"></div>
+    <div id="birds"></div>
     <div class="scene">
       <div class="hill h1"></div><div class="hill h2"></div><div class="hill h3"></div>
       <div class="ground"></div>
       <div class="roadline"></div>
+      <div id="gprops"></div>
     </div>
+    <div id="mindsky"></div>
 
     <div id="walkRobot">
       <svg class="bot" viewBox="0 0 170 200">
@@ -428,6 +450,7 @@ const $ = s => document.querySelector(s);
 const app=$("#app");
 const map=$("#map"), canvas=$("#canvas"), world=$("#world"), edgesSvg=$("#edges"), robot=$("#robot");
 const walkRobot=$("#walkRobot"), roadEl=$("#pageWalk .roadline");
+const mindsky=$("#mindsky"), birdsEl=$("#birds"), gpropsEl=$("#gprops");
 const elWalks=$("#walks"), elRate=$("#rate"), elWarm=$("#warm");
 const modal=$("#modal");
 
@@ -520,6 +543,16 @@ function refreshHUD(){
   const p=Math.min(totalLv/12,1);
   elWarm.textContent=Math.round(p*100);
   app.style.setProperty("--p",p);   // 두 로봇 공유(상속)
+  renderMind();
+}
+// 하늘에 현재 가진 마음 종류 + 각각의 양(=재회 깊이 레벨)
+function renderMind(){
+  const items=NODES.filter(n=>n.type==="person" && S.levels[n.id]>0)
+    .map(n=>({name:PEOPLE[n.key].name, color:PEOPLE[n.key].color, amt:S.levels[n.id]}));
+  if(!items.length){ mindsky.innerHTML='<div class="mindempty">아직 배운 마음이 없다…</div>'; return; }
+  mindsky.innerHTML = items.map(it=>
+    `<div class="mindchip"><span class="dot" style="background:${it.color}"></span>${it.name} <b>×${it.amt}</b></div>`
+  ).join("");
 }
 function renderAll(){ sizeCanvas(); renderEdges(); renderNodes(); placeRobot(); refreshHUD(); }
 
@@ -597,6 +630,8 @@ function stepOnce(){
   svg.style.animation="none"; void svg.offsetWidth; svg.style.animation="stepbob .26s ease-out";
   worldX += 27;                                        // 길 한 칸 전진(점선 주기 54 → 반칸씩 교차)
   roadEl.style.backgroundPosition = (-(worldX%54))+"px 0";
+  advanceGProps(27);                                   // 꽃·동물도 한 칸 흐른다
+  if(Math.random()<0.085) spawnGProp();                // 가끔 새 오브젝트 등장
 }
 // S.walks의 정수 자리가 늘 때마다 그만큼 보(步). 줄어들면(소비) 보 없이 동기화만.
 function syncSteps(){ const w=Math.floor(S.walks); if(w>wholeWalks) stepOnce(); wholeWalks=w; }
@@ -628,6 +663,35 @@ function spark(){ const rb=robot.getBoundingClientRect();
   for(let i=0;i<6;i++){ const m=document.createElement("div"); m.className="mote";
     m.style.left=(cx+(Math.random()*40-20))+"px"; m.style.top=cy+"px";
     document.body.appendChild(m); setTimeout(()=>m.remove(),1300); } }
+
+/* ---------- 풍경 생물: 새(하늘) · 꽃/동물(땅) ---------- */
+function BIRD_SVG(){ return `<svg width="26" height="14" viewBox="0 0 26 14"><path d="M1 9 Q6 2 13 8 Q20 2 25 9" fill="none" stroke="#8a8f96" stroke-width="2" stroke-linecap="round" opacity=".55"/></svg>`; }
+function FLOWER_SVG(){ const pal=[["#f0c0c8","#e7aeb8"],["#cdbfe2","#bcabd6"],["#bcd0e6","#a9c2dd"],["#efd6ac","#e6c48c"]];
+  const c=pal[Math.floor(Math.random()*pal.length)];
+  return `<svg width="22" height="32" viewBox="0 0 22 32"><line x1="11" y1="32" x2="11" y2="15" stroke="#7d9b6e" stroke-width="2"/><circle cx="6" cy="11" r="3.6" fill="${c[1]}"/><circle cx="16" cy="11" r="3.6" fill="${c[1]}"/><circle cx="11" cy="7" r="3.6" fill="${c[1]}"/><circle cx="11" cy="11" r="4.4" fill="${c[0]}"/><circle cx="11" cy="11" r="2" fill="#f6e6c0"/></svg>`; }
+function ANIMAL_SVG(){ const t="#b0a896"; return `<svg width="34" height="26" viewBox="0 0 34 26"><ellipse cx="19" cy="18" rx="12" ry="7" fill="${t}"/><circle cx="8" cy="13" r="5.2" fill="${t}"/><path d="M5 9 q-1 -8 2.5 -8 q1.2 4 -.2 8z" fill="${t}"/><ellipse cx="30" cy="22" rx="3.2" ry="2.4" fill="#9a9384"/><circle cx="6" cy="13" r="1" fill="#5a554c"/></svg>`; }
+
+const gprops=[];
+function spawnGProp(){
+  const W = gpropsEl.clientWidth || 380;
+  const wrap=document.createElement("div"); wrap.className="gprop";
+  wrap.innerHTML = Math.random()<0.7 ? FLOWER_SVG() : ANIMAL_SVG();
+  gpropsEl.appendChild(wrap);
+  const x = W + 24; wrap.style.transform=`translateX(${x}px)`;
+  gprops.push({el:wrap, x});
+}
+function advanceGProps(d){
+  for(let i=gprops.length-1;i>=0;i--){ const g=gprops[i]; g.x-=d; g.el.style.transform=`translateX(${g.x}px)`;
+    if(g.x < -50){ g.el.remove(); gprops.splice(i,1); } }
+}
+function spawnBird(){
+  const b=document.createElement("div"); b.className="bird"; b.innerHTML=BIRD_SVG();
+  b.style.top=(6+Math.random()*30)+"%";
+  const dur=9+Math.random()*6; b.style.animationDuration=dur+"s";
+  birdsEl.appendChild(b); setTimeout(()=>b.remove(), dur*1000+300);
+}
+setInterval(()=>{ if(Math.random()<0.6) spawnBird(); }, 5200);  // 가끔 새 한 마리
+setTimeout(spawnBird, 1600);
 
 /* ---------- idle 루프 (기본 1초 1걸음 → 1초 1보) ---------- */
 setInterval(()=>{ S.walks += S.rate*0.1; elWalks.textContent=fmt(S.walks); syncSteps(); }, 100);
