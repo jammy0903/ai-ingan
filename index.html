@@ -944,29 +944,30 @@ function renderMind(){
 }
 function renderAll(){ sizeCanvas(); renderEdges(); renderNodes(); placeRobot(); refreshHUD(); updateFilterBtns(); }
 
-/* ---------- 지도 갈래 필터: 감정 / 몸 (둘 다 켜면 병렬 보기, 끄면 그 갈래만 숨김) ---------- */
-const mapFilter = { emo:true, body:true };
+/* ---------- 지도 갈래 보기: 감정 ↔ 몸 (배타 선택 — 한 번에 한 갈래만) ---------- */
+let mapView = "emo";                                 // "emo" = 감정 지도 / "body" = 몸 지도
 function inMapFilter(n){
   if(!n) return true;
-  if(n.type==="person") return mapFilter.emo;     // 감정 갈래
-  if(n.type==="body")   return mapFilter.body;     // 몸 갈래
-  return true;                                     // start·ending(샘)·human·teaser 는 항상 표시
+  if(n.type==="person") return mapView==="emo";      // 감정 노드는 감정 보기에서만
+  if(n.type==="body")   return mapView==="body";      // 몸 노드는 몸 보기에서만
+  return true;                                        // start·ending(샘)·human·teaser 는 항상 표시
 }
 function updateFilterBtns(){
   const e=document.getElementById('fEmo'), b=document.getElementById('fBody');
-  if(e) e.classList.toggle('on', mapFilter.emo);
-  if(b) b.classList.toggle('on', mapFilter.body);
+  if(e) e.classList.toggle('on', mapView==="emo");
+  if(b) b.classList.toggle('on', mapView==="body");
   const ce=document.getElementById('cntEmo'), cb=document.getElementById('cntBody');
   if(ce) ce.textContent = `${learnedCount()}/${FRAG_TOTAL}`;
   if(cb) cb.textContent = `${bodyCount()}/${BODY_TOTAL}`;
 }
-function toggleMapFilter(key){
-  mapFilter[key] = !mapFilter[key];
-  if(!mapFilter.emo && !mapFilter.body) mapFilter[key] = true;   // 최소 하나는 켜둔다
-  updateFilterBtns(); renderEdges(); renderNodes(); placeRobot(); centerOn(S.current);
+function selectMapView(v){
+  mapView = v;
+  updateFilterBtns(); renderEdges(); renderNodes(); placeRobot();
+  const cur=NODES.find(n=>n.id===S.current);
+  centerOn(inMapFilter(cur) ? S.current : "start");   // 현재 노드가 안 보이는 갈래면 start로
 }
-document.getElementById('fEmo')?.addEventListener('click', ()=>toggleMapFilter('emo'));
-document.getElementById('fBody')?.addEventListener('click', ()=>toggleMapFilter('body'));
+document.getElementById('fEmo')?.addEventListener('click', ()=>selectMapView('emo'));
+document.getElementById('fBody')?.addEventListener('click', ()=>selectMapView('body'));
 
 /* ---------- 이동 + 만남 ---------- */
 function travelTo(n, cb){
