@@ -858,7 +858,7 @@ NODES.forEach(n => S.levels[n.id] = n.completed ? 1 : 0);
 
 const TAP_GAIN = 1;
 const UP_BASE = { person: 30 };   // 재회 업그레이드 1레벨 비용 기준
-const upCost = (node, lv) => Math.round(UP_BASE.person * Math.pow(1.7, lv-1));
+const upCost = (node, lv) => Math.round(UP_BASE.person * Math.pow(1.45, lv-1));  // 재회 비용 곡선 배율(완만하게)
 const MAX_LV = 10;                // 재회 심화 상한 — 각 노드는 Lv10(첫 만남 Lv1 + 재회 9회)까지만 깊어진다
 
 /* ===================== DOM ===================== */
