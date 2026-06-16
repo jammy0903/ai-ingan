@@ -790,57 +790,55 @@ const REL_EDGES = [
   ["joy","sorrow","oppo"], ["calm","excite","oppo"],         // 거울 쌍
   ["relief","anxiety","oppo"], ["amuse","bored","oppo"],
 ];
-// 유기적 가지 배치: 완벽한 원이 아니라 가지가 뻗듯 불규칙하게.
-// 결정적 지터(노드 id 해시)라 새로고침해도 모양은 그대로.
+// 프랙탈 트리 배치: 각 가지가 '자손 잎 수'에 비례한 부채꼴(sector)을 받아 바깥으로 뻗는다.
+// 가지마다 자기 부채꼴 안에서만 다시 갈라지므로(자기유사) 서로 절대 안 겹치고 나무처럼 펼쳐진다.
+// 가지 길이는 깊어질수록 일정 비율로 짧아져(DECAY) 프랙탈 특유의 결이 난다.
 function computeRadialLayout(){
   const kids={}; NODES.forEach(n=>kids[n.id]=[]);
   NODES.forEach(n=>{ if(n.parent) kids[n.parent].push(n.id); });
   const byId=Object.fromEntries(NODES.map(n=>[n.id,n]));
   const hash=s=>{ let h=2166136261; for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619);} return ((h>>>0)%100000)/100000; }; // [0,1)
-  const RING=0.115;
-  (function assign(id, angle, radius, depth){
+  // 각 노드의 '자손 잎(leaf) 수' = 그 가지가 차지할 각도 폭의 가중치
+  const leaf={};
+  (function w(id){ const ch=kids[id]; if(!ch.length) return leaf[id]=1; let s=0; ch.forEach(c=>s+=w(c)); return leaf[id]=s; })("start");
+
+  const SEG0=0.20, DECAY=0.72;                  // 가지 길이: 깊어질수록 0.72배(자기유사) → 프랙탈 결
+  const seg = depth => SEG0*Math.pow(DECAY, depth);
+
+  // assign: 노드를 (반지름, 방향)에 놓고, 자기 부채꼴 [lo,hi]를 자식들에게 잎 수 비례로 분배
+  (function assign(id, dir, radius, lo, hi, depth){
     const n=byId[id];
-    n.x=0.5 + radius*Math.cos(angle); n.y=0.5 + radius*Math.sin(angle);
-    if(id==="becoming") return;                 // 샘의 자식(human)은 따로 배치
-    const ch=kids[id];                           // 몸 가지도 평범한 트리 자식으로 함께 배치(병렬)
-    const k=ch.length; if(!k) return;
-    ch.forEach((c,i)=>{
-      let childAngle, seg=RING*(0.72 + hash(c)*0.75);            // 가지 길이 제각각
-      if(depth===0){                                            // 첫 고리: 원형이되 크게 흐트러뜨림
-        childAngle = (i/k)*Math.PI*2 - Math.PI/2 + (hash(c)-0.5)*1.0;
-        seg = RING*(0.95 + hash(c+"r")*0.85);
-      } else {                                                  // 깊은 가지: 부모 방향으로 자라며 갈라짐
-        const cone = Math.min(Math.PI*0.85, 0.5 + k*0.42);
-        const frac = k===1 ? 0 : (i/(k-1)-0.5);
-        childAngle = angle + frac*cone + (hash(c)-0.5)*cone*0.65;
-      }
-      assign(c, childAngle, radius+seg, depth+1);
+    n.x=0.5 + radius*Math.cos(dir); n.y=0.5 + radius*Math.sin(dir);
+    if(id==="becoming") return;                 // 샘의 자식(human)은 정규화 뒤 따로 배치
+    const ch=kids[id]; if(!ch.length) return;
+    const span=hi-lo, totW=ch.reduce((s,c)=>s+leaf[c],0);
+    let acc=lo;
+    ch.forEach(c=>{
+      const frac=leaf[c]/totW, clo=acc, chi=acc+span*frac; acc=chi;
+      const jit=(hash(c)-0.5)*span*frac*0.22;   // 부채꼴 안에서만 살짝 흔들어 유기적으로
+      assign(c, (clo+chi)/2 + jit, radius+seg(depth), clo, chi, depth+1);
     });
-  })("start", -Math.PI/2, 0, 0);
-  // 겹침 해소: 너무 가까운 노드 쌍을 밀어 최소 간격 확보. start는 고정 장애물(안 움직이되 남을 밀어냄), human은 뒤에서 배치.
-  const MIND=0.125;                                  // 최소 중심간 거리(노드 링+라벨 footprint 기준)
-  const sim=NODES.filter(n=>n.id!=="human");
-  const fixed=id=> id==="start";
-  for(let it=0; it<120; it++){
-    for(let i=0;i<sim.length;i++){
-      for(let j=i+1;j<sim.length;j++){
-        const a=sim[i], b2=sim[j];
-        let dx=b2.x-a.x, dy=b2.y-a.y, d=Math.hypot(dx,dy);
-        if(d<1e-6){ dx=(hash(a.id)-0.5)*0.02; dy=(hash(b2.id+"y")-0.5)*0.02; d=Math.hypot(dx,dy)||1e-6; }
-        if(d>=MIND) continue;
-        const ux=dx/d, uy=dy/d, gap=MIND-d, fa=fixed(a.id), fb=fixed(b2.id);
-        if(fa&&fb) continue;
-        if(fa){ b2.x+=ux*gap; b2.y+=uy*gap; }            // start 고정 → 상대만 밀기
-        else if(fb){ a.x-=ux*gap; a.y-=uy*gap; }
-        else { a.x-=ux*gap/2; a.y-=uy*gap/2; b2.x+=ux*gap/2; b2.y+=uy*gap/2; }
-      }
+  })("start", -Math.PI/2, 0, -Math.PI, Math.PI, 0);   // root: 자식들이 360° 전체로 펼쳐짐
+
+  // 잎이 같은 반지름에 몰려 닿을 때만 살짝 떼는 가벼운 보정(부채꼴 구조·교차는 유지)
+  const MIND=0.085, sim=NODES.filter(n=>n.id!=="human"&&n.id!=="start");
+  for(let it=0; it<70; it++){
+    for(let i=0;i<sim.length;i++) for(let j=i+1;j<sim.length;j++){
+      const a=sim[i], b2=sim[j]; let dx=b2.x-a.x, dy=b2.y-a.y, d=Math.hypot(dx,dy);
+      if(d<1e-6){ dx=(hash(a.id)-0.5)*0.02; dy=(hash(b2.id+"y")-0.5)*0.02; d=Math.hypot(dx,dy)||1e-6; }
+      if(d>=MIND) continue;
+      const ux=dx/d, uy=dy/d, g=(MIND-d)/2;
+      a.x-=ux*g; a.y-=uy*g; b2.x+=ux*g; b2.y+=uy*g;
     }
   }
-  // 사람(human)은 샘(becoming) 바깥으로 살짝 떨어뜨려 배치(겹침 해소 뒤에).
-  const b=byId["becoming"];
-  const hu=byId["human"]; if(hu){ const dx=b.x-0.5, dy=b.y-0.5, len=Math.hypot(dx,dy)||1;
-    hu.x=b.x + (dx/len)*0.17; hu.y=b.y + (dy/len)*0.17; }   // 샘에서 바깥쪽으로
-  NODES.forEach(n=>{ n.x=Math.max(0.05,Math.min(0.95,n.x)); n.y=Math.max(0.05,Math.min(0.95,n.y)); }); // 캔버스 안으로
+  // 중심 기준으로 전체를 캔버스에 꽉 차게 정규화(프랙탈 모양은 보존, 크기만 맞춤)
+  let maxR=0; NODES.forEach(n=>{ if(n.id!=="human") maxR=Math.max(maxR, Math.hypot(n.x-0.5, n.y-0.5)); });
+  const sc = maxR>0 ? 0.45/maxR : 1;
+  NODES.forEach(n=>{ if(n.id!=="human"){ n.x=0.5+(n.x-0.5)*sc; n.y=0.5+(n.y-0.5)*sc; } });
+  // 사람(human)은 샘(becoming) 바깥으로 살짝 떨어뜨려 배치(정규화 뒤).
+  const b=byId["becoming"], hu=byId["human"];
+  if(hu&&b){ const dx=b.x-0.5, dy=b.y-0.5, len=Math.hypot(dx,dy)||1; hu.x=b.x+(dx/len)*0.1; hu.y=b.y+(dy/len)*0.1; }
+  NODES.forEach(n=>{ n.x=Math.max(0.03,Math.min(0.97,n.x)); n.y=Math.max(0.03,Math.min(0.97,n.y)); }); // 캔버스 안으로
 }
 computeRadialLayout();
 
@@ -874,7 +872,7 @@ const modal=$("#modal");
 /* ---------- 줌 + 월드 좌표 (월드는 base 좌표, 화면 스케일은 CSS transform) ---------- */
 let zoom = 0.85;
 const ZMIN=0.4, ZMAX=2.2;
-const baseSize = () => Math.max(map.clientWidth, map.clientHeight) * 2.3;  // 정사각 월드(방사형)
+const baseSize = () => Math.max(map.clientWidth, map.clientHeight) * 2.9;  // 정사각 월드(방사형) — 넓게 펼쳐 노드 간격 확보
 const px = n => ({ x: n.x*baseSize(), y: n.y*baseSize() });                 // 미스케일 월드 좌표
 function sizeCanvas(){
   const s=baseSize();
