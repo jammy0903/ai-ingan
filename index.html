@@ -70,6 +70,9 @@
   .edges { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
   .edges line { stroke:#bda886; stroke-width:2; stroke-dasharray:5 7; opacity:.5; }
   .edges line.live { stroke:#c98f6a; opacity:.85; stroke-dasharray:none; }
+  /* 연관/반대 = 시각 전용 엣지(이동·발견 X) — 감정의 그라데이션·거울쌍 지형 */
+  .edges line.assoc { stroke:#9fb0bd; stroke-width:1.4; stroke-dasharray:none; opacity:.4; }
+  .edges line.oppo  { stroke:#c6a2ad; stroke-width:1.4; stroke-dasharray:2 6; opacity:.4; }
 
   .node { position:absolute; transform:translate(-50%,-50%); z-index:3;
     display:flex; flex-direction:column; align-items:center; gap:5px; cursor:default; }
@@ -95,6 +98,10 @@
   .node.done .ring { background:radial-gradient(circle,#fbf6e8,#e7d3b3); border:2px solid #c9a86a; opacity:1; cursor:pointer; }
   .node.done { cursor:pointer; }
   .node.done.person .ring { background:radial-gradient(circle,#fbf6e8,#dcc6e0); }
+  /* 대분류(갈래) 허브 노드 — 감정보다 작고 차분하게 */
+  .node.category .ring { width:48px; height:48px; }
+  .node.category .label { font-weight:700; color:#7a7060; letter-spacing:.6px; }
+  .node.done.category .ring { background:radial-gradient(circle,#f4f0e4,#dcd3c2); border:2px solid #b8a87e; }
   .node .lv { position:absolute; bottom:-4px; right:-4px; background:#9a7b4a; color:#fff;
     font-size:9px; font-weight:700; min-width:15px; height:15px; line-height:15px; border-radius:8px; padding:0 3px;
     font-family:'Nanum Myeongjo',serif; }
@@ -708,43 +715,51 @@ const SAM_TWIST =
 const HUMAN_TEXT =
   "고치는 마법 같은 건\n없었다.\n\n슬픔을 알고,\n기쁨을 알고,\n누굴 그리워한 그 순간—\n그때 이미\n사람이 된 거였다.\n\n눈에서 물이 났다.\n기뻐서, 슬퍼서,\n동시에.\n\n고장이… 아니다.\n나는, 사람이다.";
 
-// 노드 = 트리. start를 중심으로 9방향으로 흩뿌리고, 각 가지가 다시 자식을 흩뿌린다(방사형).
-// 같은 계열 감정이 한 가지(branch) 안에 모인다. x,y는 computeRadialLayout()이 계산.
+// 노드 = root(감정) → 4 대분류 → 세부 감정 3계층 그래프. 몸은 start에서 병렬로 뻗는다.
+// 같은 결의 감정이 한 분류(category) 아래 모인다. x,y는 computeRadialLayout()이 계산.
 const NODES = [
   { id:"start",      type:"start",  parent:null,      cost:0,   gen:0,    icon:"·", completed:true },
-  // ▸ 애정·아름다움
-  { id:"adore",   type:"person", key:"adore",   parent:"start",  cost:18,  gen:0.35, icon:"❀" },
-  { id:"beauty",  type:"person", key:"beauty",  parent:"adore",  cost:60,  gen:0.75, icon:"❀" },
-  { id:"admire",  type:"person", key:"admire",  parent:"adore",  cost:55,  gen:0.70, icon:"❀" },
-  { id:"attract", type:"person", key:"attract", parent:"admire", cost:220, gen:1.60, icon:"❀" },
-  // ▸ 밝은 마음
-  { id:"joy",     type:"person", key:"joy",     parent:"start",  cost:20,  gen:0.40, icon:"❀" },
-  { id:"amuse",   type:"person", key:"amuse",   parent:"joy",    cost:58,  gen:0.70, icon:"❀" },
-  { id:"excite",  type:"person", key:"excite",  parent:"joy",    cost:62,  gen:0.75, icon:"❀" },
-  { id:"flutter", type:"person", key:"flutter", parent:"joy",    cost:66,  gen:0.80, icon:"❀" },
-  // ▸ 시린 마음
-  { id:"sorrow",  type:"person", key:"sorrow",  parent:"start",  cost:22,  gen:0.45, icon:"❀" },
-  { id:"longing", type:"person", key:"longing", parent:"sorrow", cost:70,  gen:0.85, icon:"❀" },
-  { id:"crave",   type:"person", key:"crave",   parent:"longing",cost:240, gen:1.70, icon:"❀" },
-  { id:"empathy", type:"person", key:"empathy", parent:"sorrow", cost:72,  gen:0.80, icon:"❀" },
-  { id:"compassion",type:"person",key:"compassion",parent:"sorrow",cost:80,gen:0.90, icon:"❀" },
-  // ▸ 무거운 마음 (불편한 감정)
-  { id:"fear",    type:"person", key:"fear",    parent:"start",  cost:24,  gen:0.50, icon:"❀" },
-  { id:"anxiety", type:"person", key:"anxiety", parent:"fear",   cost:85,  gen:0.95, icon:"❀" },
-  { id:"awkward", type:"person", key:"awkward", parent:"fear",   cost:88,  gen:1.00, icon:"❀" },
-  { id:"disgust", type:"person", key:"disgust", parent:"fear",   cost:90,  gen:1.05, icon:"❀" },
-  { id:"horror",  type:"person", key:"horror",  parent:"disgust",cost:300, gen:1.90, icon:"❀" },
-  // ▸ 벅찬 마음 (관조)
-  { id:"curious", type:"person", key:"curious", parent:"start",  cost:26,  gen:0.55, icon:"❀" },
-  { id:"awe",     type:"person", key:"awe",     parent:"curious",cost:100, gen:1.10, icon:"❀" },
-  { id:"trance",  type:"person", key:"trance",  parent:"curious",cost:105, gen:1.15, icon:"❀" },
-  { id:"calm",    type:"person", key:"calm",    parent:"curious",cost:110, gen:1.30, icon:"❀" },
-  // ▸ 단단한 마음 → 길 끝(샘알트머스크)
-  { id:"confuse", type:"person", key:"confuse", parent:"start",  cost:28,  gen:0.60, icon:"❀" },
-  { id:"bored",   type:"person", key:"bored",   parent:"confuse",cost:120, gen:1.40, icon:"❀" },
-  { id:"relief",  type:"person", key:"relief",  parent:"confuse",cost:130, gen:1.60, icon:"❀" },
-  { id:"satisfy", type:"person", key:"satisfy", parent:"confuse",cost:135, gen:1.70, icon:"❀" },
-  { id:"triumph", type:"person", key:"triumph", parent:"confuse",cost:140, gen:1.80, icon:"❀" },
+  // ── 4 대분류 (root → 분류 → 감정) : 걸음으로 분류에 닿으면 그 아래 감정이 안갯속에서 드러난다 ──
+  { id:"cat_pos",     type:"category", parent:"start", cost:12, gen:0, icon:"🌤", name:"긍정·흥미",
+    intro:"밝고 끌리는 마음들이\n이 갈래에 모여 있다." },
+  { id:"cat_unease",  type:"category", parent:"start", cost:16, gen:0, icon:"🌫", name:"불안·불편",
+    intro:"피하고 싶은데\n알아둬야 하는 마음들." },
+  { id:"cat_intense", type:"category", parent:"start", cost:20, gen:0, icon:"🔥", name:"강한 자극",
+    intro:"확 타오르는\n뜨거운 마음들." },
+  { id:"cat_calm",    type:"category", parent:"start", cost:14, gen:0, icon:"🌊", name:"잔잔·시림",
+    intro:"고요하고\n시린 마음들." },
+  // ▸ 긍정·흥미 (10) — 밝고 끌리는
+  { id:"adore",   type:"person", key:"adore",   parent:"cat_pos", cost:16,  gen:0.35, icon:"❀" },
+  { id:"joy",     type:"person", key:"joy",     parent:"cat_pos", cost:18,  gen:0.40, icon:"❀" },
+  { id:"amuse",   type:"person", key:"amuse",   parent:"cat_pos", cost:20,  gen:0.70, icon:"❀" },
+  { id:"flutter", type:"person", key:"flutter", parent:"cat_pos", cost:24,  gen:0.80, icon:"❀" },
+  { id:"curious", type:"person", key:"curious", parent:"cat_pos", cost:30,  gen:0.55, icon:"❀" },
+  { id:"beauty",  type:"person", key:"beauty",  parent:"cat_pos", cost:40,  gen:0.75, icon:"❀" },
+  { id:"admire",  type:"person", key:"admire",  parent:"cat_pos", cost:46,  gen:0.70, icon:"❀" },
+  { id:"awe",     type:"person", key:"awe",     parent:"cat_pos", cost:70,  gen:1.10, icon:"❀" },
+  { id:"trance",  type:"person", key:"trance",  parent:"cat_pos", cost:80,  gen:1.15, icon:"❀" },
+  { id:"satisfy", type:"person", key:"satisfy", parent:"cat_pos", cost:90,  gen:1.70, icon:"❀" },
+  // ▸ 불안·불편 (7)
+  { id:"fear",    type:"person", key:"fear",    parent:"cat_unease", cost:18,  gen:0.50, icon:"❀" },
+  { id:"confuse", type:"person", key:"confuse", parent:"cat_unease", cost:24,  gen:0.60, icon:"❀" },
+  { id:"bored",   type:"person", key:"bored",   parent:"cat_unease", cost:30,  gen:1.40, icon:"❀" },
+  { id:"awkward", type:"person", key:"awkward", parent:"cat_unease", cost:36,  gen:1.00, icon:"❀" },
+  { id:"anxiety", type:"person", key:"anxiety", parent:"cat_unease", cost:46,  gen:0.95, icon:"❀" },
+  { id:"disgust", type:"person", key:"disgust", parent:"cat_unease", cost:55,  gen:1.05, icon:"❀" },
+  { id:"horror",  type:"person", key:"horror",  parent:"cat_unease", cost:120, gen:1.90, icon:"❀" },
+  // ▸ 강한 자극 (5) — 확 타오르는
+  { id:"excite",  type:"person", key:"excite",  parent:"cat_intense", cost:26,  gen:0.75, icon:"❀" },
+  { id:"relief",  type:"person", key:"relief",  parent:"cat_intense", cost:40,  gen:1.60, icon:"❀" },
+  { id:"attract", type:"person", key:"attract", parent:"cat_intense", cost:66,  gen:1.60, icon:"❀" },
+  { id:"crave",   type:"person", key:"crave",   parent:"cat_intense", cost:130, gen:1.70, icon:"❀" },
+  { id:"triumph", type:"person", key:"triumph", parent:"cat_intense", cost:140, gen:1.80, icon:"❀" },
+  // ▸ 잔잔·시림 (5) — 고요하고 시린
+  { id:"sorrow",  type:"person", key:"sorrow",  parent:"cat_calm", cost:16,  gen:0.45, icon:"❀" },
+  { id:"empathy", type:"person", key:"empathy", parent:"cat_calm", cost:34,  gen:0.80, icon:"❀" },
+  { id:"longing", type:"person", key:"longing", parent:"cat_calm", cost:44,  gen:0.85, icon:"❀" },
+  { id:"compassion",type:"person",key:"compassion",parent:"cat_calm",cost:52, gen:0.90, icon:"❀" },
+  { id:"calm",    type:"person", key:"calm",    parent:"cat_calm", cost:64,  gen:1.30, icon:"❀" },
+  // 샘 재회(엔딩) — 감정·몸 둘 다 모은 뒤 도달. 감정 갈래(triumph)·몸 갈래(repro)가 여기서 합류.
   { id:"becoming",   type:"ending",                   parent:"triumph", cost:500, gen:0,    icon:"✦" },
   // ▸ 신체 — 감정과 '병렬'로 자라는 또 하나의 가지(cells식 동시 성장). start에서 바로 뻗어 유기적 서브트리.
   { id:"skin",     type:"body", key:"skin",      chapter:"body", parent:"start",   cost:30,  gen:2.0, icon:"🫧" },
@@ -763,6 +778,18 @@ const NODES = [
 const COST_MULT = 5;   // 난이도: 다음 단계가 5배 멀어지게(걸음 5배 더 모아야 발견·이동)
 const EDGES = NODES.filter(n=>n.parent).map(n=>[n.parent, n.id, n.cost*COST_MULT]);
 EDGES.push(["repro","becoming", 500*COST_MULT]);   // 몸 가지도 샘으로 수렴(두 갈래가 샘 재회로 합류)
+// 연관/반대 = '시각 전용' 엣지(이동·발견엔 안 씀). 감정의 그라데이션·거울쌍을 지형으로 보여준다.
+//  assoc = 강도 축(비슷한데 에너지가 커짐)·이웃/양가  /  oppo = 거울처럼 반대되는 쌍.
+const REL_EDGES = [
+  ["anxiety","fear","assoc"], ["fear","horror","assoc"],     // 불안→두려움→오싹함
+  ["satisfy","joy","assoc"],  ["joy","excite","assoc"],      // 뿌듯함→기쁨→신남
+  ["bored","confuse","assoc"], ["longing","crave","assoc"],  // 지루함→혼란 / 그리움→갈망
+  ["empathy","compassion","assoc"], ["curious","awe","assoc"],
+  ["adore","attract","assoc"], ["awe","fear","assoc"],       // 경외 ── 두려움(압도)
+  ["longing","sorrow","assoc"],                              // 그리움 ── 슬픔(과거의 슬픔)
+  ["joy","sorrow","oppo"], ["calm","excite","oppo"],         // 거울 쌍
+  ["relief","anxiety","oppo"], ["amuse","bored","oppo"],
+];
 // 유기적 가지 배치: 완벽한 원이 아니라 가지가 뻗듯 불규칙하게.
 // 결정적 지터(노드 id 해시)라 새로고침해도 모양은 그대로.
 function computeRadialLayout(){
@@ -910,6 +937,19 @@ function renderEdges(){
     if(live) ln.classList.add("live");
     edgesSvg.appendChild(ln);
   });
+  // 연관/반대(시각 전용): 양 끝이 모두 드러났고 같은 갈래 필터일 때만 — 이동/발견엔 영향 없음
+  REL_EDGES.forEach(([a,b,t])=>{
+    const na=NODES.find(n=>n.id===a), nb=NODES.find(n=>n.id===b);
+    if(!na||!nb) return;
+    if(!(isRevealed(a)&&isRevealed(b))) return;
+    if(!(inMapFilter(na)&&inMapFilter(nb))) return;
+    const pa=px(na), pb=px(nb);
+    const ln=document.createElementNS("http://www.w3.org/2000/svg","line");
+    ln.setAttribute("x1",pa.x);ln.setAttribute("y1",pa.y);
+    ln.setAttribute("x2",pb.x);ln.setAttribute("y2",pb.y);
+    ln.classList.add("rel", t);
+    edgesSvg.appendChild(ln);
+  });
 }
 function renderNodes(){
   updateDiscovered();
@@ -923,6 +963,7 @@ function renderNodes(){
     el.style.left=p.x+"px"; el.style.top=p.y+"px";
     let name = n.type==="person"?PEOPLE[n.key].name
              : n.type==="body"?BODY[n.key].name
+             : n.type==="category"?n.name
              : (n.type==="start"?"시작" : n.type==="ending"?"샘알트머스크" : n.type==="human"?"사람" : "…");
     const reach = !done && n.type!=="teaser";
     const cost = reach ? reachCost(n.id) : null;
@@ -967,7 +1008,7 @@ function renderAll(){ sizeCanvas(); renderEdges(); renderNodes(); placeRobot(); 
 let mapView = "emo";                                 // "emo" = 감정 지도 / "body" = 몸 지도
 function inMapFilter(n){
   if(!n) return true;
-  if(n.type==="person") return mapView==="emo";      // 감정 노드는 감정 보기에서만
+  if(n.type==="person"||n.type==="category") return mapView==="emo";  // 감정·대분류는 감정 보기에서만
   if(n.type==="body")   return mapView==="body";      // 몸 노드는 몸 보기에서만
   return true;                                        // start·ending(샘)·human·teaser 는 항상 표시
 }
@@ -1021,6 +1062,12 @@ function openNode(n, firstMeet){
     afterClose = openPrestige;     // 이 모달을 닫으면 → 회차 정산(프레스티지)으로
     fillModal({ badge:"반전", emo:"🕊 사람이 되다", lv:"", situ:"", log: HUMAN_TEXT,
       reward:["✨ 알고 보니, 처음부터","💗 너는 이미 사람이었어"], closeText:"…그리고, 다시 길 위에" });
+    return;
+  }
+  if(n.type==="category"){          // 대분류 허브 — 이야기 없이, 갈래가 펼쳐졌다는 신호만
+    fillModal({ badge:"마음의 갈래에 닿다", emo:`〈 ${n.name} 〉`, lv:"", situ:"",
+      log: n.intro || "여기서 마음의 갈래가 펼쳐진다.",
+      reward:["🌿 새 갈래가 열렸다", `🌫️ ${n.name}의 감정들이 안갯속에서 드러난다`], closeText:"감정을 만나러" });
     return;
   }
   const cur=(n.gen*lv), nxt=(n.gen*(lv+1));   // 이 노드의 걸음/초 기여(강할수록 큼)
