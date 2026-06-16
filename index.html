@@ -57,6 +57,16 @@
     display:flex; align-items:center; justify-content:center; line-height:1; transition:background .15s; }
   .zoomctl button:active { background:#ece3d0; }
   .zoomctl .zlvl { font-size:10px; color:#9a917f; text-align:center; }
+  /* 지도 우상단 갈래 필터 (감정 / 몸 — 병렬 보기·집중) */
+  .mapfilter { position:absolute; top:12px; right:12px; z-index:8; display:flex; gap:8px; }
+  .filtbtn { position:relative; width:46px; height:46px; border-radius:50%; border:1px solid #c4bca9; background:rgba(247,243,234,.82);
+    font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    transition:opacity .2s, background .2s, box-shadow .2s, transform .1s; }
+  .filtbtn.on { border-color:#9a7b4a; background:#ece3d0; box-shadow:0 2px 9px rgba(120,100,70,.28); }
+  .filtbtn:not(.on) { opacity:.38; }
+  .filtbtn:active { transform:scale(.93); }
+  .filtbtn .cnt { position:absolute; bottom:-3px; right:-3px; font-size:9px; background:#9a7b4a; color:#fff;
+    border-radius:8px; padding:1px 4px; line-height:1.2; font-family:'Nanum Myeongjo',serif; }
   .edges { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
   .edges line { stroke:#bda886; stroke-width:2; stroke-dasharray:5 7; opacity:.5; }
   .edges line.live { stroke:#c98f6a; opacity:.85; stroke-dasharray:none; }
@@ -443,6 +453,11 @@
         </svg>
       </div>
     </div></div>
+  </div>
+
+  <div class="mapfilter">
+    <button id="fEmo" class="filtbtn on" title="감정 지도" aria-label="감정 지도">🧩<span class="cnt" id="cntEmo">0</span></button>
+    <button id="fBody" class="filtbtn on" title="몸 지도" aria-label="몸 지도">🫀<span class="cnt" id="cntBody">0</span></button>
   </div>
 
   <div class="zoomctl">
@@ -868,6 +883,7 @@ function renderEdges(){
     const na=NODES.find(n=>n.id===a), nb=NODES.find(n=>n.id===b);
     const pa=px(na), pb=px(nb);
     if(!(isRevealed(a)&&isRevealed(b))) return;
+    if(!(inMapFilter(na)&&inMapFilter(nb))) return;     // 갈래 필터(감정/몸)
     const live = S.levels[a]>0 && S.levels[b]>0;
     const ln=document.createElementNS("http://www.w3.org/2000/svg","line");
     ln.setAttribute("x1",pa.x);ln.setAttribute("y1",pa.y);
@@ -880,7 +896,7 @@ function renderNodes(){
   updateDiscovered();
   document.querySelectorAll(".node").forEach(e=>e.remove());
   NODES.forEach(n=>{
-    if(!isRevealed(n.id)) return;
+    if(!isRevealed(n.id) || !inMapFilter(n)) return;    // 갈래 필터(감정/몸)
     const p=px(n), lv=S.levels[n.id], done=lv>0;
     const el=document.createElement("div");
     el.className="node "+n.type+(done?" done":(n.type!=="teaser"?" reachable":" empty"));
@@ -926,7 +942,31 @@ function renderMind(){
   mindsky.innerHTML=`<div class="fragline">🧩 <b>${emo}</b>/27${emoDone?' <span class="ck">✓</span>':''}`
          + `<span class="sep">·</span>🫀 <b>${bodyN}</b>/11${bodyDone?' <span class="ck">✓</span>':''}</div>`;
 }
-function renderAll(){ sizeCanvas(); renderEdges(); renderNodes(); placeRobot(); refreshHUD(); }
+function renderAll(){ sizeCanvas(); renderEdges(); renderNodes(); placeRobot(); refreshHUD(); updateFilterBtns(); }
+
+/* ---------- 지도 갈래 필터: 감정 / 몸 (둘 다 켜면 병렬 보기, 끄면 그 갈래만 숨김) ---------- */
+const mapFilter = { emo:true, body:true };
+function inMapFilter(n){
+  if(!n) return true;
+  if(n.type==="person") return mapFilter.emo;     // 감정 갈래
+  if(n.type==="body")   return mapFilter.body;     // 몸 갈래
+  return true;                                     // start·ending(샘)·human·teaser 는 항상 표시
+}
+function updateFilterBtns(){
+  const e=document.getElementById('fEmo'), b=document.getElementById('fBody');
+  if(e) e.classList.toggle('on', mapFilter.emo);
+  if(b) b.classList.toggle('on', mapFilter.body);
+  const ce=document.getElementById('cntEmo'), cb=document.getElementById('cntBody');
+  if(ce) ce.textContent = `${learnedCount()}/${FRAG_TOTAL}`;
+  if(cb) cb.textContent = `${bodyCount()}/${BODY_TOTAL}`;
+}
+function toggleMapFilter(key){
+  mapFilter[key] = !mapFilter[key];
+  if(!mapFilter.emo && !mapFilter.body) mapFilter[key] = true;   // 최소 하나는 켜둔다
+  updateFilterBtns(); renderEdges(); renderNodes(); placeRobot(); centerOn(S.current);
+}
+document.getElementById('fEmo')?.addEventListener('click', ()=>toggleMapFilter('emo'));
+document.getElementById('fBody')?.addEventListener('click', ()=>toggleMapFilter('body'));
 
 /* ---------- 이동 + 만남 ---------- */
 function travelTo(n, cb){
