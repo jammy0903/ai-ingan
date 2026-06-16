@@ -790,7 +790,26 @@ function computeRadialLayout(){
       assign(c, childAngle, radius+seg, depth+1);
     });
   })("start", -Math.PI/2, 0, 0);
-  // 사람(human)은 샘(becoming) 바깥으로 살짝 떨어뜨려 배치.
+  // 겹침 해소: 너무 가까운 노드 쌍을 밀어 최소 간격 확보. start는 고정 장애물(안 움직이되 남을 밀어냄), human은 뒤에서 배치.
+  const MIND=0.125;                                  // 최소 중심간 거리(노드 링+라벨 footprint 기준)
+  const sim=NODES.filter(n=>n.id!=="human");
+  const fixed=id=> id==="start";
+  for(let it=0; it<120; it++){
+    for(let i=0;i<sim.length;i++){
+      for(let j=i+1;j<sim.length;j++){
+        const a=sim[i], b2=sim[j];
+        let dx=b2.x-a.x, dy=b2.y-a.y, d=Math.hypot(dx,dy);
+        if(d<1e-6){ dx=(hash(a.id)-0.5)*0.02; dy=(hash(b2.id+"y")-0.5)*0.02; d=Math.hypot(dx,dy)||1e-6; }
+        if(d>=MIND) continue;
+        const ux=dx/d, uy=dy/d, gap=MIND-d, fa=fixed(a.id), fb=fixed(b2.id);
+        if(fa&&fb) continue;
+        if(fa){ b2.x+=ux*gap; b2.y+=uy*gap; }            // start 고정 → 상대만 밀기
+        else if(fb){ a.x-=ux*gap; a.y-=uy*gap; }
+        else { a.x-=ux*gap/2; a.y-=uy*gap/2; b2.x+=ux*gap/2; b2.y+=uy*gap/2; }
+      }
+    }
+  }
+  // 사람(human)은 샘(becoming) 바깥으로 살짝 떨어뜨려 배치(겹침 해소 뒤에).
   const b=byId["becoming"];
   const hu=byId["human"]; if(hu){ const dx=b.x-0.5, dy=b.y-0.5, len=Math.hypot(dx,dy)||1;
     hu.x=b.x + (dx/len)*0.17; hu.y=b.y + (dy/len)*0.17; }   // 샘에서 바깥쪽으로
@@ -1058,6 +1077,7 @@ function fillModal(o){
 let afterClose=null;                               // 모달 닫은 뒤 이어질 흐름(엔딩→프레스티지)
 $("#mBtn").onclick=closeModal;                     // 주 버튼 = 다음 길로(닫기)
 $("#mBtn2").onclick=()=>{ if(modalUp) modalUp(); }; // 보조 = 재회(있을 때만)
+modal.addEventListener("click", e=>{ if(e.target===modal) closeModal(); });  // 카드 바깥(배경) 클릭 = 닫기
 function closeModal(){ modal.classList.remove("show"); renderAll();
   const a=afterClose; afterClose=null; if(a) setTimeout(a, 280); }
 
