@@ -29,7 +29,25 @@
   .titlebar { display:flex; justify-content:space-between; align-items:baseline; }
   .title { font-weight:700; font-size:15px; color:#54514a; letter-spacing:1px; }
   .tag { font-size:10px; color:#8a857a; border:1px solid #c9c2b3; padding:2px 7px; border-radius:3px; }
-  .rn { font-size:13px; color:#9a7b4a; font-family:'Gaegu',cursive; }
+  .rn { font-size:13px; color:#9a7b4a; font-family:'Gaegu',cursive; cursor:pointer; }
+  .rn:hover { text-decoration:underline; opacity:.85; }
+  /* 닉네임 변경 다이얼로그 */
+  .renameov { position:absolute; inset:0; z-index:45; display:none; align-items:center; justify-content:center;
+    padding:30px; background:rgba(40,44,40,.34); }
+  .renameov.show { display:flex; animation:fade .25s ease; }
+  .renamecard { width:100%; max-width:290px; text-align:center; background:linear-gradient(160deg,#f3f1ea,#ebe5d8);
+    border:1px solid #cdc6b6; border-radius:6px; padding:22px 20px 20px; box-shadow:0 8px 30px rgba(60,55,45,.22); }
+  .renamecard .rt { font-family:'Nanum Myeongjo',serif; font-weight:700; font-size:15px; color:#6f5d3c; letter-spacing:2px; margin-bottom:16px; }
+  .renamerow { display:flex; gap:8px; justify-content:center; align-items:center; }
+  .renamerow input { font-family:'Gaegu',cursive; font-size:23px; text-align:center; width:150px; padding:7px 10px;
+    border:none; border-bottom:2px solid #c9a86a; background:transparent; color:#6f5d3c; outline:none; }
+  .renamerow button { font-size:18px; background:rgba(247,243,234,.7); border:1px solid #c9c2b3; border-radius:50%;
+    width:40px; height:40px; cursor:pointer; }
+  .renamebtns { display:flex; gap:10px; margin-top:20px; }
+  .renamebtns button { flex:1; padding:11px; border:1px solid #b9a98c; border-radius:3px; cursor:pointer;
+    font-family:'Nanum Myeongjo',serif; font-weight:700; font-size:14px; letter-spacing:1px; }
+  .renamebtns .ok { background:#dfeae4; color:#3f6b62; border-color:#9bb3a8; }
+  .renamebtns .cancel { background:#efeae0; color:#8a7f6e; }
   .authbtn { font-size:11px; color:#7d6a52; background:rgba(247,243,234,.7); border:1px solid #c9c2b3;
     border-radius:14px; padding:4px 11px; cursor:pointer; font-family:'Nanum Myeongjo',serif; max-width:130px;
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap; transition:background .15s; }
@@ -329,7 +347,7 @@
 
   <div class="hud">
     <div class="titlebar">
-      <div class="title">AI인간 <span id="robotName" class="rn"></span></div>
+      <div class="title">AI인간 <span id="robotName" class="rn" title="이름 바꾸기"></span></div>
       <button id="authBtn" class="authbtn">구글 로그인</button>
     </div>
     <div class="stats">
@@ -503,6 +521,19 @@
     </div>
     <button id="introBtn" type="button">다음</button>
     <div class="introskip" id="introSkip">바로 이름 짓기 ›</div>
+  </div></div>
+
+  <!-- 닉네임 변경 -->
+  <div class="renameov" id="renameOv"><div class="renamecard">
+    <div class="rt">이름 바꾸기</div>
+    <div class="renamerow">
+      <input id="renameInput" maxlength="8" autocomplete="off" placeholder="새 이름"/>
+      <button id="renameReroll" type="button" title="다른 이름 추천">🎲</button>
+    </div>
+    <div class="renamebtns">
+      <button class="cancel" id="renameCancel" type="button">취소</button>
+      <button class="ok" id="renameOk" type="button">저장</button>
+    </div>
   </div></div>
 
   <!-- 시작 게이트: 로그인 권장(스킵 가능) — 들어오면 가장 먼저 -->
@@ -984,7 +1015,7 @@ function refreshHUD(){
   elWalks.textContent=fmt(S.walks);
   elRate.textContent=S.rate.toFixed(1);
   const rn=document.getElementById('robotName');
-  if(rn) rn.textContent = (S.robotName?("· "+S.robotName):"") + (S.cycle>0?` · ${S.cycle}회차`:"");
+  if(rn) rn.textContent = (S.robotName?("· "+S.robotName):"") + (S.cycle>0?` · ${S.cycle}회차`:"") + (S.robotName?" ✎":"");
   const ds=document.getElementById('depthStat');
   if(ds){ if(S.depth>0 || S.cycle>0){ ds.style.display=""; document.getElementById('mdepth').textContent=S.depth; } else ds.style.display="none"; }
   const persons = NODES.filter(n=>n.type==="person");
@@ -1511,6 +1542,28 @@ function finishIntro(){
 }
 $("#rerollBtn").addEventListener("click",()=>{ S.robotName=""; ensureRobotName(); $("#nameInput").value=S.robotName; });
 $("#introSkip").addEventListener("click",()=>{ introStep=INTRO.length; renderIntro(); });
+
+/* ---------- 닉네임 변경 (헤더 이름 ✎ 클릭) — 저장 시 saveState로 로컬+Supabase 반영 ---------- */
+const renameOv=$("#renameOv");
+function openRename(){
+  if(!S.robotName) return;                              // 아직 이름이 없으면(미시작) 무시
+  $("#renameInput").value=S.robotName;
+  renameOv.classList.add("show");
+  setTimeout(()=>{ const i=$("#renameInput"); i.focus(); i.select(); }, 50);
+}
+function closeRename(){ renameOv.classList.remove("show"); }
+function applyRename(){
+  const v=($("#renameInput").value||"").trim().slice(0,8);
+  if(v && v!==S.robotName){ S.robotName=v; S.named=true; refreshHUD(); saveState(); }  // saveState → 클라우드까지 저장
+  closeRename();
+}
+$("#robotName")?.addEventListener("click", openRename);
+$("#renameReroll")?.addEventListener("click", ()=>{ const inp=$("#renameInput"); let n;
+  do{ n=ROBOT_NAMES[Math.floor(Math.random()*ROBOT_NAMES.length)]; }while(n===inp.value && ROBOT_NAMES.length>1); inp.value=n; });
+$("#renameOk")?.addEventListener("click", applyRename);
+$("#renameCancel")?.addEventListener("click", closeRename);
+renameOv?.addEventListener("click", e=>{ if(e.target===renameOv) closeRename(); });
+$("#renameInput")?.addEventListener("keydown", e=>{ if(e.key==="Enter") applyRename(); else if(e.key==="Escape") closeRename(); });
 
 /* ---------- idle 루프 (기본 1초 1걸음 → 1초 1보) ---------- */
 setInterval(()=>{ S.walks += S.rate*0.1; elWalks.textContent=fmt(S.walks); syncSteps();
