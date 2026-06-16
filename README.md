@@ -7,4 +7,5 @@
 
 - 아트 톤: 수채화풍 확정 → `mockup/tone-c-watercolor.html`
 - 장르: 방치형 + 탭. netcode 없음. 클라 단독 + Supabase + 가끔 Claude 호출.
-- 인간사냥(`projects/ani/demo/hunt`, aingan.click)과는 **별개 프로젝트**.
+- 배포 도메인: **aingan.click** (AI인간 전용).
+- 로컬 실행: `npm install` 후 `npm start` → `localhost:8000` (핫리로드).
