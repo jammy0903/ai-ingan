@@ -1,0 +1,13 @@
+{
+  "name": "aingan",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AI인간 — 수채화풍 감성 방치형 게임 (단일 정적 index.html, 빌드 없음)",
+  "scripts": {
+    "start": "live-server --port=8000 --no-css-inject",
+    "dev": "live-server --port=8000 --no-css-inject"
+  },
+  "devDependencies": {
+    "live-server": "^1.2.2"
+  }
+}

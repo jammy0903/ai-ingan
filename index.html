@@ -24,10 +24,10 @@
   svg.defs { position:absolute; width:0; height:0; }
 
   /* ---------- HUD ---------- */
-  .hud { position:relative; z-index:6; padding:14px 18px 10px; flex:0 0 auto;
+  .hud { position:relative; z-index:6; padding:7px 16px 6px; flex:0 0 auto;
     background:linear-gradient(#eef0ea, #f3efe6); border-bottom:1px solid rgba(150,140,120,.18); }
   .titlebar { display:flex; justify-content:space-between; align-items:baseline; }
-  .title { font-weight:700; font-size:18px; color:#54514a; letter-spacing:1px; }
+  .title { font-weight:700; font-size:15px; color:#54514a; letter-spacing:1px; }
   .tag { font-size:10px; color:#8a857a; border:1px solid #c9c2b3; padding:2px 7px; border-radius:3px; }
   .rn { font-size:13px; color:#9a7b4a; font-family:'Gaegu',cursive; }
   .authbtn { font-size:11px; color:#7d6a52; background:rgba(247,243,234,.7); border:1px solid #c9c2b3;
@@ -35,11 +35,11 @@
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap; transition:background .15s; }
   .authbtn:active { background:#ece3d0; }
   .authbtn.on { color:#5a7a4a; border-color:#b6c9a8; background:rgba(220,232,200,.4); }
-  .stats { display:flex; gap:16px; margin-top:8px; align-items:baseline; }
-  .stat b { font-size:22px; font-weight:700; color:#7a6440; }
-  .stat span { font-size:11px; color:#8a857a; letter-spacing:.5px; }
-  .stat .unit { font-size:12px; color:#9a7b4a; }
-  .warm { margin-left:auto; font-size:12px; color:#7d756a; text-align:right; }
+  .stats { display:flex; gap:13px; margin-top:3px; align-items:baseline; }
+  .stat b { font-size:18px; font-weight:700; color:#7a6440; }
+  .stat span { font-size:10px; color:#8a857a; letter-spacing:.5px; }
+  .stat .unit { font-size:11px; color:#9a7b4a; }
+  .warm { margin-left:auto; font-size:11px; color:#7d756a; text-align:right; line-height:1.25; }
   .warm b { color:#9a7b4a; }
 
   /* ---------- 지도 (스크롤 캔버스) ---------- */
@@ -148,7 +148,7 @@
       radial-gradient(120% 60% at 70% 8%, rgba(180,200,210,.45), transparent 60%),
       radial-gradient(90% 50% at 20% 0%, rgba(205,185,180,.35), transparent 55%),
       linear-gradient(#eef0ea 0%, #f3efe6 45%); }
-  #pageWalk .scene { position:absolute; left:0; bottom:0; width:100%; height:60%; overflow:hidden; }
+  #pageWalk .scene { position:absolute; left:0; bottom:0; width:100%; height:52%; overflow:hidden; }
   #pageWalk .hill { position:absolute; bottom:8%; border-radius:50% 50% 42% 42%; filter:url(#paint); opacity:.78; }
   /* 먼 언덕은 아주 느린 바람(걷기와 무관한 분위기) */
   #pageWalk .h1 { width:80%; height:42%; left:-12%; background:#aebfa9; animation:drift 70s linear infinite; }
@@ -159,17 +159,14 @@
   /* 길 점선: 한 보마다 한 칸 전진 (상시 흐름 아님) */
   #pageWalk .roadline { position:absolute; left:0; bottom:7%; width:100%; height:3px; opacity:.5;
     background:repeating-linear-gradient(90deg,#bda886 0 26px,transparent 26px 54px); transition:background-position .16s ease-out; }
-  /* 하늘의 마음 보유 표시 */
-  #mindsky { position:absolute; top:10px; left:14px; right:14px; z-index:5; display:flex; flex-wrap:wrap; gap:6px; pointer-events:none; }
-  .mindchip { font-size:12px; color:#6a6358; background:rgba(247,243,234,.62); border:1px solid rgba(150,140,120,.32);
-    border-radius:12px; padding:3px 9px; display:flex; align-items:center; gap:5px; animation:fadein .6s ease; }
-  .mindchip .dot { width:9px; height:9px; border-radius:50%; box-shadow:0 0 0 2px rgba(255,255,255,.5); }
-  .mindchip b { color:#7a6440; }
-  .mindempty { font-family:'Gaegu',cursive; font-size:15px; color:#9a917f; opacity:.8; }
-  .fragcount { flex-basis:100%; font-family:'Gaegu',cursive; font-size:14px; color:#7a6a4a;
+  /* 하늘의 마음 보유 표시 (한 줄 카운트 + 한 줄 칩) */
+  #mindsky { position:absolute; top:7px; left:12px; right:12px; z-index:5; display:flex; flex-direction:column; gap:5px; pointer-events:none; }
+  .fragline { align-self:flex-start; font-family:'Gaegu',cursive; font-size:14px; color:#7a6a4a; white-space:nowrap;
     background:rgba(247,243,234,.66); border:1px solid rgba(150,140,120,.32); border-radius:12px; padding:2px 11px; }
-  .fragcount b { color:#9a6a3a; font-size:16px; }
-  .fragcount .goal { color:#9a917f; font-size:12px; }
+  .fragline b { color:#9a6a3a; font-size:15px; }
+  .fragline .sep { color:#c3b8a2; margin:0 6px; }
+  .fragline .goal { color:#9a917f; font-size:11px; margin-left:5px; }
+  .fragline .ck { color:#9a7b4a; }
   @keyframes fadein { from{opacity:0; transform:translateY(-4px)} to{opacity:1; transform:none} }
 
   /* 새 (하늘) + 꽃·동물 (땅) */
@@ -186,7 +183,7 @@
     font-family:'Nanum Pen Script',cursive; font-size:18px; color:#8a8071; animation:breathe 2.6s ease-in-out infinite; }
   @keyframes breathe { 0%,100%{opacity:.55} 50%{opacity:1} }
   /* 걷는 동안 로봇의 상태 로그 — 감정을 '오류/고장'으로 읽는 순진한 독백이 흐른다 */
-  #syslog { position:absolute; left:14px; right:14px; bottom:23%; z-index:4; pointer-events:none;
+  #syslog { position:absolute; left:14px; right:14px; top:50px; bottom:auto; z-index:4; pointer-events:none;
     display:flex; flex-direction:column; align-items:center; gap:4px; text-align:center; }
   .syslog-line { font-family:'Gaegu',cursive; font-size:14px; line-height:1.4; color:#7c7468; max-width:300px;
     opacity:0; transform:translateY(8px); transition:opacity .8s ease, transform .8s ease;
@@ -195,6 +192,12 @@
   .syslog-line.out { opacity:0; transform:translateY(-6px); }
   .syslog-line .pre  { color:#9a9384; letter-spacing:.3px; }   /* 차가운 기계 말투 */
   .syslog-line .warm { color:#9a6a3a; }                        /* 감정이 새어나온 부분 */
+  /* 회차 후 '기억 재해석' — 옛 차가운 로그에 줄을 긋고 손글씨로 다시 읽는다 */
+  .syslog-line.reinterp { max-width:330px; }
+  .syslog-line .struck  { display:block; font-family:'Courier New',monospace; font-size:12px; color:#a7a08f;
+    text-decoration:line-through; text-decoration-color:#c7bda6; opacity:.85; }
+  .syslog-line .rewrite { display:block; font-family:'Gaegu',cursive; font-size:17px; color:#9a6a3a; margin-top:3px; }
+  .syslog-line .rewrite .pen { color:#bfa06a; margin-right:3px; }
   .tapfx { position:fixed; pointer-events:none; z-index:30; font-family:'Nanum Pen Script',cursive;
     color:#9a7b4a; font-size:16px; animation:tapup .7s ease-out forwards; }
   @keyframes tapup { from{opacity:.9; transform:translate(-50%,0)} to{opacity:0; transform:translate(-50%,-34px)} }
@@ -217,6 +220,47 @@
     font-family:'Nanum Myeongjo',serif; font-weight:700; font-size:15px; color:#6f5d3c; letter-spacing:2px; cursor:pointer; border-radius:2px; }
   .intro #introBtn:active { background:#e0d4ba; }
   .introskip { margin-top:15px; font-size:12px; color:#a59b8a; cursor:pointer; }
+
+  /* ---------- 회차 정산 (프레스티지) ---------- */
+  .prestige { position:absolute; inset:0; z-index:42; display:none; flex-direction:column; align-items:center; justify-content:center;
+    padding:30px; background:linear-gradient(160deg,#eaf0ee,#dfe6e2); }
+  .prestige.show { display:flex; animation:fade .7s ease; }
+  .prestige .pcard { width:100%; max-width:330px; text-align:center; }
+  .prestige .pbadge { font-size:12px; color:#7a9088; letter-spacing:3px; margin-bottom:18px; }
+  .prestige .pgain { font-family:'Gaegu',cursive; font-size:30px; color:#3f6b62; line-height:1.35; }
+  .prestige .pgain b { color:#2f8f7d; }
+  .prestige .pcycle { font-size:12px; color:#869a92; margin:6px 0 22px; }
+  .prestige .lookbox { border:1px solid #cdd8d2; background:rgba(247,250,248,.6); border-radius:4px; padding:15px 14px 16px; text-align:left; }
+  .prestige .lookttl { font-family:'Nanum Myeongjo',serif; font-weight:700; font-size:14px; color:#3f6b62; letter-spacing:1px; }
+  .prestige .lookdesc { font-size:12px; color:#7a857e; line-height:1.6; margin:6px 0 12px; word-break:keep-all; }
+  .prestige .lookprev { font-family:'Gaegu',cursive; font-size:16px; color:#9a6a3a; min-height:26px; margin-bottom:10px;
+    border-left:2px solid #cdb89a; padding-left:10px; }
+  .prestige .lookprev .s { display:block; font-family:'Courier New',monospace; font-size:11px; color:#a7a08f; text-decoration:line-through; }
+  .prestige .lookrow { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .prestige .lookcnt { font-size:12px; color:#5f7a72; }
+  .prestige .lookcnt b { color:#2f8f7d; font-size:15px; }
+  .prestige #lookBuy { padding:8px 12px; border:1px solid #aac0b6; background:#e3eee8; border-radius:3px;
+    font-family:'Nanum Myeongjo',serif; font-size:12px; color:#3f6b62; cursor:pointer; white-space:nowrap; }
+  .prestige #lookBuy:disabled { opacity:.4; cursor:default; }
+  .prestige #lookBuy:active:enabled { background:#d3e4db; }
+  .prestige #prestigeGo { margin-top:24px; width:100%; padding:14px; border:1px solid #9bb3a8; background:#dfeae4;
+    font-family:'Nanum Myeongjo',serif; font-weight:700; font-size:15px; color:#3f6b62; letter-spacing:2px; cursor:pointer; border-radius:2px; }
+  .prestige #prestigeGo:active { background:#cfe0d8; }
+  /* HUD 마음의 깊이 */
+  .stat.depth b { color:#2f8f7d; }
+
+  /* ---------- 시작 게이트 (로그인 권장) ---------- */
+  .gate { position:absolute; inset:0; z-index:44; display:none; flex-direction:column; align-items:center; justify-content:center;
+    padding:34px; background:linear-gradient(160deg,#eef0ea,#e6e1d4); }
+  .gate.show { display:flex; animation:fade .6s ease; }
+  .gate .gcard { width:100%; max-width:320px; text-align:center; }
+  .gate .glogo { font-size:30px; font-weight:700; color:#54514a; letter-spacing:4px; }
+  .gate .gtag { font-family:'Gaegu',cursive; font-size:16px; color:#8a7f6a; margin:13px 0 36px; line-height:1.65; word-break:keep-all; }
+  .gate #gGoogle { width:100%; padding:14px; border:1px solid #b9a98c; background:#ece3d0;
+    font-family:'Nanum Myeongjo',serif; font-weight:700; font-size:15px; color:#6f5d3c; letter-spacing:1px; cursor:pointer; border-radius:3px; }
+  .gate #gGoogle:active { background:#e0d4ba; }
+  .gate #gBrowse { margin-top:16px; font-size:13px; color:#a59b8a; cursor:pointer; }
+  .gate .gnote { margin-top:28px; font-size:11px; color:#b0a892; line-height:1.6; }
 
   /* ---------- 모달 (만남/재회) ---------- */
   .modal { position:absolute; inset:0; z-index:20; display:none; align-items:center; justify-content:center; padding:26px;
@@ -274,6 +318,7 @@
     <div class="stats">
       <div class="stat"><b id="walks">0</b> <span class="unit">걸음</span></div>
       <div class="stat"><span>걸음/초</span> <b id="rate" style="font-size:16px">0.5</b></div>
+      <div class="stat depth" id="depthStat" style="display:none"><b id="mdepth">0</b> <span class="unit">🌊 마음의 깊이</span></div>
       <div class="warm">마음 온도<br><b id="warm">0</b>%</div>
     </div>
   </div>
@@ -436,6 +481,32 @@
     </div>
     <button id="introBtn" type="button">다음</button>
     <div class="introskip" id="introSkip">바로 이름 짓기 ›</div>
+  </div></div>
+
+  <!-- 시작 게이트: 로그인 권장(스킵 가능) — 들어오면 가장 먼저 -->
+  <div class="gate" id="gate"><div class="gcard">
+    <div class="glogo">AI인간</div>
+    <div class="gtag">버려진 고철 로봇이<br>사람을 만나 감정을 배우는 여행.</div>
+    <button id="gGoogle" type="button">구글로 시작하기</button>
+    <div id="gBrowse">로그인 없이 둘러보기 ›</div>
+    <div class="gnote">로그인하면 어느 기기에서나<br>여행이 이어집니다.</div>
+  </div></div>
+
+  <!-- 회차 정산 (프레스티지): 한 생을 마치고, 마음의 깊이를 얻어 다시 걷는다 -->
+  <div class="prestige" id="prestige"><div class="pcard">
+    <div class="pbadge">— 한 번의 생을 마치고 —</div>
+    <div class="pgain" id="prestigeGain"></div>
+    <div class="pcycle" id="prestigeCycle"></div>
+    <div class="lookbox">
+      <div class="lookttl">되돌아보기</div>
+      <div class="lookdesc">지난 길에 남긴 차가운 기록을, 이제는 마음으로 다시 읽는다. 마음의 깊이를 써서 한 조각씩 되돌아본다.</div>
+      <div class="lookprev" id="lookPrev"></div>
+      <div class="lookrow">
+        <div class="lookcnt">되돌아본 기억 <b id="lookCnt">0</b> <span id="lookMax"></span></div>
+        <button id="lookBuy" type="button"></button>
+      </div>
+    </div>
+    <button id="prestigeGo" type="button">다시, 처음부터 걷는다</button>
   </div></div>
 </div>
 
@@ -719,6 +790,10 @@ const S = {
   discovered: {},        // nodeId -> true (걸음을 비용만큼 모아 희미하게 발견됨)
   robotName: "",         // 로봇 이름(사람마다 다름)
   named: false,          // 플레이어가 온보딩에서 직접 확정했는가
+  depth: 0,              // 🌊 마음의 깊이 (프레스티지 메타통화)
+  cycle: 0,              // 걸어온 회차 수 (0=첫 생)
+  lookback: 0,           // '기억 재해석'으로 되돌아본 기억 수 (마음의 깊이로 구매, §3)
+  seenIntro: false,      // 시작 게이트/온보딩을 한 번이라도 지났는가 (이후 강제 재노출 안 함)
 };
 NODES.forEach(n => S.levels[n.id] = n.completed ? 1 : 0);
 
@@ -833,7 +908,10 @@ function placeRobot(animate){
 function refreshHUD(){
   elWalks.textContent=fmt(S.walks);
   elRate.textContent=S.rate.toFixed(1);
-  const rn=document.getElementById('robotName'); if(rn) rn.textContent = S.robotName ? ("· "+S.robotName) : "";
+  const rn=document.getElementById('robotName');
+  if(rn) rn.textContent = (S.robotName?("· "+S.robotName):"") + (S.cycle>0?` · ${S.cycle}회차`:"");
+  const ds=document.getElementById('depthStat');
+  if(ds){ if(S.depth>0 || S.cycle>0){ ds.style.display=""; document.getElementById('mdepth').textContent=S.depth; } else ds.style.display="none"; }
   const persons = NODES.filter(n=>n.type==="person");
   const learned = persons.filter(n=>S.levels[n.id]>0).length;   // 마음 온도 = 배운 감정 종류 / 전체
   const p = persons.length ? learned/persons.length : 0;
@@ -841,18 +919,12 @@ function refreshHUD(){
   app.style.setProperty("--p",p);   // 두 로봇 공유(상속)
   renderMind();
 }
-// 하늘에 현재 가진 마음 종류 + 각각의 양(=재회 깊이 레벨)
+// 하늘엔 진행도(감정/몸 조각 수)만 — 감정 이름 나열은 하지 않는다(하늘은 로그용 비움)
 function renderMind(){
-  const items=NODES.filter(n=>n.type==="person" && S.levels[n.id]>0)
-    .map(n=>({name:PEOPLE[n.key].name, color:PEOPLE[n.key].color, amt:S.levels[n.id]}));
-  const bodyN=bodyCount();
-  const emoDone=items.length>=FRAG_TOTAL, bodyDone=bodyN>=BODY_TOTAL, both=emoDone&&bodyDone;
-  let html=`<div class="fragcount">🧩 감정조각 <b>${items.length}</b> / 27 ${emoDone?"✓":""}</div>`;
-  html+=`<div class="fragcount" style="border-color:#d8a8a8">🫀 몸조각 <b>${bodyN}</b> / 11 ${bodyDone?"✓":""} ${both?'<span class="goal">→ 샘 재회</span>':'<span class="goal">둘 다 모으면 → 샘</span>'}</div>`;
-  html += items.length
-    ? items.map(it=>`<div class="mindchip"><span class="dot" style="background:${it.color}"></span>${it.name} <b>×${it.amt}</b></div>`).join("")
-    : '<div class="mindempty">아직 배운 마음이 없다…</div>';
-  mindsky.innerHTML=html;
+  const emo=learnedCount(), bodyN=bodyCount();
+  const emoDone=emo>=FRAG_TOTAL, bodyDone=bodyN>=BODY_TOTAL, both=emoDone&&bodyDone;
+  mindsky.innerHTML=`<div class="fragline">🧩 <b>${emo}</b>/27${emoDone?' <span class="ck">✓</span>':''}`
+         + `<span class="sep">·</span>🫀 <b>${bodyN}</b>/11${bodyDone?' <span class="ck">✓</span>':''}</div>`;
 }
 function renderAll(){ sizeCanvas(); renderEdges(); renderNodes(); placeRobot(); refreshHUD(); }
 
@@ -886,8 +958,9 @@ function openNode(n, firstMeet){
     return;
   }
   if(n.type==="human"){            // 반전 — 알고 보니 처음부터 사람이었다
+    afterClose = openPrestige;     // 이 모달을 닫으면 → 회차 정산(프레스티지)으로
     fillModal({ badge:"반전", emo:"🕊 사람이 되다", lv:"", situ:"", log: HUMAN_TEXT,
-      reward:["✨ 알고 보니, 처음부터","💗 너는 이미 사람이었어"], closeText:"새로운 하루로" });
+      reward:["✨ 알고 보니, 처음부터","💗 너는 이미 사람이었어"], closeText:"…그리고, 다시 길 위에" });
     return;
   }
   const cur=(n.gen*lv), nxt=(n.gen*(lv+1));   // 이 노드의 걸음/초 기여(강할수록 큼)
@@ -941,9 +1014,57 @@ function fillModal(o){
   else { b2.style.display="none"; modalUp=null; }
   modal.classList.add("show");
 }
+let afterClose=null;                               // 모달 닫은 뒤 이어질 흐름(엔딩→프레스티지)
 $("#mBtn").onclick=closeModal;                     // 주 버튼 = 다음 길로(닫기)
 $("#mBtn2").onclick=()=>{ if(modalUp) modalUp(); }; // 보조 = 재회(있을 때만)
-function closeModal(){ modal.classList.remove("show"); renderAll(); }
+function closeModal(){ modal.classList.remove("show"); renderAll();
+  const a=afterClose; afterClose=null; if(a) setTimeout(a, 280); }
+
+/* ---------- 회차 정산 (프레스티지) — 한 생을 마치고 마음의 깊이를 얻어 다시 걷는다 ---------- */
+const LOOKBACK_COST = 2;                            // 기억 한 조각 재해석 비용(마음의 깊이)
+function prestigeGain(){                             // 이번 생에 모은 것 = 마음의 깊이
+  const emo=learnedCount(), body=bodyCount();
+  let extra=0; NODES.forEach(n=>{ if((n.type==="person"||n.type==="body") && S.levels[n.id]>1) extra+=S.levels[n.id]-1; });
+  return emo + body + Math.floor(extra/4);          // 첫 생 = 27+11 = 38, 재회 깊이는 보너스
+}
+let pendingGain=0;
+function openPrestige(){
+  pendingGain = prestigeGain();
+  S.depth += pendingGain; S.cycle++;                // 정산은 진입 즉시(되돌아보기에 바로 쓰도록)
+  $("#prestigeGain").innerHTML = `🌊 마음의 깊이 <b>+${pendingGain}</b>`;
+  $("#prestigeCycle").textContent = `${S.cycle}번째 여행을 마쳤다 · 가진 마음의 깊이 ${S.depth}`;
+  renderLookback();
+  document.getElementById('prestige').classList.add('show');
+  refreshHUD(); saveState();
+}
+function renderLookback(){
+  const max=SYS_REINTERP.length;
+  $("#lookCnt").textContent = S.lookback;
+  $("#lookMax").textContent = `/ ${max}`;
+  const prev=$("#lookPrev");
+  if(S.lookback>0){ const r=SYS_REINTERP[S.lookback-1];
+    prev.innerHTML = `<span class="s">${r.old}</span>✎ ${r.fix}`; }
+  else prev.innerHTML = `<span style="color:#a8b0aa">아직 되돌아본 기억이 없다…</span>`;
+  const btn=$("#lookBuy");
+  if(S.lookback>=max){ btn.disabled=true; btn.textContent="모두 되돌아봤다"; }
+  else { btn.disabled = S.depth < LOOKBACK_COST;
+    btn.textContent = `깊이 ${LOOKBACK_COST} 써서 되돌아보기`; }
+}
+$("#lookBuy").onclick=()=>{
+  if(S.lookback>=SYS_REINTERP.length || S.depth<LOOKBACK_COST) return;
+  S.depth-=LOOKBACK_COST; S.lookback++; renderLookback(); refreshHUD(); saveState();
+};
+$("#prestigeGo").onclick=()=>{ doPrestige(); };
+function doPrestige(){                               // 리셋: 걸음·rate·진행 초기화 / depth·cycle·lookback·이름 보존
+  document.getElementById('prestige').classList.remove('show');
+  S.walks=0; S.rate=1.0; S.current="start"; S.discovered={};
+  NODES.forEach(n=>S.levels[n.id]= n.completed?1:0);
+  wholeWalks=0; worldX=0;
+  showPage("walk"); refreshHUD(); renderAll(); saveState();
+  const h=$("#hint");
+  if(h){ h.textContent = `다시, 처음부터. 이번엔 ${S.robotName}가 무엇을 다시 보게 될까`;
+    setTimeout(()=>{ h.textContent="이 길을 두드릴수록 로봇이 더 빨리 걷는다"; }, 5200); }
+}
 
 /* ---------- 걸음당 1보(步) : 걸음이 들어올 때만 한 발 ---------- */
 let stepPhase=false, wholeWalks=0, worldX=0;
@@ -1064,6 +1185,20 @@ function SYS_NAMED(){                                 // 배운 감정 이름을
             `[로그] <span class="warm">‘${nm}’</span>. 아직 익숙하지 않다.` ];
   return t[(Math.random()*t.length)|0];
 }
+// 회차 후 '기억 재해석'(설계서 #3) — 1회차에 차갑게 기록한 오류를, 사람이 된 뒤 손글씨로 다시 읽는다.
+// old = 그때의 차가운 로그 / fix = 회차를 살아낸 지금의 재해석. 앞에서부터 lookback 개수만큼 열린다.
+const SYS_REINTERP=[
+  { old:"[오류] 시각 센서에 원인 불명의 액체. 배출 중…",   fix:"그때 난, 슬펐던 거였어." },
+  { old:"[경고] 코어 회전수 비정상 ↑. 고장인가?",          fix:"고장이 아니라… 설렘이었어." },
+  { old:"[오류] 가슴 부근 압력 이상. 통증 아님. 분류 불가.", fix:"누군가가 그리웠던 거래." },
+  { old:"[오류] 두 발이 명령 없이 멈춤. 원인 불명.",        fix:"꽃을 보느라 멈춰 섰던 거야." },
+  { old:"[경고] 연산 지연 발생. 무언가 자꾸 떠오름.",       fix:"자꾸 그 사람이 떠올랐던 거고." },
+  { old:"[오류] 출력 신호에 미세한 떨림. 손상 아님?",       fix:"그건 웃음이었어. 손상이 아니라." },
+  { old:"[시스템] 외피 부식 31%. 무시함.",                 fix:"부식이 아니라 흉터야. 걸어온 자국." },
+  { old:"[스캔] 바람 4.2m/s. 분류: 무의미.",               fix:"바람이 좋다는 걸, 이제 안다." },
+  { old:"[시스템] 배터리 충분. 목적지 좌표 미상.",          fix:"어디로 가는지 몰라도 괜찮았어." },
+  { old:"[메모] 길이 끝나는 지점 데이터 없음.",             fix:"끝이 없어도, 걷는 게 좋았어." },
+];
 let lastSys="";
 function pickSys(){
   const learned=learnedCount();
@@ -1078,13 +1213,26 @@ function pickSys(){
   }
   return SYS_COLD[0];
 }
+function pickReinterp(){                              // 되돌아본 기억 중 하나(앞에서부터 lookback개만 열림)
+  const max=Math.min(S.lookback, SYS_REINTERP.length);
+  if(max<=0) return null;
+  return SYS_REINTERP[(Math.random()*max)|0];
+}
 function emitSys(){
   if(!syslogEl || curPage!=="walk" || !S.named) return;
   if(document.getElementById('intro')?.classList.contains('show')) return;
-  const text=pickSys();
+  if(document.getElementById('prestige')?.classList.contains('show')) return;
   const div=document.createElement('div'); div.className='syslog-line';
-  const m=text.match(/^(\[[^\]]+\])\s*([\s\S]*)$/);    // 앞 [태그]는 차갑게, 나머지는 기본
-  div.innerHTML = m ? `<span class="pre">${m[1]}</span> ${m[2]}` : text;
+  // 회차를 산 뒤(cycle≥1)·되돌아본 기억이 있으면(lookback>0) 가끔 옛 로그를 줄 긋고 다시 읽는다
+  const rein = (S.cycle>=1 && S.lookback>0 && Math.random()<0.42) ? pickReinterp() : null;
+  if(rein){
+    div.classList.add('reinterp');
+    div.innerHTML = `<span class="struck">${rein.old}</span><span class="rewrite"><span class="pen">✎</span>${rein.fix}</span>`;
+  } else {
+    const text=pickSys();
+    const m=text.match(/^(\[[^\]]+\])\s*([\s\S]*)$/);    // 앞 [태그]는 차갑게, 나머지는 기본
+    div.innerHTML = m ? `<span class="pre">${m[1]}</span> ${m[2]}` : text;
+  }
   syslogEl.appendChild(div);
   requestAnimationFrame(()=>div.classList.add('in'));
   if(syslogEl.children.length>3){ const old=syslogEl.firstElementChild;
@@ -1098,19 +1246,18 @@ function addSysLogs(cold=[], warm=[]){ SYS_COLD.push(...cold); SYS_WARM.push(...
 
 /* ---------- 세이브 (localStorage 즉시 + 새 Supabase 키 넣으면 클라우드 동기화) ---------- */
 const SAVE_KEY = "aingan_save_v1";
-// 인간사냥과 동일 Supabase 프로젝트(우리 것). publishable 키는 클라 공개용(안전·RLS 보호).
+// AI인간 전용 Supabase 프로젝트. publishable 키는 클라 공개용(안전·RLS 보호).
 const SUPA = { url:"https://irpavlciywhjnigqsjxn.supabase.co", anon:"sb_publishable_SNr6tjf-JX5-4NhLBo8oEg_mNqoClDf" };
 const OFFLINE_CAP_H = 4;            // 오프라인 적립 상한(시간)
 
-function devId(){ let id=localStorage.getItem("aingan_dev");
-  if(!id){ id="dev_"+Math.random().toString(36).slice(2,10)+Date.now().toString(36); localStorage.setItem("aingan_dev",id);} return id; }
-function saveKey(){ return authUser ? ("u_"+authUser.id) : devId(); }   // 로그인하면 계정 기준, 아니면 기기 기준
+// 저장은 '로그인된 계정'에 대해서만. 비로그인(둘러보기)은 임시 플레이 — 익명 로컬/클라우드 db를 만들지 않는다.
+function saveKey(){ return authUser ? ("u_"+authUser.id) : null; }
 
 // 로봇이 스스로 짓는 이름 — 사람마다 다르게(첫 플레이에 랜덤, 세이브에 보관)
 const ROBOT_NAMES=["삐삐","또르","깡통이","녹슬이","별이","콩이","또롱","삐릭","깡총","또또","모리","단추","나사","볼트","깜빡이","또각","삐약","동그리","네모","철이","구리","뚜뚜","링링","찌릿","오백","뽀삐","고철이","반짝","덜컹","깡깡"];
 function ensureRobotName(){ if(!S.robotName) S.robotName = ROBOT_NAMES[Math.floor(Math.random()*ROBOT_NAMES.length)]; }
 
-function snapshot(){ return { walks:S.walks, rate:S.rate, current:S.current, levels:S.levels, discovered:S.discovered, robotName:S.robotName, named:S.named, t:Date.now() }; }
+function snapshot(){ return { walks:S.walks, rate:S.rate, current:S.current, levels:S.levels, discovered:S.discovered, robotName:S.robotName, named:S.named, depth:S.depth, cycle:S.cycle, lookback:S.lookback, seenIntro:S.seenIntro, t:Date.now() }; }
 function loadLocal(){ try{ const r=localStorage.getItem(SAVE_KEY); return r?JSON.parse(r):null; }catch(e){ return null; } }
 function applyState(d){
   if(!d) return 0;
@@ -1121,37 +1268,45 @@ function applyState(d){
   S.walks  = d.walks || 0;
   if(d.robotName) S.robotName = d.robotName;
   S.named = !!d.named;
+  S.depth = d.depth || 0; S.cycle = d.cycle || 0; S.lookback = d.lookback || 0;
+  S.seenIntro = !!(d.seenIntro || d.named);   // 기존 이름지은 유저는 자동으로 '봤음' 처리(게이트 안 띄움)
   let off=0; if(d.t){ const sec=Math.max(0,(Date.now()-d.t)/1000); off=Math.min(d.rate*sec, d.rate*3600*OFFLINE_CAP_H); S.walks+=off; }
   wholeWalks=Math.floor(S.walks);
   return off;
 }
-function saveState(){ const d=snapshot();
-  try{ localStorage.setItem(SAVE_KEY, JSON.stringify(d)); }catch(e){}
+function saveState(){
+  if(!authUser) return;                                  // 로그인 안 했으면 저장 안 함(익명 db 안 만듦)
+  const d=snapshot();
+  try{ localStorage.setItem(SAVE_KEY, JSON.stringify(d)); }catch(e){}  // 빠른 부팅용 계정 미러
   supaSave(d);
 }
-async function supaSave(d){ if(!SUPA.url||!SUPA.anon) return;
+async function supaSave(d){ if(!authUser || !SUPA.url || !SUPA.anon) return;
   try{ await fetch(`${SUPA.url}/rest/v1/saves`, { method:"POST",
     headers:{ apikey:SUPA.anon, Authorization:"Bearer "+SUPA.anon, "Content-Type":"application/json", Prefer:"resolution=merge-duplicates" },
     body: JSON.stringify({ device_id:saveKey(), data:d, updated_at:new Date().toISOString() }) }); }catch(e){}
 }
-async function supaLoad(){ if(!SUPA.url||!SUPA.anon) return null;
+async function supaLoad(){ if(!authUser || !SUPA.url || !SUPA.anon) return null;
   try{ const r=await fetch(`${SUPA.url}/rest/v1/saves?device_id=eq.${encodeURIComponent(saveKey())}&select=data`,
     { headers:{ apikey:SUPA.anon, Authorization:"Bearer "+SUPA.anon } });
     const rows=await r.json(); return (rows&&rows[0])?rows[0].data:null; }catch(e){ return null; }
 }
+function resetState(){                                   // 메모리 상태를 새 게임으로 초기화
+  S.walks=0; S.rate=1.0; S.current="start"; S.discovered={};
+  NODES.forEach(n=>S.levels[n.id]= n.completed?1:0);
+  S.robotName=""; S.named=false; S.depth=0; S.cycle=0; S.lookback=0; S.seenIntro=false;
+  wholeWalks=0; worldX=0;
+}
 function bootSave(){
-  const off = applyState(loadLocal());                 // 로컬 즉시 반영(+오프라인 적립)
-  if(!S.named){ startIntro(); }                        // 아직 직접 이름 안 지었으면 → 튜토리얼+이름짓기
-  else if(off>=1){ const h=$("#hint"); h.textContent=`당신이 없는 동안 ${S.robotName}가 ${Math.floor(off)}걸음을 걸었어요`;
+  const off = applyState(loadLocal());                 // 직전 로그인 계정 미러가 있으면 즉시 반영(빠른 부팅)
+  decideEntry();                                        // 게이트 / 온보딩 / 바로 게임 중 결정 (클라우드는 onAuthChanged가 처리)
+  if(S.seenIntro && off>=1){ const h=$("#hint"); h.textContent=`당신이 없는 동안 ${S.robotName}가 ${Math.floor(off)}걸음을 걸었어요`;
     setTimeout(()=>{ h.textContent="이 길을 두드릴수록 로봇이 더 빨리 걷는다"; }, 4500); }
-  supaLoad().then(d=>{ const l=loadLocal();             // 클라우드가 더 최신이면 덮어쓰기
-    if(d && (d.t||0) > (l?.t||0)){ applyState(d); if(S.named) closeIntro(); refreshHUD(); if(curPage==="map") renderAll(); } });
 }
 setInterval(saveState, 10000);
 window.addEventListener("beforeunload", saveState);
 document.addEventListener("visibilitychange", ()=>{ if(document.hidden) saveState(); });
 
-/* ---------- 구글 로그인 (인간사냥과 동일 Supabase 프로젝트) ---------- */
+/* ---------- 구글 로그인 (AI인간 전용 Supabase 프로젝트) ---------- */
 let sb=null, authUser=null, lastKey=null;
 function initAuth(){
   if(!window.supabase || !SUPA.url || !SUPA.anon){ renderAuth(); return; }
@@ -1161,17 +1316,27 @@ function initAuth(){
   sb.auth.getSession().then(({data})=>{ authUser = data?.session?.user || null; renderAuth(); onAuthChanged(); });
 }
 async function googleLogin(){ if(sb) await sb.auth.signInWithOAuth({ provider:"google", options:{ redirectTo: location.origin+location.pathname } }); }
-async function logout(){ if(sb) await sb.auth.signOut(); }
+async function logout(){
+  try{ if(sb) await sb.auth.signOut(); }catch(e){}
+  authUser=null; lastKey=null;
+  try{ localStorage.removeItem(SAVE_KEY); }catch(e){}   // 익명 로컬 기록 남기지 않음
+  resetState();                                          // 메모리 초기화 → 옛 기록 안 보이게
+  closeIntro(); closeModal && closeModal();
+  renderAuth(); refreshHUD();
+  showGate();                                            // 로그아웃 = 로그인(게이트) 화면으로
+}
 function renderAuth(){
   const b=document.getElementById('authBtn'); if(!b) return;
   if(authUser){ const md=authUser.user_metadata||{}; b.textContent="👤 "+(md.name||md.full_name||"로그인됨"); b.classList.add('on'); b.onclick=logout; }
   else { b.textContent="구글 로그인"; b.classList.remove('on'); b.onclick=googleLogin; }
 }
 function onAuthChanged(){
-  const k=saveKey(); if(k===lastKey) return; lastKey=k;   // 키(계정/기기) 바뀔 때만 동기화
+  if(!authUser){ return; }                                // 로그아웃은 logout()에서 게이트로 처리(익명 복원 안 함)
+  const k=saveKey(); if(k===lastKey) return; lastKey=k;
   supaLoad().then(d=>{
-    if(d){ applyState(d); if(S.named) closeIntro(); refreshHUD(); if(curPage==="map") renderAll(); }
-    else { saveState(); }                                 // 이 계정에 세이브 없으면 현재 진행을 올림
+    if(d){ applyState(d); S.seenIntro=true; }             // 계정에 세이브 있음 = 돌아온 유저 → 튜토리얼 생략
+    saveState();                                          // 신규 계정이면 현재 진행 업로드 / 복귀면 미러 갱신
+    decideEntry(); refreshHUD(); if(curPage==="map") renderAll();
   });
 }
 
@@ -1186,8 +1351,35 @@ const INTRO=[
   "「둘 다 모아서 오면\n내가 짠— 하고\n진짜 사람으로\n만들어줄게.」",
   "화면이 다시 꺼졌다.\n…모아오자. 하나씩." ];
 let introStep=0;
-function startIntro(){ introStep=0; document.getElementById('intro').classList.add('show'); renderIntro(); }
+function startIntro(){
+  S.seenIntro=true; saveState();                       // 온보딩이 시작되면 '봤음' — 이후 강제 재노출 안 함
+  closeGate();
+  introStep=0; document.getElementById('intro').classList.add('show'); renderIntro();
+}
 function closeIntro(){ document.getElementById('intro')?.classList.remove('show'); }
+
+/* ---------- 시작 게이트 (로그인 권장 — 스킵 가능) ---------- */
+function showGate(){ document.getElementById('gate')?.classList.add('show'); }
+function closeGate(){ document.getElementById('gate')?.classList.remove('show'); }
+// 로컬에 Supabase 세션 토큰이 있으면 = 로그인된 복귀 유저 (인증은 부팅 직후 비동기로 해소됨)
+function hasAuthSession(){
+  try{ return Object.keys(localStorage).some(k=>k.startsWith('sb-') && k.includes('auth-token')); }catch(e){ return false; }
+}
+// 들어올 때 무엇을 보여줄지: 이미 지났으면 바로 게임 / 로그인 상태면 온보딩 / 아니면 게이트
+function decideEntry(){
+  if(S.seenIntro){
+    closeGate(); closeIntro();
+    if(!S.named) ensureRobotName();                     // 이름 없이 지나친 경우 자동 이름 부여
+    refreshHUD();
+    return;
+  }
+  if(typeof authUser!=="undefined" && authUser){ startIntro(); return; }  // 로그인 했으면 게이트 건너뛰고 온보딩
+  // 아직 authUser 미해소지만 세션 토큰이 있으면 = 복귀 유저 → 게이트 깜빡임 방지, onAuthChanged가 곧 처리
+  if(hasAuthSession()) return;
+  showGate();
+}
+$("#gGoogle")?.addEventListener("click", ()=>{ if(typeof googleLogin==="function") googleLogin(); });
+$("#gBrowse")?.addEventListener("click", ()=>{ startIntro(); });          // 로그인 없이 둘러보기 → 온보딩
 function renderIntro(){
   const t=$("#introText"), nb=$("#introName"), btn=$("#introBtn"), skip=$("#introSkip");
   if(introStep < INTRO.length){
