@@ -141,8 +141,10 @@
   .bot .core{ fill:color-mix(in srgb,#6f9c93 calc((1 - var(--p,0))*100%),#e6a85e); transition:fill 1s; }
   .bot .coreHi{ opacity:calc(.22 + var(--p,0)*.6); }
   .bot .spark{ fill:#fff7e6; opacity:calc(var(--p,0)*.9); }
-  .bot .eye{ fill:color-mix(in srgb,#7e9aa6 calc((1 - var(--p,0))*100%),#f0b257); transition:fill 1s; }
-  .bot .eyeHi{ fill:#fff; opacity:.9; }
+  .bot .eye{ fill:color-mix(in srgb,#5fcde4 calc((1 - var(--p,0))*100%),#ffc64f); transition:fill 1s; }
+  .bot .eyeHi{ fill:#fff; opacity:1; }
+  .bot .cheek{ fill:#eba0a0; opacity:.5; }                          /* 볼 홍조(귀엽게) */
+  .bot .smile{ stroke:#6a6258; stroke-width:1.8; stroke-linecap:round; fill:none; opacity:.7; }
   .bot .tip{ fill:color-mix(in srgb,#b6bcae calc((1 - var(--p,0))*100%),#e89a4e); transition:fill 1s; }
   .bot .tipHalo{ fill:url(#gAura); opacity:calc(var(--p,0)*.5); }
 
@@ -439,9 +441,11 @@
         <!-- 뒤통수 볼트 -->
         <circle cx="78" cy="58" r="4.5" fill="#9aa19c" stroke="#828984" stroke-width="1.5"/>
         <!-- 바이저(앞쪽) + 렌즈 눈 1개 -->
-        <rect class="visor" x="100" y="46" width="24" height="22" rx="11"/>
-        <circle class="eye" cx="114" cy="57" r="6.5"/>
-        <circle class="eyeHi" cx="112" cy="55" r="2" fill="#fff"/>
+        <rect class="visor" x="99" y="45" width="26" height="23" rx="11.5"/>
+        <circle class="eye" cx="113" cy="57" r="7.8"/>
+        <circle class="eyeHi" cx="110.3" cy="54.3" r="2.9" fill="#fff"/>
+        <circle class="eyeHi" cx="115.5" cy="59.5" r="1.3" fill="#fff"/>
+        <ellipse class="cheek" cx="118" cy="71" rx="4.2" ry="2.6"/>
         <!-- 안테나 -->
         <g class="antG"><path class="ant" d="M96 34 q-4 -8 1 -14" fill="none"/><circle class="tipHalo" cx="98" cy="16" r="9"/><circle class="tip" cx="98" cy="16" r="4.5"/></g>
       </svg>
@@ -563,12 +567,15 @@
           <circle cx="45" cy="48" r="5" fill="#9aa19c" stroke="#828984" stroke-width="1.5"/>
           <circle cx="95" cy="48" r="5" fill="#9aa19c" stroke="#828984" stroke-width="1.5"/>
           <!-- 바이저 -->
-          <rect class="visor" x="51" y="38" width="38" height="22" rx="11"/>
-          <!-- 눈(렌즈) -->
-          <circle class="eye" cx="63" cy="49" r="6"/><circle class="eye" cx="77" cy="49" r="6"/>
-          <circle class="eyeHi" cx="61" cy="47" r="1.8"/><circle class="eyeHi" cx="75" cy="47" r="1.8"/>
-          <!-- 입 그릴 -->
-          <g class="grille"><line x1="66" y1="62" x2="66" y2="66"/><line x1="70" y1="62" x2="70" y2="67"/><line x1="74" y1="62" x2="74" y2="66"/></g>
+          <rect class="visor" x="50" y="37" width="40" height="23" rx="11.5"/>
+          <!-- 눈(렌즈) — 크고 동그랗게 + 큰 하이라이트 -->
+          <circle class="eye" cx="62" cy="49" r="7.4"/><circle class="eye" cx="78" cy="49" r="7.4"/>
+          <circle class="eyeHi" cx="59.3" cy="46.3" r="2.7"/><circle class="eyeHi" cx="75.3" cy="46.3" r="2.7"/>
+          <circle class="eyeHi" cx="64.5" cy="51.5" r="1.2"/><circle class="eyeHi" cx="80.5" cy="51.5" r="1.2"/>
+          <!-- 볼 홍조 -->
+          <ellipse class="cheek" cx="55" cy="63" rx="5" ry="3"/><ellipse class="cheek" cx="85" cy="63" rx="5" ry="3"/>
+          <!-- 작은 미소 -->
+          <path class="smile" d="M65 63.5 q5 4 10 0"/>
           <!-- 안테나 -->
           <path class="ant" d="M70 24 q-4 -7 0 -13" fill="none"/>
           <circle class="tipHalo" cx="70" cy="8" r="9"/>
