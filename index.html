@@ -79,21 +79,21 @@
 
   /* 줌 컨트롤 */
   .zoomctl { position:absolute; right:14px; bottom:18px; z-index:8; display:flex; flex-direction:column; gap:6px; }
-  .zoomctl button { width:38px; height:38px; border:1px solid #c4bca9; border-radius:50%;
-    background:rgba(247,243,234,.92); color:#7a6a4a; font-size:20px; font-weight:700;
-    font-family:'Nanum Myeongjo',serif; cursor:pointer; box-shadow:0 3px 10px rgba(0,0,0,.12);
+  .zoomctl button { width:38px; height:38px; border:1px solid #cdbce0; border-radius:50%;
+    background:rgba(251,248,244,.92); color:#7a6a8a; font-size:20px; font-weight:700;
+    font-family:'Nanum Myeongjo',serif; cursor:pointer; box-shadow:0 3px 10px rgba(90,70,120,.12);
     display:flex; align-items:center; justify-content:center; line-height:1; transition:background .15s; }
-  .zoomctl button:active { background:#ece3d0; }
+  .zoomctl button:active { background:#ece6f3; }
   .zoomctl .zlvl { font-size:10px; color:#9a917f; text-align:center; }
   /* 지도 우상단 갈래 필터 (감정 / 몸 — 병렬 보기·집중) */
   .mapfilter { position:absolute; top:12px; right:12px; z-index:8; display:flex; gap:8px; }
-  .filtbtn { position:relative; width:46px; height:46px; border-radius:50%; border:1px solid #c4bca9; background:rgba(247,243,234,.82);
+  .filtbtn { position:relative; width:46px; height:46px; border-radius:50%; border:1px solid #cdbce0; background:rgba(251,248,244,.85);
     font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center;
     transition:opacity .2s, background .2s, box-shadow .2s, transform .1s; }
-  .filtbtn.on { border-color:#9a7b4a; background:#ece3d0; box-shadow:0 2px 9px rgba(120,100,70,.28); }
+  .filtbtn.on { border-color:#b79fd6; background:#ece6f3; box-shadow:0 2px 9px rgba(150,120,200,.28); }
   .filtbtn:not(.on) { opacity:.38; }
   .filtbtn:active { transform:scale(.93); }
-  .filtbtn .cnt { position:absolute; bottom:-3px; right:-3px; font-size:9px; background:#9a7b4a; color:#fff;
+  .filtbtn .cnt { position:absolute; bottom:-3px; right:-3px; font-size:9px; background:#b79fd6; color:#fff;
     border-radius:8px; padding:1px 4px; line-height:1.2; font-family:'Nanum Myeongjo',serif; }
   .edges { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
   .edges line { stroke:#cbbce0; stroke-width:2; stroke-dasharray:5 7; opacity:.55; }
@@ -108,31 +108,31 @@
     filter:url(#paint); transition:transform .3s, box-shadow .3s; position:relative; }
   .node .ring .ic { font-size:22px; opacity:.85; }
   .node .label { font-size:12px; color:#6a6358; letter-spacing:.3px; white-space:nowrap; opacity:.9; }
-  .node .cost { font-size:11px; color:#9a7b4a; font-family:'Gaegu',cursive; }
+  .node .cost { font-size:11px; color:#9a86b8; font-family:'Gaegu',cursive; }
   .node .cost.rate { color:#6f9a72; font-weight:700; }
 
   /* 빈 원 (예고) */
-  .node.empty .ring { background:transparent; border:2px dashed #b3a892; opacity:.55; }
+  .node.empty .ring { background:transparent; border:2px dashed #ccbce2; opacity:.55; }
   .node.empty .label { color:#9a917f; font-style:italic; }
   /* 발견됨(아직 안 엶) = 희미하게. 열면 .done 으로 뚜렷해짐 */
   .node.reachable { cursor:pointer; }
-  .node.reachable .ring { border:2px dashed #bcaa8c; background:rgba(201,143,106,.05);
+  .node.reachable .ring { border:2px dashed #c6b6e0; background:rgba(200,168,224,.06);
     animation:faintpulse 2.6s ease-in-out infinite; cursor:pointer; }
   .node.reachable .ring .ic { opacity:.5; }
   .node.reachable .label { color:#9a917f; opacity:.6; font-style:italic; }
   .node.reachable .cost { opacity:.7; }
   @keyframes faintpulse { 0%,100%{opacity:.4} 50%{opacity:.66} }
   /* 완료 */
-  .node.done .ring { background:radial-gradient(circle,#fbf6e8,#e7d3b3); border:2px solid #c9a86a; opacity:1; cursor:pointer; }
+  .node.done .ring { background:radial-gradient(circle,#fbfdfb,#cfe6d8); border:2px solid #a9d2bf; opacity:1; cursor:pointer; }
   .node.done { cursor:pointer; }
-  .node.done.person .ring { background:radial-gradient(circle,#fbf6e8,#dcc6e0); }
+  .node.done.person .ring { background:radial-gradient(circle,#fffaf6,#f3cfdd); border-color:#e6aecb; }
   /* 대분류(갈래) 허브 노드 — 감정보다 작고 차분하게 */
   /* 갈래 안 대/중/소 크기 (중=기본 58px) */
   .node.tier-big .ring { width:68px; height:68px; }
   .node.tier-small .ring { width:48px; height:48px; }
   .node.category .ring { width:48px; height:48px; }
   .node.category .label { font-weight:700; color:#7a7060; letter-spacing:.6px; }
-  .node.done.category .ring { background:radial-gradient(circle,#f4f0e4,#dcd3c2); border:2px solid #b8a87e; }
+  .node.done.category .ring { background:radial-gradient(circle,#faf7fd,#dcd0ee); border:2px solid #c3b2e0; }
   /* 도착해서 막 열린 자리 — 한 번 반짝(열렸다는 신호) */
   .node.flash .ring { animation:nodeflash .85s ease-out; z-index:6; }
   @keyframes nodeflash {
@@ -141,7 +141,7 @@
     55%  { box-shadow:0 0 14px 6px rgba(255,233,170,.55);  transform:scale(1.05); }
     100% { box-shadow:0 0 0 0 rgba(255,236,180,0);   transform:scale(1); }
   }
-  .node .lv { position:absolute; bottom:-4px; right:-4px; background:#9a7b4a; color:#fff;
+  .node .lv { position:absolute; bottom:-4px; right:-4px; background:#b79fd6; color:#fff;
     font-size:9px; font-weight:700; min-width:15px; height:15px; line-height:15px; border-radius:8px; padding:0 3px;
     font-family:'Nanum Myeongjo',serif; }
 
