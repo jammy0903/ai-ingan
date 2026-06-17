@@ -117,6 +117,9 @@
   .node.done { cursor:pointer; }
   .node.done.person .ring { background:radial-gradient(circle,#fbf6e8,#dcc6e0); }
   /* 대분류(갈래) 허브 노드 — 감정보다 작고 차분하게 */
+  /* 갈래 안 대/중/소 크기 (중=기본 58px) */
+  .node.tier-big .ring { width:68px; height:68px; }
+  .node.tier-small .ring { width:48px; height:48px; }
   .node.category .ring { width:48px; height:48px; }
   .node.category .label { font-weight:700; color:#7a7060; letter-spacing:.6px; }
   .node.done.category .ring { background:radial-gradient(circle,#f4f0e4,#dcd3c2); border:2px solid #b8a87e; }
@@ -273,6 +276,30 @@
     font-family:'Nanum Pen Script',cursive; font-size:17px; color:#8a8071; animation:breathe 2.6s ease-in-out infinite; }
   #sceneTapHint.show { display:block; }
 
+  /* ---------- 엔딩 시네마틱 ---------- */
+  .endcine { position:absolute; inset:0; z-index:46; display:none; flex-direction:column; align-items:center; justify-content:center;
+    padding:36px; text-align:center; background:linear-gradient(160deg,#e8e9e5,#dcd9d1); transition:background 2.4s ease; cursor:pointer; }
+  .endcine.show { display:flex; animation:fade 1.3s ease; }
+  .endcine.warm { background:linear-gradient(160deg,#fbf3e6,#f3e2cd); }      /* 깨달음에서 따뜻해진다 */
+  .endcine .efigure { width:128px; margin-bottom:20px; opacity:0; transform:translateY(16px) scale(.9);
+    transition:opacity 1.4s ease, transform 1.4s ease; }
+  .endcine .efigure.in { opacity:1; transform:none; }
+  .endcine .efigure svg { width:100%; filter:url(#paintSoft) drop-shadow(0 5px 7px rgba(70,66,60,.16)); animation:bob 4s ease-in-out infinite; }
+  .endcine .eheart { transform-box:fill-box; transform-origin:center; animation:heartbeat 1.5s ease-in-out infinite; }
+  @keyframes heartbeat { 0%,100%{transform:scale(1)} 14%{transform:scale(1.18)} 28%{transform:scale(1)} 42%{transform:scale(1.1)} 56%{transform:scale(1)} }
+  .endcine .etext { font-family:'Gaegu',cursive; font-size:27px; line-height:1.75; color:#4d443a; white-space:pre-line;
+    max-width:340px; min-height:150px; display:flex; align-items:center; justify-content:center;
+    opacity:0; transform:translateY(12px); transition:opacity 1.1s ease, transform 1.1s ease; }
+  .endcine .etext.in { opacity:1; transform:none; }
+  .endcine .etext.climax { font-size:31px; color:#9a6a3a; font-weight:700; }
+  .endcine .ehint { position:absolute; bottom:6%; font-family:'Nanum Pen Script',cursive; font-size:16px; color:#9a8f7e;
+    opacity:0; transition:opacity .6s; }
+  .endcine .ehint.in { opacity:.65; animation:breathe 2.6s ease-in-out infinite; }
+  .endcine .ebtn { margin-top:30px; padding:13px 24px; border:1px solid #b9a98c; background:#ece3d0;
+    font-family:'Nanum Myeongjo',serif; font-weight:700; font-size:15px; color:#6f5d3c; letter-spacing:2px; border-radius:2px;
+    opacity:0; pointer-events:none; transition:opacity .9s; }
+  .endcine .ebtn.in { opacity:1; pointer-events:auto; cursor:pointer; }
+
   /* ---------- 온보딩(튜토리얼 + 이름짓기) ---------- */
   .intro { position:absolute; inset:0; z-index:40; display:none; flex-direction:column; align-items:center; justify-content:center;
     padding:30px; background:linear-gradient(160deg,#eef0ea,#e6e1d4); }
@@ -379,6 +406,15 @@
     <linearGradient id="gRust" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c9a988"/><stop offset="1" stop-color="#9f7e63"/></linearGradient>
     <radialGradient id="gCore"><stop offset="0" stop-color="#ffffff" stop-opacity=".95"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></radialGradient>
     <radialGradient id="gAura"><stop offset="0" stop-color="#f0d9a8"/><stop offset="1" stop-color="#f0d9a8" stop-opacity="0"/></radialGradient>
+    <!-- 사람이 된 모습(엔딩)용 — 부드러운 회화풍 음영 -->
+    <radialGradient id="hSkin" cx="42%" cy="34%" r="72%"><stop offset="0" stop-color="#fbdcb8"/><stop offset="55%" stop-color="#f2cca2"/><stop offset="1" stop-color="#e3b487"/></radialGradient>
+    <radialGradient id="hSkinArm" cx="40%" cy="30%" r="80%"><stop offset="0" stop-color="#f3cda7"/><stop offset="1" stop-color="#e1b184"/></radialGradient>
+    <linearGradient id="hDress" x1="0.2" y1="0" x2="0.8" y2="1"><stop offset="0" stop-color="#f6b69c"/><stop offset=".55" stop-color="#ef9d83"/><stop offset="1" stop-color="#df8568"/></linearGradient>
+    <linearGradient id="hHair" x1="0" y1="0" x2="0.3" y2="1"><stop offset="0" stop-color="#7d5f48"/><stop offset="1" stop-color="#5c4636"/></linearGradient>
+    <radialGradient id="hCheek"><stop offset="0" stop-color="#f29a9a" stop-opacity=".75"/><stop offset="1" stop-color="#f29a9a" stop-opacity="0"/></radialGradient>
+    <radialGradient id="hHeart" cx="38%" cy="32%" r="75%"><stop offset="0" stop-color="#f59a9a"/><stop offset="1" stop-color="#d96a6a"/></radialGradient>
+    <radialGradient id="hHeartGlow"><stop offset="0" stop-color="#ffd0d0" stop-opacity=".8"/><stop offset="1" stop-color="#ffd0d0" stop-opacity="0"/></radialGradient>
+    <radialGradient id="hTear" cx="35%" cy="25%" r="80%"><stop offset="0" stop-color="#eaf6fc"/><stop offset="1" stop-color="#9fcde6"/></radialGradient>
   </svg>
 
   <div class="hud">
@@ -666,6 +702,91 @@
     </div>
     <button id="prestigeGo" type="button">다시, 처음부터 걷는다</button>
   </div></div>
+
+  <!-- 엔딩 시네마틱: 샘 재회 → 마법 불발(정적) → "넌 이미 사람이었다" 반전 (한 줄씩 페이드) -->
+  <div class="endcine" id="endcine">
+    <!-- 사람이 된 모습: 코어→가슴의 하트, 안테나→삐친 머리, 기쁘고 슬픈 눈물 -->
+    <div class="efigure" id="eFigure">
+      <svg viewBox="0 0 120 170">
+        <ellipse cx="60" cy="163" rx="28" ry="5" fill="#7f8681" opacity=".15"/>
+        <!-- 다리 + 신발 -->
+        <rect x="49" y="122" width="11" height="22" rx="5.5" fill="url(#hSkinArm)"/>
+        <rect x="60" y="122" width="11" height="22" rx="5.5" fill="url(#hSkinArm)"/>
+        <ellipse cx="53.5" cy="147" rx="8" ry="4.3" fill="#cf8e6a"/>
+        <ellipse cx="66.5" cy="147" rx="8" ry="4.3" fill="#bd7e5c"/>
+        <path d="M47 146 q6.5 3 13 0" stroke="#a8694a" stroke-width="1" fill="none" opacity=".45"/>
+        <!-- 원피스 -->
+        <path d="M60 63 C 46 63 41 73 39 85 C 36 100 33 119 32 130 C 45 136 75 136 88 130 C 87 119 84 100 81 85 C 79 73 74 63 60 63 Z" fill="url(#hDress)" stroke="#d78468" stroke-width="1.3"/>
+        <!-- 소매 퍼프 -->
+        <ellipse cx="41" cy="73" rx="7.5" ry="6" fill="url(#hDress)" stroke="#d78468" stroke-width=".9"/>
+        <ellipse cx="79" cy="73" rx="7.5" ry="6" fill="url(#hDress)" stroke="#d78468" stroke-width=".9"/>
+        <!-- 칼라 -->
+        <path d="M52 66 q8 6 16 0 l-3 6 q-5 3 -10 0 z" fill="#f9c8b5" opacity=".85"/>
+        <!-- 옷주름 -->
+        <path d="M46 100 q14 6 28 0" stroke="#d2795f" stroke-width="1" fill="none" opacity=".4"/>
+        <path d="M40 118 q20 8 40 0" stroke="#d2795f" stroke-width="1" fill="none" opacity=".4"/>
+        <path d="M35 129 q25 7 50 0" stroke="#d2795f" stroke-width="1.2" fill="none" opacity=".5"/>
+        <!-- 가슴 하트 + 글로우 + 하이라이트 -->
+        <circle cx="60" cy="98" r="13" fill="url(#hHeartGlow)"/>
+        <path class="eheart" d="M60 92 c -3 -4.5 -11 -3.5 -11 2.3 c 0 4.8 7 8.3 11 11.2 c 4 -2.9 11 -6.4 11 -11.2 c 0 -5.8 -8 -6.8 -11 -2.3 z" fill="url(#hHeart)"/>
+        <path d="M54.5 95 q-1 3 1 5.5" stroke="#fff" stroke-width="1.3" fill="none" opacity=".55" stroke-linecap="round"/>
+        <!-- 팔 + 손 -->
+        <path d="M42 73 C 34 79 31 90 32 99 C 32.5 103 37 103 37.5 99 C 37 90 40 81 47 77 Z" fill="url(#hSkinArm)"/>
+        <path d="M78 73 C 86 79 89 90 88 99 C 87.5 103 83 103 82.5 99 C 83 90 80 81 73 77 Z" fill="url(#hSkinArm)"/>
+        <circle cx="34.7" cy="101" r="5" fill="url(#hSkin)"/>
+        <circle cx="85.3" cy="101" r="5" fill="url(#hSkin)"/>
+        <!-- 목 -->
+        <rect x="54" y="53" width="12" height="14" rx="5" fill="#ecbf9a"/>
+        <!-- 귀 -->
+        <circle cx="33.5" cy="42" r="4.5" fill="url(#hSkin)"/>
+        <circle cx="86.5" cy="42" r="4.5" fill="url(#hSkin)"/>
+        <!-- 머리 (치비) -->
+        <circle cx="60" cy="39" r="27.5" fill="url(#hSkin)" stroke="#dcab84" stroke-width="1.1"/>
+        <!-- 머리카락: 비대칭 스웹 앞머리 + 얼굴 감싸는 옆 로크 + 가르마·여러 결 (풍성하게) -->
+        <path d="M32 52 C 29 24 45 10 60 10 C 75 10 91 24 88 52 C 85 38 79 33 73 34 C 67 27 50 28 47 34 C 40 33 35 40 32 52 Z" fill="url(#hHair)"/>
+        <!-- 비대칭 스웹 앞머리(오른쪽으로 흐름) -->
+        <path d="M47 34 C 50 25 65 23 76 30 C 68 28 60 30 56 35 C 53 31 50 32 47 34 Z" fill="#6a5040"/>
+        <path d="M73 34 C 79 29 84 31 87 38 C 83 34 79 35 75 38 Z" fill="#6a5040"/>
+        <!-- 양옆 긴 로크(볼을 감싼다) -->
+        <path d="M33 50 C 30 41 31 33 37 30 C 33 42 35 56 41 63 C 36 61 34 56 33 50 Z" fill="#5b4434"/>
+        <path d="M87 50 C 90 41 89 33 83 30 C 87 42 85 56 79 63 C 84 61 86 56 87 50 Z" fill="#5b4434"/>
+        <!-- 삐친머리(ahoge) -->
+        <path d="M57 11 q-3 -9 2.5 -11.5 q3.5 4 1 11.5 z" fill="url(#hHair)"/>
+        <!-- 가르마 + 결/하이라이트 (윤기) -->
+        <path d="M60 12 q-2 6 -3 11" stroke="#523d2e" stroke-width="1.2" fill="none" opacity=".45" stroke-linecap="round"/>
+        <path d="M42 21 q13 -8 27 -4" stroke="#a8866a" stroke-width="2.2" fill="none" opacity=".5" stroke-linecap="round"/>
+        <path d="M48 16 q10 -4 19 -1" stroke="#b9977a" stroke-width="1.3" fill="none" opacity=".4" stroke-linecap="round"/>
+        <path d="M37 30 q-3 7 -1 14" stroke="#8c6c52" stroke-width="1.2" fill="none" opacity=".45" stroke-linecap="round"/>
+        <path d="M83 30 q3 7 1 14" stroke="#8c6c52" stroke-width="1.2" fill="none" opacity=".45" stroke-linecap="round"/>
+        <!-- 볼 홍조 -->
+        <ellipse cx="42" cy="47" rx="6.5" ry="4.3" fill="url(#hCheek)"/>
+        <ellipse cx="78" cy="47" rx="6.5" ry="4.3" fill="url(#hCheek)"/>
+        <!-- 눈: 속눈썹 + 홍채 + 캐치라이트 -->
+        <ellipse cx="50" cy="40" rx="4.8" ry="5.6" fill="#3a2c22"/>
+        <ellipse cx="70" cy="40" rx="4.8" ry="5.6" fill="#3a2c22"/>
+        <ellipse cx="50" cy="42" rx="3.5" ry="3.8" fill="#6e4d34"/>
+        <ellipse cx="70" cy="42" rx="3.5" ry="3.8" fill="#6e4d34"/>
+        <circle cx="48" cy="37.6" r="1.9" fill="#fff"/>
+        <circle cx="68" cy="37.6" r="1.9" fill="#fff"/>
+        <circle cx="52" cy="42.6" r="1" fill="#fff" opacity=".8"/>
+        <circle cx="72" cy="42.6" r="1" fill="#fff" opacity=".8"/>
+        <!-- 눈썹은 앞머리에 자연스레 가려 생략(귀여운 톤) -->
+
+        <!-- 코 -->
+        <path d="M59 45 q1.4 1.6 1.8 3" stroke="#d59f76" stroke-width="1.3" fill="none" stroke-linecap="round" opacity=".7"/>
+        <!-- 눈물 (기뻐서, 슬퍼서) -->
+        <path d="M50 47 q-2.5 7 -0.5 12.5" stroke="url(#hTear)" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+        <path d="M70 47 q2.5 7 0.5 12.5" stroke="url(#hTear)" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+        <ellipse cx="49.4" cy="60.5" rx="2" ry="2.7" fill="url(#hTear)"/>
+        <ellipse cx="70.6" cy="60.5" rx="2" ry="2.7" fill="url(#hTear)"/>
+        <!-- 울먹이며 웃는 입 -->
+        <path d="M53 50 Q60 57.5 67 50" stroke="#b06a48" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="etext" id="eText"></div>
+    <button class="ebtn" id="eBtn" type="button">…그리고, 다시 길 위에</button>
+    <div class="ehint" id="eHint">화면을 톡 —</div>
+  </div>
 </div>
 
 <script src="vendor/supabase.js"></script>
@@ -818,8 +939,6 @@ const PEOPLE = {
     lines:["끝까지 올라왔다.\n두 팔이 저절로 올라갔다.\n해냈다.","숨이 찼지만\n다 잊었다.","끝에 서 보니\n내가 좀 멋졌다."],
     mem:"감정 스물일곱 개,\n내가 다 해낼 수 있을까." },
 };
-const ENDING_TEXT =
-  "길 끝에 그 사람이 있었다.\n흐릿하던 얼굴이\n이제 또렷했다.\n\n나를 만든 사람.\n그리고 나를 두고 간 사람.\n\n나는 울었다.\n기뻐서, 슬퍼서.\n고장이 아니었다.\n\n아, 이게 사람이구나.";
 // 신체: 인체 11 기관계. 감정과 '병렬'로(동시에) 모은다. 로봇이 몸을 한 계통씩 얻는다.
 const BODY = {
   skin:   { name:"피부", color:"#f0d8c8", situ:"<b>차가운 비를 맞았다.</b>",
@@ -845,11 +964,17 @@ const BODY = {
   repro:  { name:"생식", color:"#e8c0cc", situ:"<b>새 생명을 생각했다.</b>",
     lines:["언젠가 나도\n누군가를 낳을 수 있을까.\n생명을 잇는 힘이다.","사랑이\n여기까지 왔다.","사람은\n사람을 남긴다."] },
 };
-// 엔딩 반전: 샘의 '마법'은 없다. 모으는 과정 자체가 이미 사람이 되는 거였다.
-const SAM_TWIST =
-  "길 끝에 샘이 있었다.\n흐릿하던 얼굴이\n또렷했다.\n\n\"다 모아왔구나.\n마음 스물일곱,\n몸 열하나.\"\n\n샘이 손을 들었다.\n마법을 부리듯—\n\n…근데 아무 일도\n일어나지 않았다.\n\n\"뭐 해? 어차피\n넌 벌써 사람인데.\"";
-const HUMAN_TEXT =
-  "고치는 마법 같은 건\n없었다.\n\n슬픔을 알고,\n기쁨을 알고,\n누굴 그리워한 그 순간—\n그때 이미\n사람이 된 거였다.\n\n눈에서 물이 났다.\n기뻐서, 슬퍼서,\n동시에.\n\n고장이… 아니다.\n나는, 사람이다.";
+// 엔딩 시네마틱 시퀀스 — 한 줄씩 페이드. hold=다음까지 정적(마법 불발), warm=화면 따뜻, climax/last=마지막
+const ENDING_SEQ = [
+  { t:"길 끝에 샘이 있었다.\n흐릿하던 얼굴이\n이제 또렷했다." },
+  { t:"\"다 모아왔구나.\n마음 스물일곱,\n몸 열하나.\"" },
+  { t:"샘이 손을 들었다.\n마법을 부리듯—", hold:1800 },
+  { t:"…근데 아무 일도\n일어나지 않았다." },
+  { t:"\"뭐 해? 어차피\n넌 벌써 사람인데.\"", warm:true },
+  { t:"고치는 마법 같은 건\n없었다." },
+  { t:"슬픔을 알고, 기쁨을 알고,\n누굴 그리워한 그 순간—\n그때 이미 사람이 된 거였다." },
+  { t:"눈에서 물이 났다.\n기뻐서, 슬퍼서, 동시에." },
+  { t:"고장이… 아니다.\n나는, 사람이다.", climax:true, last:true } ];
 
 // 노드 = root(감정) → 4 대분류 → 세부 감정 3계층 그래프. 몸은 start에서 병렬로 뻗는다.
 // 같은 결의 감정이 한 분류(category) 아래 모인다. x,y는 computeRadialLayout()이 계산.
@@ -1039,11 +1164,26 @@ function reachCost(id){ // 완료 노드와 잇는 간선 중 최소 비용(=열
   neighbors(id).forEach(([nb,cost])=>{ if(S.levels[nb]>0) c=Math.min(c,cost); });
   return c;
 }
+// 갈래 안 대/중/소 티어 (대=대표 1 / 중=다음 / 소=깊은 마지막). 갈래 안에서 단계적으로 공개.
+const TIER = {
+  joy:"big", adore:"mid", amuse:"mid", flutter:"mid", curious:"small", beauty:"small", admire:"small", awe:"small", trance:"small", satisfy:"small",
+  fear:"big", confuse:"mid", bored:"mid", awkward:"mid", anxiety:"small", disgust:"small", horror:"small",
+  excite:"big", relief:"mid", attract:"mid", crave:"small", triumph:"small",
+  sorrow:"big", empathy:"mid", longing:"mid", compassion:"small", calm:"small",
+};
+// 한 갈래에서 '재회' 누적 횟수(레벨2 이상으로 다시 만난 만큼)
+function regionReunions(catId){ let r=0; NODES.forEach(n=>{ if(n.type==="person"&&n.parent===catId) r+=Math.max(0,(S.levels[n.id]||0)-1); }); return r; }
 // 노드는 '걸음을 그 비용만큼 모은' 순간 처음 희미하게 발견된다(이후 계속 보임).
 function gateOk(n){                                 // 챕터 게이트
   if(n.type==="ending") return learnedCount()>=FRAG_TOTAL && bodyCount()>=BODY_TOTAL; // 샘 재회 = 마음27 + 몸11 둘 다
   if(n.type==="human")  return S.levels["becoming"]>0;                                // 샘을 만난 뒤에 사람
-  return true;   // person·body 는 평소 발견 규칙(부모 완료 + 걸음)으로 '병렬' 성장
+  if(n.type==="person"){                           // 갈래 안 단계 공개: 대 → (재회) → 중 → (재회) → 소
+    const tier=TIER[n.key];
+    if(tier==="mid")   return regionReunions(n.parent)>=1;   // 중: 그 갈래에서 재회 1회 이상
+    if(tier==="small") return regionReunions(n.parent)>=2;   // 소: 재회 2회 이상
+    return true;                                   // 대(대표 감정): 평소대로(허브 완료 + 걸음)
+  }
+  return true;   // 대분류 허브·몸 등은 평소 발견 규칙
 }
 function updateDiscovered(){
   let changed=false;
@@ -1095,6 +1235,7 @@ function renderNodes(){
     const el=document.createElement("div");
     el.className="node "+n.type+(done?" done":(n.type!=="teaser"?" reachable":" empty"));
     if(n.type==="teaser") el.className="node teaser empty";
+    if(n.type==="person" && TIER[n.key]) el.classList.add("tier-"+TIER[n.key]);   // 대/중/소 크기
     el.dataset.id=n.id;
     el.style.left=p.x+"px"; el.style.top=p.y+"px";
     let name = n.type==="person"?PEOPLE[n.key].name
@@ -1203,16 +1344,8 @@ function objParticle(word){
 }
 function openNode(n, firstMeet){
   const lv=S.levels[n.id];
-  if(n.type==="ending"){           // 샘 재회 — 마음27 + 몸11 둘 다 모은 뒤에만 도달(gateOk)
-    fillModal({ badge:"길 끝, 다시 만난 샘", emo:"샘 알트머스크", lv:"나를 만든 사람", situ:"",
-      log: SAM_TWIST,
-      reward:["🧩 감정 27 · 🫀 몸 11 — 다 모았다","💗 …근데 샘이 이상한 말을 한다"], closeText:"사람이… 되는 걸까" });
-    return;
-  }
-  if(n.type==="human"){            // 반전 — 알고 보니 처음부터 사람이었다
-    afterClose = openPrestige;     // 이 모달을 닫으면 → 회차 정산(프레스티지)으로
-    fillModal({ badge:"반전", emo:"🕊 사람이 되다", lv:"", situ:"", log: HUMAN_TEXT,
-      reward:["✨ 알고 보니, 처음부터","💗 너는 이미 사람이었어"], closeText:"…그리고, 다시 길 위에" });
+  if(n.type==="ending" || n.type==="human"){   // 샘 재회 + 반전 = 한 편의 시네마틱(끝나면 프레스티지)
+    startEnding();
     return;
   }
   if(n.type==="category"){          // 대분류 허브 — 이야기 없이, 갈래가 펼쳐졌다는 신호만
@@ -1297,6 +1430,37 @@ modal.addEventListener("click", e=>{ if(e.target!==modal) return;            // 
   if(modalNext){ const f=modalNext; modalNext=null; f(); } else closeModal(); });  // = 다음 페이지 or 닫기
 function closeModal(){ modal.classList.remove("show"); renderAll();
   const a=afterClose; afterClose=null; if(a) setTimeout(a, 280); }
+
+/* ---------- 엔딩 시네마틱 (샘 재회 → 마법 불발 정적 → "넌 이미 사람이었다" 반전) ---------- */
+let endStep=0, endHold=false;
+function startEnding(){
+  endStep=0; endHold=false;
+  const ec=$("#endcine");
+  ec.classList.remove("warm"); ec.classList.add("show");
+  $("#eBtn").classList.remove("in"); $("#eText").classList.remove("in","climax"); $("#eHint").classList.remove("in");
+  $("#eFigure").classList.remove("in");               // 사람이 된 모습은 깨달음(warm)에서 등장
+  setTimeout(renderEndStep, 800);                     // 암전 뒤 첫 컷
+}
+function renderEndStep(){
+  const ec=$("#endcine"), t=$("#eText"), seg=ENDING_SEQ[endStep];
+  t.textContent=seg.t;
+  t.classList.toggle("climax", !!seg.climax);
+  if(seg.warm){ ec.classList.add("warm"); $("#eFigure").classList.add("in"); }   // 따뜻해지며 사람이 된 모습 등장
+  requestAnimationFrame(()=>t.classList.add("in"));
+  $("#eHint").classList.toggle("in", !seg.last && !seg.hold);
+  if(seg.last) setTimeout(()=>$("#eBtn").classList.add("in"), 1300);
+  if(seg.hold){ endHold=true; setTimeout(()=>{ endHold=false;
+    if(!ENDING_SEQ[endStep].last) $("#eHint").classList.add("in"); }, seg.hold); }   // 정적
+}
+function advanceEnding(){
+  if(endHold) return;                                 // 정적 구간엔 탭 무시
+  if(endStep>=ENDING_SEQ.length-1) return;            // 마지막 컷은 버튼으로만
+  endStep++;
+  $("#eText").classList.remove("in");                 // 페이드아웃 → 다음 컷
+  setTimeout(renderEndStep, 600);
+}
+function finishEnding(){ $("#endcine").classList.remove("show"); openPrestige(); }
+$("#endcine").addEventListener("click", e=>{ if(e.target.id==="eBtn"){ finishEnding(); return; } advanceEnding(); });
 
 /* ---------- 회차 정산 (프레스티지) — 한 생을 마치고 마음의 깊이를 얻어 다시 걷는다 ---------- */
 const LOOKBACK_COST = 2;                            // 기억 한 조각 재해석 비용(마음의 깊이)
