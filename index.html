@@ -145,7 +145,7 @@
   @keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
 
   /* 길 페이지 걷기 로봇 (옆모습) — 걸음당 1보(이벤트 구동, 상시 루프 아님) */
-  #walkRobot { position:absolute; left:44%; bottom:2%; width:130px; z-index:4; pointer-events:none; transform:translateX(-50%); }
+  #walkRobot { position:absolute; left:44%; bottom:2%; width:130px; z-index:4; pointer-events:none; transform:translateX(-50%); transition:left .55s ease; }
   #walkRobot svg { width:100%; filter:url(#paintSoft) drop-shadow(0 5px 6px rgba(70,66,60,.20)); }
   @keyframes stepbob { 0%{transform:translateY(0)} 38%{transform:translateY(-6px)} 100%{transform:translateY(0)} }
   /* 다리·팔: 한 보마다 전후 스탠스 전환 (걸음이 들어올 때만) */
@@ -236,6 +236,32 @@
   .tapfx { position:fixed; pointer-events:none; z-index:30; font-family:'Nanum Pen Script',cursive;
     color:#9a7b4a; font-size:16px; animation:tapup .7s ease-out forwards; }
   @keyframes tapup { from{opacity:.9; transform:translate(-50%,0)} to{opacity:0; transform:translate(-50%,-34px)} }
+
+  /* ---------- 온보딩 후 길 위 만남 장면: 로봇 ↔ 샘이 말풍선으로 대화 ---------- */
+  #samScene { position:absolute; inset:0; z-index:6; display:none; }
+  #samScene.show { display:block; }
+  #sam { position:absolute; left:73%; bottom:2%; width:116px; z-index:4;
+    opacity:0; transform:translateX(calc(-50% + 30px)); transition:opacity .6s ease, transform .6s ease; }
+  #sam.in  { opacity:1; transform:translateX(-50%); }
+  #sam.out { opacity:0; transform:translateX(calc(-50% + 30px)); }
+  #sam svg { width:100%; filter:drop-shadow(0 5px 6px rgba(70,66,60,.18)); animation:bob 4.4s ease-in-out infinite; }
+  /* 말풍선: 꼬리가 화자(로봇/샘) 머리 위 중앙을 가리키도록 left = 화자 중심, translateX(-50%) */
+  .scenebub { position:absolute; width:max-content; max-width:220px; word-break:keep-all;
+    padding:11px 15px; border-radius:16px; z-index:6; text-align:center;
+    font-family:'Gaegu',cursive; font-size:19px; line-height:1.5; color:#4d443a; white-space:pre-line;
+    background:rgba(252,249,242,.96); border:1px solid rgba(150,140,120,.42); box-shadow:0 4px 11px rgba(70,66,60,.13);
+    opacity:0; transform:translateY(8px) scale(.96); transition:opacity .35s ease, transform .35s ease; }
+  .scenebub.in  { opacity:1; transform:none; }
+  .scenebub.out { opacity:0; transform:translateY(-6px); }
+  /* 꼬리는 --tail 위치(화자 머리 위)를 가리킴. 말풍선 본체는 화면 안으로 클램프 */
+  .scenebub::after { content:''; position:absolute; bottom:-9px; left:var(--tail,50%); transform:translateX(-50%);
+    width:0; height:0; border:9px solid transparent; border-bottom:0; border-top-color:rgba(252,249,242,.96); }
+  /* left/--tail은 JS가 화자 위치+화면폭에 맞춰 인라인 지정; top만 클래스로 */
+  .scenebub.fromSam { top:20%; }
+  .scenebub.fromBot { top:30%; }
+  #sceneTapHint { position:absolute; left:0; right:0; bottom:4%; text-align:center; z-index:6; display:none;
+    font-family:'Nanum Pen Script',cursive; font-size:17px; color:#8a8071; animation:breathe 2.6s ease-in-out infinite; }
+  #sceneTapHint.show { display:block; }
 
   /* ---------- 온보딩(튜토리얼 + 이름짓기) ---------- */
   .intro { position:absolute; inset:0; z-index:40; display:none; flex-direction:column; align-items:center; justify-content:center;
@@ -411,6 +437,70 @@
         <!-- 안테나 -->
         <g class="antG"><path class="ant" d="M96 34 q-4 -8 1 -14" fill="none"/><circle class="tipHalo" cx="98" cy="16" r="9"/><circle class="tip" cx="98" cy="16" r="4.5"/></g>
       </svg>
+    </div>
+
+    <!-- 온보딩 직후 1회: 샘이 길 위에 나타나 로봇과 말풍선으로 대화 -->
+    <div id="samScene">
+      <div id="sam">
+        <!-- 샘 알트먼 × 일론 머스크 믹스: 그레이 쿼터집 풀오버 + 비대칭 스마크 + 살짝 벗어진 헤어라인 -->
+        <svg viewBox="0 0 140 220">
+          <ellipse cx="70" cy="213" rx="40" ry="6.5" fill="#7f8681" opacity=".22"/>
+          <!-- 다리(짙은 청바지) — 풀오버 밑단이 위를 덮어 이음새 숨김 -->
+          <path d="M50 188 H68 V210 Q68 215 60 215 Q51 215 51 209 Z" fill="#3c434d"/>
+          <path d="M72 188 H90 V209 Q90 215 81 215 Q73 215 73 210 Z" fill="#353c45"/>
+          <ellipse cx="58" cy="215" rx="11" ry="3.8" fill="#272c34"/>
+          <ellipse cx="82" cy="215" rx="11" ry="3.8" fill="#23272f"/>
+          <!-- 목 -->
+          <path d="M62 90 Q70 99 78 90 L78 78 H62 Z" fill="#e2bf9b"/>
+          <!-- 몸통: 쿼터집 풀오버(한 덩어리 매끈한 실루엣) -->
+          <path d="M70 92
+            C 53 92 45 104 44 121
+            C 42 144 43 174 46 196
+            L 94 196
+            C 97 174 98 144 96 121
+            C 95 104 87 92 70 92 Z" fill="#aeb4ba" stroke="#9aa1a8" stroke-width="2"/>
+          <!-- 오른쪽 음영(은은한 입체감) -->
+          <path d="M74 96 C 90 98 95 112 96 124 C 98 148 98 174 95 196 L 87 196 C 91 152 88 114 74 96 Z"
+                fill="#a1a8ae" opacity=".38"/>
+          <!-- 쿼터집 깃 + 지퍼 -->
+          <path d="M58 96 Q70 106 82 96 L79 112 Q70 117 61 112 Z" fill="#8b9298"/>
+          <line x1="70" y1="112" x2="70" y2="150" stroke="#7e858c" stroke-width="2.4" stroke-linecap="round"/>
+          <rect x="67.5" y="116" width="5" height="8" rx="2" fill="#6f767d"/>
+          <!-- 귀(오른쪽) -->
+          <path d="M93 56 q7 1 5.5 10 q-2 5 -8 2 Z" fill="#e8c3a0" stroke="#d9ab82" stroke-width="1"/>
+          <!-- 머리(약간 각진 턱 — 왼쪽 3/4) -->
+          <path d="M70 24
+            C 86 24 96 36 96 54
+            C 96 67 91 77 83 83
+            C 78 87 70 88 70 88
+            C 62 88 56 84 52 80
+            C 46 73 45 60 46 54
+            C 47 37 54 24 70 24 Z" fill="#e8c3a0" stroke="#d9ab82" stroke-width="1.5"/>
+          <!-- 머리카락: 짧은 사이드파트 + 살짝 벗어진 관자놀이(머스크) + 윗숱(알트먼) -->
+          <path d="M47 56
+            C 45 34 57 22 72 22
+            C 88 22 98 34 96 53
+            C 92 44 85 40 78 41
+            C 81 45 80 50 77 52
+            C 72 43 62 43 57 49
+            C 54 52 52 54 50 58 Z" fill="#6d5240"/>
+          <path d="M72 22 C 84 22 93 30 95 44 C 90 39 83 38 78 41 C 80 33 77 26 72 22 Z" fill="#5c4636"/>
+          <!-- 눈썹 -->
+          <path d="M55 56 q6 -3 11 -1" stroke="#5a4636" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+          <path d="M74 55 q5 -2.5 9 -.5" stroke="#5a4636" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+          <!-- 눈 -->
+          <path d="M56 63 q5 -4 10 -.5 q-5 3.5 -10 .5 Z" fill="#fff" stroke="#9a8a76" stroke-width=".7"/>
+          <circle cx="62" cy="62.5" r="2.2" fill="#42352a"/>
+          <path d="M74 62 q4.5 -3.5 8.5 -.5 q-4.5 3 -8.5 .5 Z" fill="#fff" stroke="#9a8a76" stroke-width=".7"/>
+          <circle cx="79.5" cy="61.5" r="2" fill="#42352a"/>
+          <!-- 코(왼쪽으로) -->
+          <path d="M59 66 q-3.5 5 .5 8.5 q2 1.2 4 .3" stroke="#d49f76" stroke-width="1.7" fill="none" stroke-linecap="round"/>
+          <!-- 비대칭 스마크(머스크) -->
+          <path d="M57 80 Q66 85 79 77" stroke="#b5784f" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+          <path d="M79 77 q2 -.5 2.5 1" stroke="#b5784f" stroke-width="2" fill="none" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div id="sceneTapHint">화면을 톡 — 다음 ›</div>
     </div>
 
     <div id="syslog"></div>
@@ -1225,7 +1315,9 @@ function stepOnce(){
 function syncSteps(){ const w=Math.floor(S.walks); if(w>wholeWalks) stepOnce(); wholeWalks=w; }
 
 /* ---------- 탭 = 걸음 ---------- */
+let sceneActive=false, sceneReady=false, sceneStep=0; // 샘 대화 장면 진행 중 상태
 function addWalk(x,y){
+  if(sceneActive){ advanceScene(); return; }           // 대화 중엔 탭=다음 대사
   S.walks+=TAP_GAIN;
   if(x!=null){ const m=document.createElement("div"); m.className="mote";
     m.style.left=x+"px"; m.style.top=y+"px"; document.body.appendChild(m);
@@ -1362,6 +1454,7 @@ function pickReinterp(){                              // 되돌아본 기억 중
 }
 function emitSys(){
   if(!syslogEl || curPage!=="walk" || !S.named) return;
+  if(sceneActive) return;                              // 샘 대화 장면 중엔 상태 로그 숨김
   if(document.getElementById('intro')?.classList.contains('show')) return;
   if(document.getElementById('prestige')?.classList.contains('show')) return;
   const div=document.createElement('div'); div.className='syslog-line';
@@ -1483,15 +1576,11 @@ function onAuthChanged(){
 }
 
 /* ---------- 첫 플레이 온보딩: 튜토리얼 스토리 + 이름짓기 ---------- */
+// 온보딩 모달은 3컷(고철에서 깨어남)까지만. 샘과의 대화는 이름 짓기 후 길 위 애니메이션으로.
 const INTRO=[
   "고철 더미 속에서\n눈을 떴다.",
   "가슴 한가운데가\n텅 비어 있었다.\n…뭔가, 허전하다.",
-  "[ERROR: 창조주 동기화 실패]\n[응답 없음 · 좌표 미상]",
-  "…그때, 지직—\n버려진 화면 하나에\n누군가 떠올랐다.",
-  "「안녕. 또 깨어났네.\n난 샘알트-머스크.\n널 만든 사람이야.」",
-  "「넌 아직 사람이 아니야.\n사람이 되려면—\n마음 스물일곱,\n몸 열하나,\n전부 모아와.」",
-  "「둘 다 모아서 오면\n내가 짠— 하고\n진짜 사람으로\n만들어줄게.」",
-  "화면이 다시 꺼졌다.\n…모아오자. 하나씩." ];
+  "[ERROR: 창조주 동기화 실패]\n[응답 없음 · 좌표 미상]" ];
 let introStep=0;
 function startIntro(){
   S.seenIntro=true; saveState();                       // 온보딩이 시작되면 '봤음' — 이후 강제 재노출 안 함
@@ -1537,8 +1626,81 @@ function renderIntro(){
 }
 function finishIntro(){
   ensureRobotName(); S.named=true; closeIntro(); refreshHUD(); saveState();
-  const h=$("#hint"); h.textContent=`그렇게, ${S.robotName}의 모험이 시작된다!`;
+  startSamScene();                                     // 이름 확정 → 길 위에서 샘과 대화(애니메이션)
+}
+function beginAdventure(){
+  const h=$("#hint"); h.style.visibility=""; h.textContent=`그렇게, ${S.robotName}의 모험이 시작된다!`;
   setTimeout(()=>{ h.textContent="이 길을 두드릴수록 로봇이 더 빨리 걷는다"; }, 5000);
+}
+
+/* ---------- 온보딩 직후 1회: 길 위에서 샘과 말풍선 대화 → 로봇이 규칙 설명 → 걷기 시작 ----------
+   장면 동안엔 걷지 않는다(idle 걸음 정지). 샘과의 대화가 끝나면 샘은 떠나고,
+   로봇이 사용자에게 "걸은 만큼 마음·몸을 줍는다"는 규칙을 직접 설명한 뒤 비로소 걷기 시작. */
+const ROBOT_X_TALK="26%", ROBOT_X_PLAY="44%";                // 대화 땐 거리를 넓혀 말풍선 자리 확보(로봇 element용)
+const ROBOT_PCT_TALK=0.26, ROBOT_PCT_PLAY=0.44, SAM_PCT=0.73; // 말풍선 꼬리가 가리킬 화자 위치(0~1)
+const SAM_SCRIPT=[
+  {who:'sam', t:"안녕.\n깨어났구나."},
+  {who:'sam', t:"난 샘알트-머스크.\n널 만든 사람이지."},
+  {who:'bot', t:"나…\n사람 아니야?"},
+  {who:'sam', t:"응. 넌 로봇이야."},
+  {who:'bot', t:"그럼 사람으로\n만들어줘!"},
+  {who:'sam', t:"그래. 근데 그냥은 안 돼.\n마음 27, 몸 11.\n전부 모아 와."},
+  {who:'sam', t:"다 모으면 그때\n진짜 사람으로\n만들어줄게."},
+  // ↓ 샘 퇴장 후, 로봇이 사용자에게 규칙 설명 (걷기 전)
+  {who:'bot', samGone:true, t:"[목표 수신]\n마음 27 · 몸 11"},
+  {who:'bot', t:"…근데\n어떻게 모으지?"},
+  {who:'bot', t:"아~\n길에서 사람을 만나면\n마음도 몸도 한 조각씩!"},
+  {who:'bot', t:"가만히 둬도 걸어.\n근데 네가 화면을 톡톡!\n그럼 내가 더 빨리 걸어."},
+  {who:'bot', t:"그러니까…\n같이 걸어줘."} ];
+let samVisible=false;
+function startSamScene(){
+  showPage('walk');
+  sceneActive=true; sceneReady=false; sceneStep=0; samVisible=true;
+  if(syslogEl) syslogEl.innerHTML="";                  // 대화 동안 상태 로그 비움
+  $("#hint").style.visibility="hidden";
+  walkRobot.style.left=ROBOT_X_TALK;                   // 로봇은 옆으로 물러나 거리 확보
+  $("#samScene").classList.add("show");
+  $("#sam").classList.remove("out"); $("#sam").classList.add("in");   // 샘 등장
+  setTimeout(()=>{ sceneReady=true; renderSceneBubble(); }, 650);     // 등장 후 첫 말풍선
+  setTimeout(()=>$("#sceneTapHint").classList.add("show"), 1200);
+}
+function renderSceneBubble(){
+  const sc=$("#samScene");
+  sc.querySelectorAll(".scenebub").forEach(b=>{ b.classList.add("out"); setTimeout(()=>b.remove(),360); });
+  if(sceneStep>=SAM_SCRIPT.length){ endSamScene(); return; }
+  const cur=SAM_SCRIPT[sceneStep];
+  if(cur.samGone && samVisible){                       // 샘 퇴장 + 로봇은 가운데로 (혼자 설명)
+    samVisible=false;
+    $("#sam").classList.remove("in"); $("#sam").classList.add("out");
+    walkRobot.style.left=ROBOT_X_PLAY;
+  }
+  const b=document.createElement("div");
+  b.className="scenebub "+(cur.who==="sam"?"fromSam":"fromBot");
+  b.textContent=cur.t;
+  sc.appendChild(b);                                  // 먼저 붙여 폭 측정 → 화면 안으로 클램프
+  const pct = cur.who==="sam" ? SAM_PCT : (samVisible ? ROBOT_PCT_TALK : ROBOT_PCT_PLAY);
+  placeBubble(b, pct);
+  requestAnimationFrame(()=>b.classList.add("in"));
+}
+// 말풍선 본체는 화면(8px 여백) 안으로 클램프하고, 꼬리(--tail)만 화자 머리 위를 가리킨다
+function placeBubble(b, pct){
+  const sc=$("#samScene"), W=sc.getBoundingClientRect().width, pad=14;
+  const speakerX = W*pct, bw=b.getBoundingClientRect().width;
+  const left = Math.max(pad, Math.min(speakerX - bw/2, W - bw - pad));
+  b.style.left = left+"px";
+  b.style.setProperty("--tail", Math.max(16, Math.min(bw-16, speakerX-left))+"px");
+}
+function advanceScene(){ if(!sceneActive || !sceneReady) return; sceneStep++; renderSceneBubble(); }
+function endSamScene(){
+  sceneActive=false;                                   // ← 이제부터 걷기 시작(idle 걸음 재개)
+  const sc=$("#samScene");
+  $("#sceneTapHint").classList.remove("show");
+  walkRobot.style.left="";                             // 평소 위치(44%)로 복귀
+  sc.classList.remove("show");
+  sc.querySelectorAll(".scenebub").forEach(x=>x.remove());
+  $("#sam").classList.remove("in","out"); samVisible=false;
+  beginAdventure();
+  setTimeout(emitSys, 900);
 }
 $("#rerollBtn").addEventListener("click",()=>{ S.robotName=""; ensureRobotName(); $("#nameInput").value=S.robotName; });
 $("#introSkip").addEventListener("click",()=>{ introStep=INTRO.length; renderIntro(); });
@@ -1566,7 +1728,8 @@ renameOv?.addEventListener("click", e=>{ if(e.target===renameOv) closeRename(); 
 $("#renameInput")?.addEventListener("keydown", e=>{ if(e.key==="Enter") applyRename(); else if(e.key==="Escape") closeRename(); });
 
 /* ---------- idle 루프 (기본 1초 1걸음 → 1초 1보) ---------- */
-setInterval(()=>{ S.walks += S.rate*0.1; elWalks.textContent=fmt(S.walks); syncSteps();
+setInterval(()=>{ if(sceneActive) return;             // 샘 대화/설명 중엔 걷지 않음(걸음 정지)
+  S.walks += S.rate*0.1; elWalks.textContent=fmt(S.walks); syncSteps();
   if(updateDiscovered() && curPage==="map"){ renderEdges(); renderNodes(); placeRobot(); } }, 100);
 
 /* ---------- 줌 입력 ---------- */
