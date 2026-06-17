@@ -4,6 +4,35 @@
 
 ---
 
+## 0. WORKING RULES (read before touching anything)
+
+> Rules are in English; talk to the user and write code comments in Korean.
+
+### 0.0 Language
+- **Always talk to the user in Korean.** No exceptions, regardless of the language the user writes in.
+
+### 0.1 Refactoring rules
+1. **Refactor first, add features second. Never both at once.** Finish the structural change, verify it works (test), commit — *then* layer the new feature on top. Mixing them makes bugs untraceable. Always split into stages.
+2. **Don't change business logic on speculation.** No "this would be cleaner/faster" rewrites of existing data flow or error handling. Touch only what the user explicitly asked to change or add.
+3. **Trust the code over the comments.** Comments may be decades-old fossils — analyze the logic that actually runs, not the comment beside it. While refactoring, delete or update stale/wrong comments so they match reality.
+4. **Map the blast radius first, then report.** Before editing a shared/common function or anything referenced elsewhere, tell the user "this also affects A and B — proceed?" and wait. Never edit shared code blind.
+5. **Keep changes splittable into small git commits.** Don't overturn dozens of files at once. Deliver incrementally — "Stage 1: extracted fn X", "Stage 2: added feature interface Y" — so the user can review and commit each separately.
+6. **Stay in this project's style.** No forced latest-trend or heavyweight design patterns. Match the existing conventions, naming, and architecture grain. **No over-engineering.**
+
+### 0.2 Commit & push rules
+- **Read `git-rule.md`** before any git operation (commit / branch / staging). It is the source of truth for commit conventions.
+- **Commit or push only when the user asks.** End the commit body with:
+  `Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>`
+
+### 0.3 New-session rules
+- **Read `project-summary.md` first** to understand the project, then this file (CLAUDE.md) and the `MEMORY.md` index — together they are the source of truth for project state and prior decisions.
+- **`git pull` all branches** at session start so local is in sync (`git fetch --all` + pull current branch).
+- **Start from a clean `git status`** when beginning staged work; verify with `git status` before editing.
+- No hot reload: after editing, the user must manually F5. Verify syntax with `node --check` on the inline script before claiming done.
+- Check `plan.md` and recent commits for in-flight work before starting something new.
+
+---
+
 ## 1. 프로젝트 정체
 
 - **제목: AI인간** (aingan)
