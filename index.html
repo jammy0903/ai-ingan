@@ -1741,8 +1741,10 @@ function applyState(d){
   return off;
 }
 function saveState(){
-  if(!authUser) return;                                  // 둘러보기(로그인 X)는 의도적으로 비저장 — 익명=휘발, 로그인 유도(설계). CLAUDE.md 참고
-  supaSave(snapshot());                                  // 클라우드(Supabase)에만 저장 — localStorage엔 안 남김(캐시 자동로그인/계정 혼선 방지)
+  if(!authUser) return;                                  // 둘러보기(로그인 X)는 의도적으로 로컬에도 저장 안 함 — 익명=휘발, 로그인 유도(설계). CLAUDE.md 참고
+  const d=snapshot();
+  try{ localStorage.setItem(SAVE_KEY, JSON.stringify(d)); }catch(e){}  // 빠른 부팅용 계정 미러(로그인 유저만)
+  supaSave(d);
 }
 async function supaSave(d){ if(!authUser || !SUPA.url || !SUPA.anon) return;
   try{ await fetch(`${SUPA.url}/rest/v1/saves`, { method:"POST",
@@ -1761,8 +1763,10 @@ function resetState(){                                   // 메모리 상태를 
   wholeWalks=0; worldX=0;
 }
 function bootSave(){
-  try{ localStorage.removeItem(SAVE_KEY); }catch(e){}   // 로컬 미러 안 씀(옛 잔재 제거) — 로그인은 매번 클라우드에서, 세션도 비저장
-  decideEntry();                                        // 미로그인=게이트 → 계정 선택 → onAuthChanged가 클라우드 로드(오프라인 누적은 applyState가 처리)
+  const off = applyState(loadLocal());                 // 직전 로그인 계정 미러가 있으면 즉시 반영(빠른 부팅)
+  decideEntry();                                        // 게이트 / 온보딩 / 바로 게임 중 결정 (클라우드는 onAuthChanged가 처리)
+  if(S.seenIntro && off>=1){ const h=$("#hint"); h.textContent=`당신이 없는 동안 ${S.robotName}가 ${Math.floor(off)}걸음을 걸었어요`;
+    setTimeout(()=>{ h.textContent="이 길을 두드릴수록 로봇이 더 빨리 걷는다"; }, 4500); }
 }
 setInterval(saveState, 10000);
 window.addEventListener("beforeunload", saveState);
@@ -1772,7 +1776,7 @@ document.addEventListener("visibilitychange", ()=>{ if(document.hidden) saveStat
 let sb=null, authUser=null, lastKey=null;
 function initAuth(){
   if(!window.supabase || !SUPA.url || !SUPA.anon){ renderAuth(); return; }
-  try{ sb = window.supabase.createClient(SUPA.url, SUPA.anon, { auth:{ persistSession:false, autoRefreshToken:false, detectSessionInUrl:true } }); }  // 세션 localStorage 미저장 → 캐시 자동로그인 방지(매번 계정 선택). detectSessionInUrl은 OAuth 복귀 토큰 처리용(메모리)
+  try{ sb = window.supabase.createClient(SUPA.url, SUPA.anon, { auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:true } }); }  // 세션 유지(자동 로그인). 계정 전환은 '로그아웃 후 재로그인' 시 prompt:select_account로
   catch(e){ renderAuth(); return; }
   sb.auth.onAuthStateChange((_e,s)=>{ authUser = s?.user || null; renderAuth(); onAuthChanged(); });
   sb.auth.getSession().then(({data})=>{ authUser = data?.session?.user || null; renderAuth(); onAuthChanged(); });
