@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "click.aingan.twa",
+      "sha256_cert_fingerprints": [
+        "4D:08:18:79:6A:62:0F:1A:FB:C8:6E:86:F2:AC:7B:D1:39:AC:4B:E6:0D:91:4C:14:15:9B:A0:3A:F1:63:03:B0"
+      ]
+    }
+  }
+]
