@@ -37,7 +37,7 @@
   .hud { position:relative; z-index:6; padding:7px 16px 6px; flex:0 0 auto;
     background:linear-gradient(#eef0ea, #f3efe6); border-bottom:1px solid rgba(150,140,120,.18); }
   .titlebar { display:flex; justify-content:space-between; align-items:baseline; }
-  .title { font-weight:700; font-size:15px; color:#54514a; letter-spacing:1px; }
+  .title { font-weight:700; font-size:14px; color:#54514a; letter-spacing:0; white-space:nowrap; }
   .tag { font-size:10px; color:#8a857a; border:1px solid #c9c2b3; padding:2px 7px; border-radius:3px; }
   .rn { font-size:13px; color:#9a7b4a; font-family:'Gaegu',cursive; cursor:pointer; }
   .rn:hover { text-decoration:underline; opacity:.85; }
@@ -429,7 +429,7 @@
 
   <div class="hud">
     <div class="titlebar">
-      <div class="title">AI인간 <span id="robotName" class="rn" title="이름 바꾸기"></span></div>
+      <div class="title">강철의 인간술사 <span id="robotName" class="rn" title="이름 바꾸기"></span></div>
       <button id="authBtn" class="authbtn">구글 로그인</button>
     </div>
     <div class="stats">
@@ -693,7 +693,9 @@
     <div class="gtag">버려진 고철 로봇이<br>사람을 만나 감정을 배우는 여행.</div>
     <button id="gGoogle" type="button">구글로 시작하기</button>
     <div id="gBrowse">로그인 없이 둘러보기 ›</div>
-    <div class="gnote">로그인하면 어느 기기에서나<br>여행이 이어집니다.</div>
+    <div class="gnote">로그인하면 어느 기기에서나<br>여행이 이어집니다.<br>
+      <a href="privacy.html" style="color:#a59b8a">개인정보처리방침</a> ·
+      <a href="delete-account.html" style="color:#a59b8a">계정·데이터 삭제</a></div>
   </div></div>
 
   <!-- 회차 정산 (프레스티지): 한 생을 마치고, 마음의 깊이를 얻어 다시 걷는다 -->
@@ -1143,7 +1145,7 @@ const modal=$("#modal");
 
 /* ---------- 줌 + 월드 좌표 (월드는 base 좌표, 화면 스케일은 CSS transform) ---------- */
 let zoom = 0.85;
-const ZMIN=0.4, ZMAX=2.2;
+const ZMIN=0.22, ZMAX=4.0;
 const baseSize = () => Math.max(map.clientWidth, map.clientHeight) * 2.9;  // 정사각 월드(방사형) — 넓게 펼쳐 노드 간격 확보
 const px = n => ({ x: n.x*baseSize(), y: n.y*baseSize() });                 // 미스케일 월드 좌표
 function sizeCanvas(){
@@ -1156,8 +1158,13 @@ function centerOn(id, smooth){
   map.scrollTo({ left:p.x*zoom-map.clientWidth/2, top:p.y*zoom-map.clientHeight/2, behavior:smooth?"smooth":"auto" });
 }
 function setZoom(z){
+  const old=zoom;
   zoom = Math.max(ZMIN, Math.min(ZMAX, z));
-  sizeCanvas(); centerOn(S.current);
+  // 현재 보고 있는 화면 중심을 유지하며 줌 (S.current로 스냅하지 않음 = 자유로운 줌)
+  const cx=(map.scrollLeft+map.clientWidth/2)/old, cy=(map.scrollTop+map.clientHeight/2)/old;
+  sizeCanvas();
+  map.scrollLeft = cx*zoom - map.clientWidth/2;
+  map.scrollTop  = cy*zoom - map.clientHeight/2;
   const zl=document.getElementById('zlvl'); if(zl) zl.textContent = zoom.toFixed(1)+"×";
 }
 
@@ -1701,7 +1708,7 @@ function addSysLogs(cold=[], warm=[]){ SYS_COLD.push(...cold); SYS_WARM.push(...
 
 /* ---------- 세이브 (localStorage 즉시 + 새 Supabase 키 넣으면 클라우드 동기화) ---------- */
 const SAVE_KEY = "aingan_save_v1";
-// AI인간 전용 Supabase 프로젝트. publishable 키는 클라 공개용(안전·RLS 보호).
+// 강철의 인간술사 전용 Supabase 프로젝트. publishable 키는 클라 공개용(안전·RLS 보호).
 const SUPA = { url:"https://irpavlciywhjnigqsjxn.supabase.co", anon:"sb_publishable_SNr6tjf-JX5-4NhLBo8oEg_mNqoClDf" };
 const OFFLINE_CAP_H = 4;            // 오프라인 적립 상한(시간)
 
@@ -1761,7 +1768,7 @@ setInterval(saveState, 10000);
 window.addEventListener("beforeunload", saveState);
 document.addEventListener("visibilitychange", ()=>{ if(document.hidden) saveState(); });
 
-/* ---------- 구글 로그인 (AI인간 전용 Supabase 프로젝트) ---------- */
+/* ---------- 구글 로그인 (강철의 인간술사 전용 Supabase 프로젝트) ---------- */
 let sb=null, authUser=null, lastKey=null;
 function initAuth(){
   if(!window.supabase || !SUPA.url || !SUPA.anon){ renderAuth(); return; }
