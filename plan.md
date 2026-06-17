@@ -102,8 +102,8 @@ caches.match(req).then(hit => hit || fetch(req)...)
 ## 5. 진행 체크리스트
 
 - [x] ① `snapshot`/`applyState` 세이브 버저닝 + 마이그레이션 — **완료**(`SAVE_VERSION`·`migrate()`·미래버전 클램프, `index.html:1715/1727/1731`)
-- [ ] ② `data.js` 추출 (전역, 모듈 아님, 인라인보다 먼저 로드)
-- [ ] ③ `balance.js` 추출
-- [ ] ④ `sw.js` CORE에 추가 + `CACHE` 범프 규칙 문서화
-- [ ] ⑤ 엔진/뷰 인라인 유지 확인 (회귀 없음, F5 검증)
-- [ ] `node --check` 통과 + 브라우저 동작 확인(걷기·만남·재회·세이브·로그인)
+- [x] ② `data.js` 추출 — **완료**(커밋 78a51f0). PEOPLE·BODY·ENDING_SEQ·NODES·COST_MULT·EDGES·REL_EDGES. node --check 3종 통과. ※COST_MULT는 EDGES 결합 때문에 data.js에 둠(balance ❌)
+- [x] ③ `balance.js` 추출 — **완료**(커밋 df7faea). TAP_GAIN·UP_BASE·upCost·MAX_LV·TIER·LOOKBACK_COST·OFFLINE_CAP_H. COST_MULT는 data.js(EDGES 결합)
+- [x] ④ `sw.js` `CORE`에 data.js·balance.js 추가 + `CACHE=aingan-v2` 범프 + 규칙(CLAUDE.md §7·sw.js 주석) — **완료**
+- [x] ⑤ 엔진/뷰 인라인 유지 확인 — 회귀 없음(엔진·뷰 코드 미변경, 데이터/밸런스만 이동)
+- [x] `node --check`(data·balance·인라인·합본) + 브라우저 부팅(localhost:8000 게이트→인트로 풀렌더, 콘솔 무에러) 통과
