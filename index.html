@@ -120,6 +120,14 @@
   .node.category .ring { width:48px; height:48px; }
   .node.category .label { font-weight:700; color:#7a7060; letter-spacing:.6px; }
   .node.done.category .ring { background:radial-gradient(circle,#f4f0e4,#dcd3c2); border:2px solid #b8a87e; }
+  /* 도착해서 막 열린 자리 — 한 번 반짝(열렸다는 신호) */
+  .node.flash .ring { animation:nodeflash .85s ease-out; z-index:6; }
+  @keyframes nodeflash {
+    0%   { box-shadow:0 0 0 0 rgba(255,236,180,0);   transform:scale(1); }
+    25%  { box-shadow:0 0 22px 11px rgba(255,233,170,.95); transform:scale(1.28); }
+    55%  { box-shadow:0 0 14px 6px rgba(255,233,170,.55);  transform:scale(1.05); }
+    100% { box-shadow:0 0 0 0 rgba(255,236,180,0);   transform:scale(1); }
+  }
   .node .lv { position:absolute; bottom:-4px; right:-4px; background:#9a7b4a; color:#fff;
     font-size:9px; font-weight:700; min-width:15px; height:15px; line-height:15px; border-radius:8px; padding:0 3px;
     font-family:'Nanum Myeongjo',serif; }
@@ -665,142 +673,142 @@ const PEOPLE = {
   adore: { name:"애틋함", color:"#f0c0b0",
     situ:"엄마가 <b>자는 아이를 한참 바라본다.</b>",
     lines:[
-      "엄마가 아이를\n오래 바라봤다.\n눈빛이 말랑했다.\n이게 애틋함이다.",
+      "엄마가 아이를\n오래 바라봤다.\n눈빛이 말랑했다.",
       "보고 또 봐도\n안 질리는 거였다.",
       "나도 누굴\n그렇게 보고 싶다." ],
     mem:"그 사람도 나를\n그렇게 봤을까." },
   beauty: { name:"아름다움", color:"#cdd8e0",
     situ:"<b>노을이 하늘을 붉게 물들인다.</b>",
     lines:[
-      "하늘이 붉게 탔다.\n발이 저절로 멈췄다.\n예뻤다.\n이게 아름다움이다.",
+      "하늘이 붉게 탔다.\n발이 저절로 멈췄다.\n예뻤다.",
       "쓸모도 없는데\n자꾸 보게 됐다.",
       "예쁜 건\n그냥 좋은 거였다." ],
     mem:"그 사람 눈에도\n내가 예뻤을까." },
   admire: { name:"감탄", color:"#e0d4a0",
     situ:"<b>장인이 그릇 하나를 빚어낸다.</b>",
     lines:[
-      "손이 춤추듯 움직였다.\n그릇이 태어났다.\n우와.\n이게 감탄이다.",
+      "손이 춤추듯 움직였다.\n그릇이 태어났다.\n우와.",
       "따라 하고 싶어졌다.",
       "대단한 걸 보면\n나도 커지고 싶다." ],
     mem:"나 만든 사람도\n누가 감탄했을까." },
   attract: { name:"끌림", color:"#e8b0bc",
     situ:"<b>한 사람이 자꾸 누군가를 곁눈질한다.</b>",
     lines:[
-      "자꾸 그쪽으로\n눈이 갔다.\n가까이 가고 싶었다.\n이게 끌림이다.",
+      "자꾸 그쪽으로\n눈이 갔다.\n가까이 가고 싶었다.",
       "왜인지 모르겠는데\n그냥 끌렸다.",
-      "마음이 먼저\n그 사람한테 갔다." ],
+      "나는 누구에게\n마음이 끌릴까." ],
     mem:"내 발도 자꾸\n그 사람 쪽으로 간다." },
   // ▸ 밝은 마음
   joy: { name:"기쁨", color:"#f2cf86",
     situ:"<b>아이들이 비눗방울을 분다.</b>",
     lines:[
-      "방울이 펑 터졌다.\n아이들이 까르르 웃었다.\n나도 웃었다.\n좋다. 이게 기쁨이다.",
+      "방울이 펑 터졌다.\n아이들이 까르르 웃었다.\n나도 웃었다.",
       "나도 방울을 불었다.\n터져도 안 아쉬웠다.\n부는 게 좋았으니까.",
-      "기쁨은\n지금 활짝 웃는 거다." ],
+      "기쁨은\n지금 활짝 웃는 것." ],
     mem:"그 사람이랑도\n이렇게 웃었던 것 같다." },
   amuse: { name:"재미", color:"#f0d878",
     situ:"<b>강아지가 제 꼬리를 빙빙 쫓는다.</b>",
-    lines:["강아지가 꼬리를 쫓았다.\n웃겼다.\n나도 웃음이 났다.\n이게 재미다.","내가 웃으니까\n옆 사람도 웃었다.","재미는\n같이 웃으면 커진다."],
+    lines:["강아지가 꼬리를 쫓았다.\n웃겼다.\n나도 웃음이 났다.","내가 웃으니까\n옆 사람도 웃었다.","재미는\n같이 웃으면 커진다."],
     mem:"그 사람도\n잘 웃었나." },
   excite: { name:"신남", color:"#f5c96a",
     situ:"달리기 전에 <b>아이가 발을 동동 구른다.</b>",
-    lines:["아직 시작도 안 했는데\n아이 가슴이 콩닥거렸다.\n이게 신남이다.","달리기보다\n달리기 전이 더 신났다.","신날 땐\n기다리는 것도 재밌다."],
+    lines:["아직 시작도 안 했는데\n아이 가슴이 콩닥거렸다.","달리기보다\n달리기 전이 더 신났다.","신날 땐\n기다리는 것도 재밌다."],
     mem:"그 사람한테 갈 때\n나도 콩닥거린다." },
   flutter: { name:"설렘", color:"#f3c0a0",
     situ:"<b>한 사람이 편지를 들고</b> 문 앞에 서 있다.",
-    lines:["두드릴까 말까.\n가슴이 간질간질했다.\n이게 설렘이다.","두드리기 전이\n제일 떨리고 좋았다.","설렘은\n좋은 일을 기다리는 거다."],
+    lines:["두드릴까 말까.\n가슴이 간질간질했다.","두드리기 전이\n제일 떨리고 좋았다.","설렘은\n좋은 일을 기다리는 거다."],
     mem:"그 사람 만나면\n나도 설렐까." },
   // ▸ 시린 마음
   sorrow: { name:"슬픔", color:"#bcd0e6",
     situ:"<b>아이가 길에서 울고 있다.</b> 눈에서 물이 난다.",
     lines:[
-      "아이 눈에서 물이 났다.\n고장인 줄 알았다.\n옆에 앉았더니\n내 가슴도 무거웠다. 이게 슬픔이다.",
+      "아이 눈에서 물이 났다.\n고장인 줄 알았다.\n옆에 앉았더니\n내 가슴도 무거웠다.",
       "또 울었다.\n그냥 들어줬다.\n물이 멎었다.",
       "슬픈 사람 옆에\n같이 있어 주면 된다." ],
     mem:"그 사람도\n슬퍼 보였던 것 같다." },
   longing: { name:"그리움", color:"#dcc6e0",
     situ:"버스가 떠났는데 <b>한 사람이 계속 손을 흔든다.</b>",
     lines:[
-      "버스는 갔는데\n그 사람은 계속 손을 흔들었다.\n없어도 자꾸 생각나는 거.\n이게 그리움이다.",
+      "버스는 갔는데\n그 사람은 계속 손을 흔들었다.\n없어도 자꾸 생각나는 거.",
       "그리움은\n없어지지 않았다.\n그냥 익숙해졌다.",
       "보고 싶어도\n웃을 수 있다는 걸 배웠다." ],
     mem:"나도 누가 보고 싶다.\n근데 얼굴이 흐릿하다." },
   crave: { name:"갈망", color:"#d8b89c",
     situ:"<b>한 사람이 빵집 앞에서 못 떠난다.</b>",
     lines:[
-      "갖고 싶은 게\n자꾸 떠올랐다.\n참기 힘들었다.\n이게 갈망이다.",
+      "갖고 싶은 게\n자꾸 떠올랐다.\n참기 힘들었다.",
       "가지면 끝일 줄 알았는데\n또 생겼다.",
       "원하는 게 있으면\n자꾸 걷게 된다." ],
     mem:"나는 그 사람을\n그렇게 원하나 보다." },
   empathy: { name:"안쓰러움", color:"#c0ccd8",
     situ:"<b>한 아이가 넘어져 무릎이 까졌다.</b>",
-    lines:["남이 아픈데\n내 무릎이 시렸다.\n이게 안쓰러움이다.","대신 아파줄 순\n없었다.","그냥 옆에서\n같이 찡그렸다."],
+    lines:["남이 아픈데\n내 무릎이 시렸다.","대신 아파줄 순\n없었다.","그냥 옆에서\n같이 찡그렸다."],
     mem:"그 사람 아플 때\n나는 어디 있었나." },
   compassion: { name:"연민", color:"#c4d8b8",
     situ:"<b>한 사람이 다친 고양이한테</b> 우산을 씌워준다.",
-    lines:["남이 아픈데\n내가 시렸다.\n이게 연민이다.","그냥 못 가고\n옆에 앉아 있었다.","연민은\n같이 비 맞아 주는 거다."],
+    lines:["비 맞는 작은 것을\n그냥 못 지나쳤다.","그냥 못 가고\n옆에 앉아 있었다.","연민은\n같이 비 맞아 주는 거다."],
     mem:"그 사람도\n나를 불쌍히 여겨\n만들었을까." },
   // ▸ 무거운 마음 (불편한 감정)
   fear: { name:"두려움", color:"#b6a892",
     situ:"<b>한 사람이 깜깜한 굴 앞에서</b> 못 들어간다.",
-    lines:["어둠은 아무 말 안 했다.\n근데 발이 안 떨어졌다.\n이게 두려움이다.","한 발 넣으니까\n어둠이 조금 물러났다.","두려움은\n맞서면 작아진다."],
+    lines:["어둠은 아무 말 안 했다.\n근데 발이 안 떨어졌다.","한 발 넣으니까\n어둠이 조금 물러났다.","두려움은\n맞서면 작아진다."],
     mem:"그 사람 만나는 게\n왜 무섭지." },
   anxiety: { name:"불안", color:"#c2b2a0",
     situ:"<b>한 사람이 전화기를 들고</b> 왔다 갔다 한다.",
-    lines:["아직 안 온 일을\n미리 걱정했다.\n이게 불안이다.","전화가 오니까\n걱정이 싹 사라졌다.","걱정한 일은\n거의 안 일어났다."],
+    lines:["아직 안 온 일을\n미리 걱정했다.","전화가 오니까\n걱정이 싹 사라졌다.","걱정한 일은\n거의 안 일어났다."],
     mem:"그 사람이 나를\n잊었을까 봐 불안하다." },
   awkward: { name:"민망함", color:"#ddcab0",
-    situ:"<b>두 사람이 동시에 말하다 멈춘다.</b>",
-    lines:["둘 다 말이 막혔다.\n괜히 헛기침했다.\n이게 민망함이다.","어디 볼지\n몰랐다.","웃어버리니까\n괜찮아졌다."],
+    situ:"누군가 나에게 말을 안 걸었는데 <b>나한테 말 건 줄 알고 대답했다.</b>",
+    lines:["먼 곳을 쳐다보는 척했다.","어디 볼지\n몰랐다.","웃어버리니까\n괜찮아졌다."],
     mem:"그 사람 앞에서도\n나는 쭈뼛댈까." },
   disgust: { name:"혐오", color:"#aebca0",
     situ:"<b>쓰레기 더미에서 냄새가 올라온다.</b>",
-    lines:["코를 막고\n뒤로 물러났다.\n싫었다.\n이게 혐오다.","싫은 게 있다는 건\n좋아하는 게 있다는 거였다.","피하고 싶은 것도\n알아야 했다."],
+    lines:["코를 막고\n뒤로 물러났다.\n싫었다.","싫은 게 있다는 건\n좋아하는 게 있다는 거였다.","피하고 싶은 것도\n알아야 했다."],
     mem:"그 사람은\n뭘 싫어했을까." },
   horror: { name:"오싹함", color:"#9aa6b0",
     situ:"<b>깜깜한 골목에서 무언가 움직인다.</b>",
-    lines:["등이 쭈뼛 섰다.\n온몸이 굳었다.\n이게 오싹함이다.","고양이였다.\n그제야 숨이 쉬어졌다.","무서운 건\n대개 아무것도 아니었다."],
+    lines:["등이 쭈뼛 섰다.\n온몸이 굳었다.","고양이였다.\n그제야 숨이 쉬어졌다.","무서운 건\n대개 아무것도 아니었다."],
     mem:"그 사람을 잃을까 봐\n가끔 오싹하다." },
   // ▸ 벅찬 마음 (관조)
   curious: { name:"호기심", color:"#bcd2c0",
     situ:"<b>아이가 돌을 뒤집어</b> 밑을 본다.",
-    lines:["돌 밑에\n작은 벌레 세상이 있었다.\n이게 호기심이다.","물어볼수록\n세상이 넓어졌다.","궁금하면\n자꾸 걷게 된다."],
+    lines:["돌 밑에\n작은 벌레 세상이 있었다.","물어볼수록\n세상이 넓어졌다.","궁금하면\n자꾸 걷게 된다."],
     mem:"나는 왜 걷지.\n끝에 누가 있을까." },
   awe: { name:"경외", color:"#a9c8c2",
     situ:"<b>사람들이 밤하늘 별을</b> 올려다본다.",
-    lines:["하늘이 너무 컸다.\n나는 아주 작아졌다.\n이게 경외다.","작아져도\n무섭지 않고 좋았다.","큰 걸 보면\n마음이 조용해진다."],
+    lines:["하늘이 너무 컸다.\n나는 아주 작아졌다.","작아져도\n무섭지 않고 좋았다.","큰 걸 보면\n마음이 조용해진다."],
     mem:"나 만든 사람도\n이 하늘 밑에선\n작았겠지." },
   trance: { name:"황홀", color:"#c0c0dc",
     situ:"거리에서 <b>누가 악기를 켠다.</b> 사람들이 멈춘다.",
-    lines:["음악이 들리자\n시간이 멈춘 것 같았다.\n이게 황홀이다.","아무 생각 없이\n그냥 들었다.","황홀은\n지금에 푹 빠지는 거다."],
+    lines:["음악이 들리자\n시간이 멈춘 것 같았다.","아무 생각 없이\n그냥 들었다.","황홀은\n지금에 푹 빠지는 거다."],
     mem:"그 사람도\n뭔가에 빠지곤 했을까." },
   calm: { name:"평온", color:"#bcd0c8",
     situ:"<b>호숫가에 바람 한 점 없다.</b>",
-    lines:["아무 일도 없었다.\n마음이 잔잔했다.\n이게 평온이다.","급할 게 없었다.","조용한 것도\n좋은 거였다."],
+    lines:["아무 일도 없었다.\n마음이 잔잔했다.","급할 게 없었다.","조용한 것도\n좋은 거였다."],
     mem:"그 사람 곁이면\n이렇게 잔잔할까." },
   // ▸ 단단한 마음 → 길 끝(샘알트머스크)
   confuse: { name:"혼란", color:"#cabcd0",
     situ:"<b>갈림길에 푯말이 다 지워져 있다.</b>",
     lines:[
-      "어디로 가야 할지\n하나도 몰랐다.\n머리가 엉켰다.\n이게 혼란이다.",
+      "어디로 가야 할지\n하나도 몰랐다.\n머리가 엉켰다.",
       "한참 서 있다가\n그냥 한쪽을 골랐다.",
       "모를 땐\n일단 걸으면 됐다." ],
     mem:"나는 왜 걷는 걸까.\n가끔 헷갈린다." },
   bored: { name:"지루함", color:"#c4c4b8",
     situ:"<b>한 사람이 빈 정류장에서 하품한다.</b>",
-    lines:["아무것도 안 일어났다.\n시간이 느렸다.\n이게 지루함이다.","심심하니까\n별게 다 궁금해졌다.","지루함 끝엔\n뭔가 시작됐다."],
+    lines:["아무것도 안 일어났다.\n시간이 느렸다.","심심하니까\n별게 다 궁금해졌다.","지루함 끝엔\n뭔가 시작됐다."],
     mem:"그 사람을 기다리는\n이 길도 가끔 지루하다." },
   relief: { name:"안도", color:"#c8dcc0",
     situ:"<b>잃어버린 아이를 엄마가 찾아 끌어안는다.</b>",
-    lines:["꽉 막혔던 게\n탁 풀렸다.\n숨이 쉬어졌다.\n이게 안도다.","걱정한 만큼\n더 후련했다.","괜찮다는 걸 알면\n다리에 힘이 풀렸다."],
+    lines:["꽉 막혔던 게\n탁 풀렸다.\n숨이 쉬어졌다.","걱정한 만큼\n더 후련했다.","괜찮다는 걸 알면\n다리에 힘이 풀렸다."],
     mem:"그 사람을 다시 보면\n나도 이렇게 풀릴까." },
   satisfy: { name:"뿌듯함", color:"#d8e0b0",
     situ:"<b>농부가 다 자란 밭을</b> 둘러본다.",
-    lines:["땀 흘린 만큼\n가득 찼다.\n배가 부른 것 같았다.\n이게 뿌듯함이다.","남이 안 알아줘도\n혼자 꽉 찼다.","해낸 건\n안 사라졌다."],
+    lines:["땀 흘린 만큼\n가득 찼다.\n배가 부른 것 같았다.","남이 안 알아줘도\n혼자 꽉 찼다.","해낸 건\n안 사라졌다."],
     mem:"여기까지 온 것도\n좀 뿌듯하다." },
   triumph: { name:"해냄", color:"#ecc880",
     situ:"<b>한 사람이 산꼭대기에서</b> 두 팔을 든다.",
-    lines:["끝까지 올라왔다.\n두 팔이 저절로 올라갔다.\n해냈다.\n이게 해냄이다.","숨이 찼지만\n다 잊었다.","끝에 서 보니\n내가 좀 멋졌다."],
+    lines:["끝까지 올라왔다.\n두 팔이 저절로 올라갔다.\n해냈다.","숨이 찼지만\n다 잊었다.","끝에 서 보니\n내가 좀 멋졌다."],
     mem:"감정 스물일곱 개,\n내가 다 해낼 수 있을까." },
 };
 const ENDING_TEXT =
@@ -841,13 +849,13 @@ const HUMAN_TEXT =
 const NODES = [
   { id:"start",      type:"start",  parent:null,      cost:0,   gen:0,    icon:"·", completed:true },
   // ── 4 대분류 (root → 분류 → 감정) : 걸음으로 분류에 닿으면 그 아래 감정이 안갯속에서 드러난다 ──
-  { id:"cat_pos",     type:"category", parent:"start", cost:12, gen:0, icon:"🌤", name:"긍정·흥미",
+  { id:"cat_pos",     type:"category", parent:"start", cost:10, gen:0, icon:"🌤", name:"긍정·흥미",
     intro:"밝고 끌리는 마음들이\n이 갈래에 모여 있다." },
-  { id:"cat_unease",  type:"category", parent:"start", cost:16, gen:0, icon:"🌫", name:"불안·불편",
+  { id:"cat_unease",  type:"category", parent:"start", cost:30, gen:0, icon:"🌫", name:"불안·불편",
     intro:"피하고 싶은데\n알아둬야 하는 마음들." },
-  { id:"cat_intense", type:"category", parent:"start", cost:20, gen:0, icon:"🔥", name:"강한 자극",
+  { id:"cat_intense", type:"category", parent:"start", cost:80, gen:0, icon:"🔥", name:"강한 자극",
     intro:"확 타오르는\n뜨거운 마음들." },
-  { id:"cat_calm",    type:"category", parent:"start", cost:14, gen:0, icon:"🌊", name:"잔잔·시림",
+  { id:"cat_calm",    type:"category", parent:"start", cost:50, gen:0, icon:"🌊", name:"잔잔·시림",
     intro:"고요하고\n시린 마음들." },
   // ▸ 긍정·흥미 (10) — 밝고 끌리는
   { id:"adore",   type:"person", key:"adore",   parent:"cat_pos", cost:16,  gen:0.35, icon:"❀" },
@@ -1080,6 +1088,7 @@ function renderNodes(){
     const el=document.createElement("div");
     el.className="node "+n.type+(done?" done":(n.type!=="teaser"?" reachable":" empty"));
     if(n.type==="teaser") el.className="node teaser empty";
+    el.dataset.id=n.id;
     el.style.left=p.x+"px"; el.style.top=p.y+"px";
     let name = n.type==="person"?PEOPLE[n.key].name
              : n.type==="body"?BODY[n.key].name
@@ -1161,15 +1170,30 @@ function tryUnlock(n){
   S.walks -= cost; syncSteps();
   travelTo(n, ()=>{
     S.levels[n.id]=1; S.rate+=n.gen; spark();
-    openNode(n,true);
-    renderAll();
+    renderAll();                       // 자리를 '열림(done)' 상태로 먼저 그리고
+    flashNode(n);                      // 그 자리가 한 번 반짝 → 열렸다는 신호
+    setTimeout(()=>openNode(n,true), 720);  // 반짝임을 본 뒤 모달
   });
+}
+// 막 도착해 열린 노드 자리를 한 번 반짝이게(모달 뜨기 전 인식)
+function flashNode(n){
+  const el=document.querySelector(`.node[data-id="${n.id}"]`);
+  if(!el) return;
+  el.classList.add("flash");
+  setTimeout(()=>el.classList.remove("flash"), 900);
 }
 function learnedCount(){ return NODES.filter(n=>n.type==="person" && S.levels[n.id]>0).length; }
 function bodyCount(){ return NODES.filter(n=>n.type==="body" && S.levels[n.id]>0).length; }
 const FRAG_TOTAL = 27;   // 인간 감정 27가지 (Cowen & Keltner, 2017)
 const BODY_TOTAL = 11;   // 인체 11 기관계
 
+// 목적격 조사 을/를 — 마지막 글자 받침 유무로 결정 ("애틋함을", "재미를")
+function objParticle(word){
+  if(!word) return "을";
+  const c=word.charCodeAt(word.length-1);
+  if(c<0xAC00 || c>0xD7A3) return "을";
+  return ((c-0xAC00)%28)!==0 ? "을" : "를";
+}
 function openNode(n, firstMeet){
   const lv=S.levels[n.id];
   if(n.type==="ending"){           // 샘 재회 — 마음27 + 몸11 둘 다 모은 뒤에만 도달(gateOk)
@@ -1207,15 +1231,27 @@ function openNode(n, firstMeet){
   {
     const pp=PEOPLE[n.key];
     const lineIdx=Math.min(lv-1, pp.lines.length-1);
-    const log = firstMeet ? (pp.lines[0] + "\n\n·   ·   ·\n\n" + pp.mem) : pp.lines[lineIdx];
-    fillModal({ badge:firstMeet?"하나의 감정을 알게 되다":(maxed?"마음 끝까지 닿았다":"다시 만나, 더 깊이"),
-      emo:`『 ${pp.name} 』`, lv:firstMeet?`걸음/초 +${n.gen.toFixed(2)}`:(maxed?`재회 ${lv-1}회 · 마음 끝까지 (최대)`:`재회 ${lv-1}회 · 걸음/초 +${cur.toFixed(1)}`),
-      situ: firstMeet?pp.situ:"", log,
-      reward: firstMeet?[`🧩 감정조각 +1 (${learnedCount()}/${FRAG_TOTAL})`,`🎨 회색 세계에 ${pp.name}의 색이 번진다`,`🧩 그 사람의 얼굴이 조금 또렷해진다`]
-             :(maxed?[`📖 ${pp.name} — 마음 끝까지 닿았다`,`📈 걸음/초 +${cur.toFixed(1)} · 최대 Lv${MAX_LV}`,`(이 인연은 더없이 깊어졌다)`]
+    if(firstMeet){
+      // 1페이지: 상황 + 만남 장면 → 2페이지: "○○을 알게 됐다" 해금 + 그 사람 기억
+      fillModal({ badge:"하나의 감정을 만나다",
+        emo:`『 ${pp.name} 』`, lv:`걸음/초 +${n.gen.toFixed(2)}`,
+        situ: pp.situ, log: pp.lines[0], closeText:"…",
+        next: ()=> fillModal({
+          badge:"새로운 마음, 해금",
+          emo:`『 ${pp.name} 』`, lv:`${objParticle(pp.name)} 알게 됐다`, situ:"",
+          log: pp.mem,
+          reward:[`🧩 감정조각 +1 (${learnedCount()}/${FRAG_TOTAL})`,`🎨 회색 세계에 ${pp.name}의 색이 번진다`,`🧩 그 사람의 얼굴이 조금 또렷해진다`],
+          closeText:"다음 길로" })
+      });
+      return;
+    }
+    fillModal({ badge:(maxed?"마음 끝까지 닿았다":"다시 만나, 더 깊이"),
+      emo:`『 ${pp.name} 』`, lv:(maxed?`재회 ${lv-1}회 · 마음 끝까지 (최대)`:`재회 ${lv-1}회 · 걸음/초 +${cur.toFixed(1)}`),
+      situ:"", log: pp.lines[lineIdx],
+      reward:(maxed?[`📖 ${pp.name} — 마음 끝까지 닿았다`,`📈 걸음/초 +${cur.toFixed(1)} · 최대 Lv${MAX_LV}`,`(이 인연은 더없이 깊어졌다)`]
                     :[`📖 ${pp.name}의 더 깊은 이야기`,`📈 더 깊이 이해하면 걸음/초 +${cur.toFixed(1)} → +${nxt.toFixed(1)}`,`(깊은 마음일수록 걸음이 더 빨라진다)`]),
       closeText:"다음 길로",
-      upText: (firstMeet||maxed)?null:`다시 만나 더 깊이 — ${upCost(n,lv+1)} 걸음`, onUp:()=>upgrade(n) });
+      upText: maxed?null:`다시 만나 더 깊이 — ${upCost(n,lv+1)} 걸음`, onUp:()=>upgrade(n) });
   }
 }
 function nextUpLabel(n){
@@ -1234,21 +1270,24 @@ function upgrade(n){
 
 /* ---------- 모달 ---------- */
 let modalUp=null;   // 보조(재회) 액션
+let modalNext=null; // 다음 페이지(있으면 주 버튼이 닫기 대신 다음 페이지로)
 function fillModal(o){
   $("#mBadge").textContent=o.badge; $("#mEmo").textContent=o.emo;
   $("#mLv").textContent=o.lv||""; $("#mSitu").innerHTML=o.situ||""; $("#mSitu").style.display=o.situ?"block":"none";
   $("#mLog").textContent=o.log;
   $("#mReward").innerHTML=(o.reward||[]).map(r=>`<span class="r">${r}</span>`).join("");
   $("#mBtn").textContent=o.closeText||"다음 길로";
+  modalNext = o.next || null;                      // 다음 페이지 콜백(있으면 주 버튼이 그걸 호출)
   const b2=$("#mBtn2");
   if(o.upText){ b2.style.display="block"; b2.textContent=o.upText; modalUp=o.onUp; }
   else { b2.style.display="none"; modalUp=null; }
   modal.classList.add("show");
 }
 let afterClose=null;                               // 모달 닫은 뒤 이어질 흐름(엔딩→프레스티지)
-$("#mBtn").onclick=closeModal;                     // 주 버튼 = 다음 길로(닫기)
+$("#mBtn").onclick=()=>{ if(modalNext){ const f=modalNext; modalNext=null; f(); } else closeModal(); };  // 주 버튼 = 다음 페이지 or 닫기
 $("#mBtn2").onclick=()=>{ if(modalUp) modalUp(); }; // 보조 = 재회(있을 때만)
-modal.addEventListener("click", e=>{ if(e.target===modal) closeModal(); });  // 카드 바깥(배경) 클릭 = 닫기
+modal.addEventListener("click", e=>{ if(e.target!==modal) return;            // 카드 바깥(배경) 클릭
+  if(modalNext){ const f=modalNext; modalNext=null; f(); } else closeModal(); });  // = 다음 페이지 or 닫기
 function closeModal(){ modal.classList.remove("show"); renderAll();
   const a=afterClose; afterClose=null; if(a) setTimeout(a, 280); }
 
@@ -1735,11 +1774,13 @@ setInterval(()=>{ if(sceneActive) return;             // 샘 대화/설명 중�
 /* ---------- 줌 입력 ---------- */
 document.getElementById('zin').addEventListener('click', ()=>setZoom(zoom*1.25));
 document.getElementById('zout').addEventListener('click', ()=>setZoom(zoom/1.25));
-map.addEventListener('wheel', e=>{ if(e.ctrlKey){ e.preventDefault(); setZoom(zoom*(e.deltaY<0?1.12:0.9)); } }, {passive:false});
+// 마우스 휠 = 줌 (ctrl 불필요)
+map.addEventListener('wheel', e=>{ e.preventDefault(); setZoom(zoom*(e.deltaY<0?1.12:0.9)); }, {passive:false});
+// 모바일 = 손가락 둘로 핀치 줌 (passive:false + preventDefault로 브라우저 기본 제스처 차단)
 let pinch=null;
 const tdist=t=>Math.hypot(t[0].clientX-t[1].clientX, t[0].clientY-t[1].clientY);
-map.addEventListener('touchstart', e=>{ if(e.touches.length===2){ pinch={d:tdist(e.touches), z:zoom}; window.__pinch=true; } }, {passive:true});
-map.addEventListener('touchmove', e=>{ if(pinch&&e.touches.length===2) setZoom(pinch.z * tdist(e.touches)/pinch.d); }, {passive:true});
+map.addEventListener('touchstart', e=>{ if(e.touches.length===2){ e.preventDefault(); pinch={d:tdist(e.touches), z:zoom}; window.__pinch=true; } }, {passive:false});
+map.addEventListener('touchmove', e=>{ if(pinch&&e.touches.length===2){ e.preventDefault(); setZoom(pinch.z * tdist(e.touches)/pinch.d); } }, {passive:false});
 map.addEventListener('touchend', e=>{ if(e.touches.length<2){ pinch=null; window.__pinch=false; } });
 
 /* ---------- 페이지 전환 (거지키우기식: 길 ↔ 지도) ---------- */
