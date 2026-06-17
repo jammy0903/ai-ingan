@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>계정 및 데이터 삭제 요청 — 강철의 인간술사</title>
+<style>
+  body{ font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif; max-width:720px; margin:0 auto; padding:32px 20px 80px;
+    color:#3a352e; line-height:1.75; background:#f7f3ea; }
+  h1{ font-size:26px; margin:0 0 6px; color:#5a4632; }
+  .upd{ color:#9a917f; font-size:13px; margin-bottom:28px; }
+  h2{ font-size:18px; margin:30px 0 8px; color:#6f5d3c; border-left:4px solid #c9a86a; padding-left:10px; }
+  ul{ padding-left:20px; } li{ margin:4px 0; }
+  a{ color:#9a6a3a; } code{ background:#ece3d0; padding:1px 5px; border-radius:3px; }
+  .box{ background:#fff; border:1px solid #e3dcc9; border-radius:8px; padding:14px 18px; margin-top:8px; }
+  .cta{ display:inline-block; margin-top:6px; padding:12px 20px; background:#ece3d0; border:1px solid #b9a98c;
+    border-radius:10px; color:#5a4632; font-weight:700; text-decoration:none; }
+  .cta:active{ background:#e0d4ba; }
+  .muted{ color:#9a917f; font-size:13px; }
+</style>
+</head>
+<body>
+  <h1>계정 및 데이터 삭제 요청</h1>
+  <div class="upd">강철의 인간술사 (aingan) · 최종 업데이트: 2026-06-17</div>
+
+  <p>「강철의 인간술사」(이하 “게임”) 이용자는 자신의 계정과 게임에 저장된 데이터의 삭제를 요청할 수 있습니다. 본 페이지는 삭제 요청 방법과 처리 절차를 안내합니다.</p>
+
+  <h2>1. 삭제 요청 방법</h2>
+  <div class="box">
+    <p>아래 버튼을 눌러 이메일로 삭제를 요청해 주세요. 메일에 <b>로그인에 사용한 구글 계정 이메일</b>을 적어주시면 본인 확인 후 처리합니다.</p>
+    <a class="cta" href="mailto:l89192164@gmail.com?subject=%5B%EA%B0%95%EC%B2%A0%EC%9D%98%20%EC%9D%B8%EA%B0%84%EC%88%A0%EC%82%AC%5D%20%EA%B3%84%EC%A0%95%C2%B7%EB%8D%B0%EC%9D%B4%ED%84%B0%20%EC%82%AD%EC%A0%9C%20%EC%9A%94%EC%B2%AD&body=%EB%A1%9C%EA%B7%B8%EC%9D%B8%20%EA%B5%AC%EA%B8%80%20%EC%9D%B4%EB%A9%94%EC%9D%BC%3A%20%0A%EC%82%AD%EC%A0%9C%20%EB%B2%94%EC%9C%84%3A%20%EC%A0%84%EC%B2%B4%20%EC%82%AD%EC%A0%9C%20%2F%20%EC%9D%BC%EB%B6%80%20%EC%82%AD%EC%A0%9C%28%EC%95%84%EB%9E%98%20%EC%A0%81%EC%96%B4%EC%A3%BC%EC%84%B8%EC%9A%94%29%0A">📧 삭제 요청 메일 보내기</a>
+    <p class="muted" style="margin-top:12px">버튼이 동작하지 않으면 <a href="mailto:l89192164@gmail.com">l89192164@gmail.com</a> 으로 직접 보내주세요. 제목: <code>[강철의 인간술사] 계정·데이터 삭제 요청</code></p>
+  </div>
+
+  <h2>2. 게임 안에서 직접 삭제</h2>
+  <ul>
+    <li>게임 내 <b>로그아웃</b>을 하면 해당 기기에 저장된 로컬 진행 기록(localStorage)은 제거됩니다.</li>
+    <li>로그인 없이(둘러보기로) 플레이한 경우, 데이터는 기기에만 저장되므로 브라우저 데이터/앱 데이터 삭제로 완전히 제거할 수 있습니다.</li>
+    <li>클라우드(서버)에 저장된 세이브까지 삭제하려면 위 1번의 요청을 보내주세요.</li>
+  </ul>
+
+  <h2>3. 삭제되는 데이터</h2>
+  <div class="box">
+  <ul>
+    <li><b>계정 정보</b> — 구글 로그인으로 연동된 이메일·표시 이름·계정 고유 식별자.</li>
+    <li><b>게임 진행(세이브) 데이터</b> — 걸음 수, 배운 감정/몸, 회차, 로봇 이름 등 클라우드(Supabase)에 저장된 모든 진행 데이터.</li>
+  </ul>
+  요청 시 위 데이터는 백엔드(Supabase)와 인증(Google 연동 정보)에서 모두 삭제되며, 복구되지 않습니다.
+  </div>
+
+  <h2>4. 처리 기간 · 보관</h2>
+  <ul>
+    <li>삭제 요청은 본인 확인 후 <b>30일 이내</b>에 처리합니다.</li>
+    <li>법령상 보관이 요구되는 정보가 없는 한, 별도로 데이터를 보관하지 않습니다. 광고 식별자·위치·연락처 등은 애초에 수집하지 않습니다.</li>
+  </ul>
+
+  <h2>5. 문의</h2>
+  <div class="box">
+    계정·데이터 삭제 및 개인정보 관련 문의: <a href="mailto:l89192164@gmail.com">l89192164@gmail.com</a><br>
+    <span class="muted">관련 문서: <a href="privacy.html">개인정보처리방침</a></span>
+  </div>
+</body>
+</html>
