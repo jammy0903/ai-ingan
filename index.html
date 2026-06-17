@@ -21,7 +21,7 @@
   html,body { height:100%; overflow:hidden; }
   body {
     font-family:'Nanum Myeongjo','Apple SD Gothic Neo','Batang',serif;
-    background:#1c1d1a; display:flex; justify-content:center; align-items:center;
+    background:#e9e3ef; display:flex; justify-content:center; align-items:center;
     color:#5a5750; user-select:none;
   }
   #app {
@@ -29,6 +29,8 @@
     overflow:hidden; background:#fbf8f3; box-shadow:0 24px 80px rgba(70,50,90,.32);
     display:flex; flex-direction:column;
   }
+  /* 모바일: 앱이 화면을 꽉 채워 어두운 레터박스 여백 제거 (이전엔 880px 캡 밖이 검게 보였음) */
+  @media (max-width:480px){ html,body{ background:#fbf8f3; } #app{ max-width:none; max-height:none; box-shadow:none; } }
   #app::before { content:""; position:absolute; inset:0; pointer-events:none; opacity:.16; mix-blend-mode:multiply; z-index:1;
     background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.35'/></svg>"); }
   svg.defs { position:absolute; width:0; height:0; }
