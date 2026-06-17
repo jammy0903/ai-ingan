@@ -1738,9 +1738,9 @@ function applyState(d){
   return off;
 }
 function saveState(){
-  if(!authUser) return;                                  // 로그인 안 했으면 저장 안 함(익명 db 안 만듦)
+  if(!authUser) return;                                  // 둘러보기(로그인 X)는 의도적으로 로컬에도 저장 안 함 — 익명=휘발, 로그인 유도(설계). CLAUDE.md 참고
   const d=snapshot();
-  try{ localStorage.setItem(SAVE_KEY, JSON.stringify(d)); }catch(e){}  // 빠른 부팅용 계정 미러
+  try{ localStorage.setItem(SAVE_KEY, JSON.stringify(d)); }catch(e){}  // 빠른 부팅용 계정 미러(로그인 유저만)
   supaSave(d);
 }
 async function supaSave(d){ if(!authUser || !SUPA.url || !SUPA.anon) return;
@@ -1797,7 +1797,7 @@ function onAuthChanged(){
   if(!authUser){ return; }                                // 로그아웃은 logout()에서 게이트로 처리(익명 복원 안 함)
   const k=saveKey(); if(k===lastKey) return; lastKey=k;
   supaLoad().then(d=>{
-    if(d){ applyState(d); S.seenIntro=true; }             // 계정에 세이브 있음 = 돌아온 유저 → 튜토리얼 생략
+    if(d){ applyState(d); S.seenIntro=true; dismissOnboarding(); closeGate(); }  // 계정에 세이브 있음 = 돌아온 유저 → 진행 중이던 온보딩도 걷어냄
     saveState();                                          // 신규 계정이면 현재 진행 업로드 / 복귀면 미러 갱신
     decideEntry(); refreshHUD(); if(curPage==="map") renderAll();
   });
@@ -1810,12 +1810,24 @@ const INTRO=[
   "가슴 한가운데가\n텅 비어 있었다.\n…뭔가, 허전하다.",
   "[ERROR: 창조주 동기화 실패]\n[응답 없음 · 좌표 미상]" ];
 let introStep=0;
+function hasProgress(){ return S.seenIntro || S.named || S.cycle>0 || S.depth>0 || (S.discovered && Object.keys(S.discovered).length>0); }
 function startIntro(){
+  if(hasProgress()){ S.seenIntro=true; closeGate(); decideEntry(); return; }  // 이미 시작/진행한 유저 — 튜토리얼 강제 안 함
   S.seenIntro=true; saveState();                       // 온보딩이 시작되면 '봤음' — 이후 강제 재노출 안 함
   closeGate();
   introStep=0; document.getElementById('intro').classList.add('show'); renderIntro();
 }
 function closeIntro(){ document.getElementById('intro')?.classList.remove('show'); }
+// 진행 중인 온보딩(인트로 모달 + 길 위 샘 대화)을 즉시 걷어낸다 — 세이브가 늦게 도착했을 때 등
+function dismissOnboarding(){
+  closeIntro();
+  const sc=document.getElementById('samScene');
+  if(sc){ sc.classList.remove("show"); sc.querySelectorAll(".scenebub").forEach(x=>x.remove()); }
+  sceneActive=false; samVisible=false;
+  document.getElementById('sceneTapHint')?.classList.remove("show");
+  document.getElementById('sam')?.classList.remove("in","out");
+  if(typeof walkRobot!=="undefined" && walkRobot) walkRobot.style.left="";
+}
 
 /* ---------- 시작 게이트 (로그인 권장 — 스킵 가능) ---------- */
 function showGate(){ document.getElementById('gate')?.classList.add('show'); }
@@ -1882,6 +1894,7 @@ const SAM_SCRIPT=[
   {who:'bot', t:"그러니까…\n같이 걸어줘."} ];
 let samVisible=false;
 function startSamScene(){
+  if(S.cycle>0 || S.depth>0 || (S.discovered && Object.keys(S.discovered).length>0)){ beginAdventure(); return; }  // 이미 진행한 유저 — 샘 대화 생략
   showPage('walk');
   sceneActive=true; sceneReady=false; sceneStep=0; samVisible=true;
   if(syslogEl) syslogEl.innerHTML="";                  // 대화 동안 상태 로그 비움
