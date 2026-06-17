@@ -1711,7 +1711,8 @@ setTimeout(emitSys, 2500);                            // 시작 직후 한 줄
 function addSysLogs(cold=[], warm=[]){ SYS_COLD.push(...cold); SYS_WARM.push(...warm); }
 
 /* ---------- 세이브 (localStorage 즉시 + 새 Supabase 키 넣으면 클라우드 동기화) ---------- */
-const SAVE_KEY = "aingan_save_v1";
+const SAVE_KEY = "aingan_save_v1";   // localStorage 키 이름(레거시 — 바꾸면 기존 미러를 못 읽으니 고정)
+const SAVE_VERSION = 1;              // 세이브 '데이터' 스키마 버전(SAVE_KEY와 별개). 필드/노드id/규칙을 바꾸면 +1 하고 migrate()에 변환 한 칸 추가.
 // 강철의 인간술사 전용 Supabase 프로젝트. publishable 키는 클라 공개용(안전·RLS 보호).
 const SUPA = { url:"https://irpavlciywhjnigqsjxn.supabase.co", anon:"sb_publishable_SNr6tjf-JX5-4NhLBo8oEg_mNqoClDf" };
 const OFFLINE_CAP_H = 4;            // 오프라인 적립 상한(시간)
@@ -1723,10 +1724,20 @@ function saveKey(){ return authUser ? ("u_"+authUser.id) : null; }
 const ROBOT_NAMES=["삐삐","또르","깡통이","녹슬이","별이","콩이","또롱","삐릭","깡총","또또","모리","단추","나사","볼트","깜빡이","또각","삐약","동그리","네모","철이","구리","뚜뚜","링링","찌릿","오백","뽀삐","고철이","반짝","덜컹","깡깡"];
 function ensureRobotName(){ if(!S.robotName) S.robotName = ROBOT_NAMES[Math.floor(Math.random()*ROBOT_NAMES.length)]; }
 
-function snapshot(){ return { walks:S.walks, rate:S.rate, current:S.current, levels:S.levels, discovered:S.discovered, robotName:S.robotName, named:S.named, depth:S.depth, cycle:S.cycle, lookback:S.lookback, seenIntro:S.seenIntro, t:Date.now() }; }
+function snapshot(){ return { v:SAVE_VERSION, walks:S.walks, rate:S.rate, current:S.current, levels:S.levels, discovered:S.discovered, robotName:S.robotName, named:S.named, depth:S.depth, cycle:S.cycle, lookback:S.lookback, seenIntro:S.seenIntro, t:Date.now() }; }
 function loadLocal(){ try{ const r=localStorage.getItem(SAVE_KEY); return r?JSON.parse(r):null; }catch(e){ return null; } }
+// 옛 세이브를 현재 스키마로 끌어올린다. v 필드 없으면 버전 도입 이전(레거시) = v1로 간주.
+// 스키마 바꿀 때: SAVE_VERSION +1 하고 아래 체인에 `if(v<N){ /* 변환 */ v=N; }` 한 칸 추가(순서대로 누적 적용).
+function migrate(d){
+  if(!d || typeof d!=="object") return d;
+  let v = d.v || 1;
+  // if(v<2){ /* 예: d.levels 이름 변경 등 v1→v2 변환 */ v=2; }
+  d.v = Math.min(v, SAVE_VERSION);   // 미래 버전 세이브(다운그레이드 케이스)는 현재로 클램프 → 알 수 없는 스키마로 크래시 방지
+  return d;
+}
 function applyState(d){
   if(!d) return 0;
+  d = migrate(d);                    // 적용 전 항상 현재 스키마로 정규화(loadLocal·supaLoad 양쪽 원시 데이터)
   S.rate   = d.rate || 1.0;
   S.current= NODES.find(n=>n.id===d.current) ? d.current : "start";
   NODES.forEach(n=>{ S.levels[n.id] = (d.levels && d.levels[n.id]>0) ? d.levels[n.id] : (n.completed?1:0); });
