@@ -24,8 +24,9 @@ const LOOKBACK_COST = 2;                            // 기억 한 조각 재해�
 const OFFLINE_CAP_H = 4;            // 오프라인 적립 상한(시간)
 // 수집(감정+몸) 누적 개수가 at를 넘을 때마다 전역 걸음/초 ×mult 점프.
 // cells 근거: 제너레이터 '랭크 돌파마다 ×3' — 선형 덧셈이 아니라 '돌파=배율'로 자릿수 점프(gap-analysis Phase 3 ①).
+// 점증 배율(거지키우기 달성보너스 +600%→+5000% 모사): 후반 문턱일수록 세게 → income이 K→M→B로 폭발.
 const MILESTONES = [
-  {at:3, mult:1.5}, {at:6, mult:1.5}, {at:10, mult:1.5},
-  {at:15, mult:2.0}, {at:20, mult:2.0}, {at:27, mult:2.0},
-  {at:33, mult:2.5}, {at:38, mult:3.0},
+  {at:3, mult:1.6}, {at:6, mult:1.8}, {at:10, mult:2.2},
+  {at:15, mult:2.8}, {at:20, mult:3.5}, {at:27, mult:5},
+  {at:33, mult:8}, {at:38, mult:15},   // 전부 모으면 누적 ×약 3.7만 → 기본산출이 K/M 단위로
 ];

@@ -435,7 +435,7 @@
 
   <div class="hud">
     <div class="titlebar">
-      <div class="title">강철의 인간술사 <span id="robotName" class="rn" title="이름 바꾸기"></span><span id="appVer" style="font-size:11px;opacity:.42;font-weight:400;margin-left:6px">v1.0.8</span></div>
+      <div class="title">강철의 인간술사 <span id="robotName" class="rn" title="이름 바꾸기"></span><span id="appVer" style="font-size:11px;opacity:.42;font-weight:400;margin-left:6px">v1.0.9</span></div>
       <button id="authBtn" class="authbtn">구글 로그인</button>
     </div>
     <div class="stats">
@@ -926,7 +926,16 @@ function setZoom(z){
   const zl=document.getElementById('zlvl'); if(zl) zl.textContent = zoom.toFixed(1)+"×";
 }
 
-function fmt(n){ return n>=1000 ? (n/1000).toFixed(2)+"k" : Math.floor(n); }
+// 큰 수 표기 K/M/B/T… (미국 출시 대비 영문 단위). Dc 넘으면 지수표기로 폴백.
+function fmt(n){
+  n=Math.floor(n);
+  if(n<1000) return ""+n;
+  const u=["","K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc"];
+  let i=0, v=n;
+  while(v>=1000 && i<u.length-1){ v/=1000; i++; }
+  if(v>=1000) return n.toExponential(2);
+  return v.toFixed(v>=100?0:(v>=10?1:2))+u[i];
+}
 
 /* ---------- 도달 가능 판정 ---------- */
 function neighbors(id){
@@ -1027,7 +1036,7 @@ function placeRobot(animate){
 }
 function refreshHUD(){
   elWalks.textContent=fmt(S.walks);
-  elRate.textContent=effRate().toFixed(1);
+  const _r=effRate(); elRate.textContent = _r<1000 ? _r.toFixed(1) : fmt(_r);   // 초반엔 소수1자리, 커지면 K/M/B
   const rn=document.getElementById('robotName');
   if(rn) rn.textContent = (S.robotName?("· "+S.robotName):"") + (S.cycle>0?` · ${S.cycle}회차`:"") + (S.robotName?" ✎":"");
   const ds=document.getElementById('depthStat');
@@ -1285,7 +1294,7 @@ function addWalk(x,y){
   if(x!=null){ const m=document.createElement("div"); m.className="mote";
     m.style.left=x+"px"; m.style.top=y+"px"; document.body.appendChild(m);
     setTimeout(()=>m.remove(),1300);
-    const t=document.createElement("div"); t.className="tapfx"+(crit?" crit":""); t.textContent=(crit?"크리! +":"+")+g;
+    const t=document.createElement("div"); t.className="tapfx"+(crit?" crit":""); t.textContent=(crit?"크리! +":"+")+fmt(g);
     t.style.left=x+"px"; t.style.top=(y-8)+"px"; document.body.appendChild(t); setTimeout(()=>t.remove(),crit?900:700);
   }
   showCombo(cMult, comboCount);
