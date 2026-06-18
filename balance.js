@@ -7,10 +7,10 @@ const TAP_GAIN = 1;                // 탭 최소 이득(초반 = 1걸음)
 const TAP_FRAC = 1.0;             // 탭 이득 = 현재 걸음/초 × 이 비율. 1.0 = "1탭=1초어치" → 죽은 구간 없이 rate와 함께 성장(gap-analysis ③)
 // 연타 콤보 + 크리(Phase 1.2, gap-analysis ⑤ 변동보상 일부)
 const COMBO_WINDOW = 600;        // ms — 이 안에 또 누르면 콤보 유지(끊기면 리셋)
-const COMBO_STEP   = 0.08;       // 콤보 1당 탭 배율 증가분 (배율 = 1 + STEP×min(combo,MAX))
-const COMBO_MAX    = 25;         // 콤보 상한 → 최대 탭 배율 1 + 0.08×25 = ×3
-const CRIT_CHANCE  = 0.08;       // 탭 크리티컬 확률
-const CRIT_MULT    = 5;          // 크리 시 탭 ×
+const COMBO_STEP   = 0.15;       // 콤보 1당 탭 배율 증가분 (배율 = 1 + STEP×min(combo,MAX))
+const COMBO_MAX    = 40;         // 콤보 상한 → 최대 탭 배율 1 + 0.15×40 = ×7
+const CRIT_CHANCE  = 0.12;       // 탭 크리티컬 확률
+const CRIT_MULT    = 6;          // 크리 시 탭 ×
 const UP_BASE = { person: 30 };   // 재회 업그레이드 1레벨 비용 기준
 const upCost = (node, lv) => Math.round(UP_BASE.person * Math.pow(1.45, lv-1));  // 재회 비용 곡선 배율(완만하게)
 const MAX_LV = 10;                // 재회 심화 상한 — 각 노드는 Lv10(첫 만남 Lv1 + 재회 9회)까지만 깊어진다
