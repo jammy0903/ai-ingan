@@ -263,6 +263,18 @@
   .tapfx { position:fixed; pointer-events:none; z-index:30; font-family:'Nanum Pen Script',cursive;
     color:#9a7b4a; font-size:16px; animation:tapup .7s ease-out forwards; }
   @keyframes tapup { from{opacity:.9; transform:translate(-50%,0)} to{opacity:0; transform:translate(-50%,-34px)} }
+  /* 크리 탭 = 더 크고 금빛 */
+  .tapfx.crit { color:#e0892a; font-size:26px; font-weight:700; text-shadow:0 1px 7px rgba(224,138,42,.5);
+    animation:tapcrit .9s ease-out forwards; }
+  @keyframes tapcrit { 0%{opacity:1; transform:translate(-50%,0) scale(.6)} 22%{transform:translate(-50%,-6px) scale(1.28)}
+    100%{opacity:0; transform:translate(-50%,-46px) scale(1)} }
+  /* 연타 콤보 뱃지 */
+  #comboBadge { position:fixed; left:50%; top:62px; transform:translate(-50%,-6px); z-index:31; pointer-events:none;
+    font-family:'Nanum Pen Script',cursive; color:#e0892a; font-size:20px; background:rgba(255,250,240,.84);
+    padding:3px 13px; border-radius:14px; box-shadow:0 2px 10px rgba(180,120,40,.18);
+    opacity:0; transition:opacity .25s, transform .25s; }
+  #comboBadge.show { opacity:1; transform:translate(-50%,0); }
+  #comboBadge b { font-size:23px; } #comboBadge span { color:#b07b3a; font-size:15px; }
 
   /* ---------- 온보딩 후 길 위 만남 장면: 로봇 ↔ 샘이 말풍선으로 대화 ---------- */
   #samScene { position:absolute; inset:0; z-index:6; display:none; }
@@ -1300,18 +1312,33 @@ function syncSteps(){ const w=Math.floor(S.walks); if(w>wholeWalks) stepOnce(); 
 
 /* ---------- 탭 = 걸음 ---------- */
 let sceneActive=false, sceneReady=false, sceneStep=0; // 샘 대화 장면 진행 중 상태
+let comboCount=0, lastTapAt=0, comboHideTimer=null, comboBadge=null;  // 연타 콤보 상태
 function addWalk(x,y){
   if(sceneActive){ advanceScene(); return; }           // 대화 중엔 탭=다음 대사
-  const g=effTap();
+  const now=Date.now();
+  comboCount = (now-lastTapAt<=COMBO_WINDOW) ? comboCount+1 : 0;       // 연타 창 안이면 누적, 끊기면 리셋
+  lastTapAt=now;
+  const cMult = 1 + COMBO_STEP*Math.min(comboCount, COMBO_MAX);        // 콤보 배율
+  const crit = Math.random() < CRIT_CHANCE;                            // 변동보상: 가끔 크리(gap-analysis ⑤)
+  const g = Math.max(1, Math.round(effTap()*cMult*(crit?CRIT_MULT:1)));
   S.walks+=g;
   if(x!=null){ const m=document.createElement("div"); m.className="mote";
     m.style.left=x+"px"; m.style.top=y+"px"; document.body.appendChild(m);
     setTimeout(()=>m.remove(),1300);
-    const t=document.createElement("div"); t.className="tapfx"; t.textContent="+"+g;
-    t.style.left=x+"px"; t.style.top=(y-8)+"px"; document.body.appendChild(t); setTimeout(()=>t.remove(),700);
+    const t=document.createElement("div"); t.className="tapfx"+(crit?" crit":""); t.textContent=(crit?"크리! +":"+")+g;
+    t.style.left=x+"px"; t.style.top=(y-8)+"px"; document.body.appendChild(t); setTimeout(()=>t.remove(),crit?900:700);
   }
+  showCombo(cMult, comboCount);
   elWalks.textContent=fmt(S.walks);
-  syncSteps();                                         // 탭 1회 = 1걸음 = 1보 (연달아 3탭 → 3보)
+  syncSteps();                                         // 탭 1회 = 1보(+콤보·크리 가속)
+}
+function showCombo(mult, n){                            // 연타 콤보 뱃지(2연타부터, 끊기면 자동 페이드)
+  if(n<2){ if(comboBadge) comboBadge.classList.remove("show"); return; }
+  if(!comboBadge){ comboBadge=document.createElement("div"); comboBadge.id="comboBadge"; document.body.appendChild(comboBadge); }
+  comboBadge.innerHTML=`🔥 <b>×${mult.toFixed(1)}</b> <span>${n} 콤보</span>`;
+  comboBadge.classList.add("show");
+  clearTimeout(comboHideTimer);
+  comboHideTimer=setTimeout(()=>{ if(comboBadge) comboBadge.classList.remove("show"); }, COMBO_WINDOW+250);
 }
 // 길 페이지 = 핵심 손맛: 두드리면 걷는다
 $("#pageWalk").addEventListener("pointerdown", e=>addWalk(e.clientX, e.clientY));
