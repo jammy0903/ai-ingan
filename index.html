@@ -1500,7 +1500,8 @@ function applyState(d){
   S.named = !!d.named;
   S.depth = d.depth || 0; S.cycle = d.cycle || 0; S.lookback = d.lookback || 0;
   S.seenIntro = !!(d.seenIntro || d.named);   // 기존 이름지은 유저는 자동으로 '봤음' 처리(게이트 안 띄움)
-  let off=0; if(d.t){ const sec=Math.max(0,(Date.now()-d.t)/1000); off=Math.min(d.rate*sec, d.rate*3600*OFFLINE_CAP_H); S.walks+=off; }
+  // 오프라인 적립도 effRate(마일스톤 배율 포함)로 — idle/탭과 일관(여기선 S.rate·S.levels 복원 뒤라 배율 정확).
+  let off=0; if(d.t){ const sec=Math.max(0,(Date.now()-d.t)/1000); const er=effRate(); off=Math.min(er*sec, er*3600*OFFLINE_CAP_H); S.walks+=off; }
   wholeWalks=Math.floor(S.walks);
   return off;
 }
