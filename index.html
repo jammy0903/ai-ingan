@@ -88,16 +88,6 @@
     display:flex; align-items:center; justify-content:center; line-height:1; transition:background .15s; }
   .zoomctl button:active { background:#ece6f3; }
   .zoomctl .zlvl { font-size:10px; color:#9a917f; text-align:center; }
-  /* 지도 우상단 갈래 필터 (감정 / 몸 — 병렬 보기·집중) */
-  .mapfilter { position:absolute; top:12px; right:12px; z-index:8; display:flex; gap:8px; }
-  .filtbtn { position:relative; width:46px; height:46px; border-radius:50%; border:1px solid #cdbce0; background:rgba(251,248,244,.85);
-    font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center;
-    transition:opacity .2s, background .2s, box-shadow .2s, transform .1s; }
-  .filtbtn.on { border-color:#b79fd6; background:#ece6f3; box-shadow:0 2px 9px rgba(150,120,200,.28); }
-  .filtbtn:not(.on) { opacity:.38; }
-  .filtbtn:active { transform:scale(.93); }
-  .filtbtn .cnt { position:absolute; bottom:-3px; right:-3px; font-size:9px; background:#b79fd6; color:#fff;
-    border-radius:8px; padding:1px 4px; line-height:1.2; font-family:'Nanum Myeongjo',serif; }
   .edges { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
   .edges line { stroke:#cbbce0; stroke-width:2; stroke-dasharray:5 7; opacity:.55; }
   .edges line.live { stroke:#e3a7c6; opacity:.9; stroke-dasharray:none; }
@@ -445,7 +435,7 @@
 
   <div class="hud">
     <div class="titlebar">
-      <div class="title">강철의 인간술사 <span id="robotName" class="rn" title="이름 바꾸기"></span><span id="appVer" style="font-size:11px;opacity:.42;font-weight:400;margin-left:6px">v1.0.7</span></div>
+      <div class="title">강철의 인간술사 <span id="robotName" class="rn" title="이름 바꾸기"></span><span id="appVer" style="font-size:11px;opacity:.42;font-weight:400;margin-left:6px">v1.0.8</span></div>
       <button id="authBtn" class="authbtn">구글 로그인</button>
     </div>
     <div class="stats">
@@ -647,10 +637,6 @@
     </div></div>
   </div>
 
-  <div class="mapfilter">
-    <button id="fEmo" class="filtbtn on" title="감정 지도" aria-label="감정 지도">🧩<span class="cnt" id="cntEmo">0</span></button>
-    <button id="fBody" class="filtbtn on" title="몸 지도" aria-label="몸 지도">🫀<span class="cnt" id="cntBody">0</span></button>
-  </div>
 
   <div class="zoomctl">
     <button id="zin" aria-label="확대">+</button>
@@ -987,7 +973,6 @@ function renderEdges(){
     const na=NODES.find(n=>n.id===a), nb=NODES.find(n=>n.id===b);
     const pa=px(na), pb=px(nb);
     if(!(isRevealed(a)&&isRevealed(b))) return;
-    if(!(inMapFilter(na)&&inMapFilter(nb))) return;     // 갈래 필터(감정/몸)
     const live = S.levels[a]>0 && S.levels[b]>0;
     const ln=document.createElementNS("http://www.w3.org/2000/svg","line");
     ln.setAttribute("x1",pa.x);ln.setAttribute("y1",pa.y);
@@ -1000,7 +985,6 @@ function renderEdges(){
     const na=NODES.find(n=>n.id===a), nb=NODES.find(n=>n.id===b);
     if(!na||!nb) return;
     if(!(isRevealed(a)&&isRevealed(b))) return;
-    if(!(inMapFilter(na)&&inMapFilter(nb))) return;
     const pa=px(na), pb=px(nb);
     const ln=document.createElementNS("http://www.w3.org/2000/svg","line");
     ln.setAttribute("x1",pa.x);ln.setAttribute("y1",pa.y);
@@ -1013,7 +997,7 @@ function renderNodes(){
   updateDiscovered();
   document.querySelectorAll(".node").forEach(e=>e.remove());
   NODES.forEach(n=>{
-    if(!isRevealed(n.id) || !inMapFilter(n)) return;    // 갈래 필터(감정/몸)
+    if(!isRevealed(n.id)) return;
     const p=px(n), lv=S.levels[n.id], done=lv>0;
     const el=document.createElement("div");
     el.className="node "+n.type+(done?" done":(n.type!=="teaser"?" reachable":" empty"));
@@ -1066,32 +1050,8 @@ function renderMind(){
          + `<span class="sep">·</span>🫀 <b>${bodyN}</b>/11${bodyDone?' <span class="ck">✓</span>':''}</div>`
          + ((multTxt||nextTxt)?`<div class="fragline" style="opacity:.85">${multTxt}${multTxt&&nextTxt?' <span class="sep">·</span> ':''}${nextTxt}</div>`:'');
 }
-function renderAll(){ sizeCanvas(); renderEdges(); renderNodes(); placeRobot(); refreshHUD(); updateFilterBtns(); }
+function renderAll(){ sizeCanvas(); renderEdges(); renderNodes(); placeRobot(); refreshHUD(); }
 
-/* ---------- 지도 갈래 보기: 감정 ↔ 몸 (배타 선택 — 한 번에 한 갈래만) ---------- */
-let mapView = "emo";                                 // "emo" = 감정 지도 / "body" = 몸 지도
-function inMapFilter(n){
-  if(!n) return true;
-  if(n.type==="person"||n.type==="category") return mapView==="emo";  // 감정·대분류는 감정 보기에서만
-  if(n.type==="body")   return mapView==="body";      // 몸 노드는 몸 보기에서만
-  return true;                                        // start·ending(샘)·human·teaser 는 항상 표시
-}
-function updateFilterBtns(){
-  const e=document.getElementById('fEmo'), b=document.getElementById('fBody');
-  if(e) e.classList.toggle('on', mapView==="emo");
-  if(b) b.classList.toggle('on', mapView==="body");
-  const ce=document.getElementById('cntEmo'), cb=document.getElementById('cntBody');
-  if(ce) ce.textContent = `${learnedCount()}/${FRAG_TOTAL}`;
-  if(cb) cb.textContent = `${bodyCount()}/${BODY_TOTAL}`;
-}
-function selectMapView(v){
-  mapView = v;
-  updateFilterBtns(); renderEdges(); renderNodes(); placeRobot();
-  const cur=NODES.find(n=>n.id===S.current);
-  centerOn(inMapFilter(cur) ? S.current : "start");   // 현재 노드가 안 보이는 갈래면 start로
-}
-document.getElementById('fEmo')?.addEventListener('click', ()=>selectMapView('emo'));
-document.getElementById('fBody')?.addEventListener('click', ()=>selectMapView('body'));
 
 /* ---------- 이동 + 만남 ---------- */
 function travelTo(n, cb){
