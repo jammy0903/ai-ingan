@@ -4,7 +4,7 @@
    ⚠️ 수정 시 sw.js의 CACHE="aingan-vN" 번호를 올려야 캐시 stale 방지(plan.md ④).
    ※ COST_MULT(그래프 거리 스칼라)는 EDGES와 묶여 data.js에 있음 — 여기 아님. */
 const TAP_GAIN = 1;                // 탭 최소 이득(초반 = 1걸음)
-const TAP_FRAC = 0.15;            // 탭 이득 = 현재 걸음/초의 이 비율(후반에도 탭이 살아있게, gap-analysis ③)
+const TAP_FRAC = 1.0;             // 탭 이득 = 현재 걸음/초 × 이 비율. 1.0 = "1탭=1초어치" → 죽은 구간 없이 rate와 함께 성장(gap-analysis ③)
 const UP_BASE = { person: 30 };   // 재회 업그레이드 1레벨 비용 기준
 const upCost = (node, lv) => Math.round(UP_BASE.person * Math.pow(1.45, lv-1));  // 재회 비용 곡선 배율(완만하게)
 const MAX_LV = 10;                // 재회 심화 상한 — 각 노드는 Lv10(첫 만남 Lv1 + 재회 9회)까지만 깊어진다
