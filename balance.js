@@ -12,8 +12,8 @@ const COMBO_MAX    = 40;         // 콤보 상한 → 최대 탭 배율 1 + 0.15
 const CRIT_CHANCE  = 0.12;       // 탭 크리티컬 확률
 const CRIT_MULT    = 6;          // 크리 시 탭 ×
 const UP_BASE = { person: 30 };   // 재회 업그레이드 1레벨 비용 기준
-const upCost = (node, lv) => Math.round(UP_BASE.person * Math.pow(1.45, lv-1));  // 재회 비용 곡선 배율(완만하게)
-const MAX_LV = 10;                // 재회 심화 상한 — 각 노드는 Lv10(첫 만남 Lv1 + 재회 9회)까지만 깊어진다
+const upCost = (node, lv) => Math.round(UP_BASE.person * Math.pow(1.22, lv-1));  // 재회 비용 곡선(완만 — 거지키우기식 다수 레벨 그라인드)
+const MAX_LV = 50;                // 재회 심화 상한 — 끝없는 sink(거지 알바식). 5레벨마다 ×2 달성보너스(achieveMult)
 const TIER = {
   joy:"big", adore:"mid", amuse:"mid", flutter:"mid", curious:"small", beauty:"small", admire:"small", awe:"small", trance:"small", satisfy:"small",
   fear:"big", confuse:"mid", bored:"mid", awkward:"mid", anxiety:"small", disgust:"small", horror:"small",
