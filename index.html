@@ -435,7 +435,7 @@
 
   <div class="hud">
     <div class="titlebar">
-      <div class="title">강철의 인간술사 <span id="robotName" class="rn" title="이름 바꾸기"></span><span id="appVer" style="font-size:11px;opacity:.42;font-weight:400;margin-left:6px">v1.0.9</span></div>
+      <div class="title">강철의 인간술사 <span id="robotName" class="rn" title="이름 바꾸기"></span><span id="appVer" style="font-size:11px;opacity:.42;font-weight:400;margin-left:6px">v1.0.10</span></div>
       <button id="authBtn" class="authbtn">구글 로그인</button>
     </div>
     <div class="stats">
@@ -890,7 +890,8 @@ function nextMilestone(){                          // 다음 속도업까지 남
 }
 function rateMult(){ return milestoneMult(); }     // 전역 산출 배율(추후 프레스티지 배율도 여기 곱)
 // 걸음/초 base를 levels에서 '계산'(누적 S.rate 폐기) — 노드별 산출에 달성보너스 등 얹기 쉬움(C단계).
-function nodeOut(n){ const lv=S.levels[n.id]; return (lv>0 && n.gen) ? n.gen*lv : 0; }   // 노드 기여(현재=gen×lv)
+function achieveMult(lv){ return Math.pow(2, Math.floor(lv/5)); }   // 5레벨마다 ×2 달성보너스(거지키우기 20레벨식)
+function nodeOut(n, lv){ if(lv==null) lv=S.levels[n.id]; return (lv>0 && n.gen) ? n.gen*lv*achieveMult(lv) : 0; }   // 노드 기여 = gen×lv×달성보너스
 function baseRate(){ let r=1; for(const n of NODES) r+=nodeOut(n); return r; }            // 1 = 기본 1걸음/초
 function effRate(){ return baseRate() * rateMult(); } // 실제 걸음/초 = base × 마일스톤 배율
 function effTap(){ return Math.max(TAP_GAIN, Math.round(effRate()*TAP_FRAC)); } // 탭 = max(1, 걸음/초 비례) — 후반에도 손맛 유지
@@ -1114,18 +1115,21 @@ function openNode(n, firstMeet){
       reward:["🌿 새 갈래가 열렸다", `🌫️ ${n.name}의 감정들이 안갯속에서 드러난다`], closeText:"감정을 만나러" });
     return;
   }
-  const cur=(n.gen*lv), nxt=(n.gen*(lv+1));   // 이 노드의 걸음/초 기여(강할수록 큼)
+  const cur=nodeOut(n,lv), nxt=nodeOut(n,lv+1);   // 이 노드의 걸음/초 기여(5레벨마다 ×2 달성보너스 포함)
   const maxed = !firstMeet && lv>=MAX_LV;        // 재회 상한 도달
+  const justAch = !firstMeet && lv>0 && lv%5===0;            // 방금 도달한 5의 배수 = 달성보너스 점등
+  const nextAch = !firstMeet && !maxed && (lv+1)%5===0;      // 다음 재회가 달성보너스(×2)
   if(n.type==="body"){
     const bd=BODY[n.key]; const lineIdx=Math.min(lv-1, bd.lines.length-1);
-    fillModal({ badge:firstMeet?"몸의 한 부분을 얻다":(maxed?"가장 단단해졌다":"몸이 더 단단해진다"),
-      emo:`〔 ${bd.name} 〕`, lv:firstMeet?`걸음/초 +${n.gen.toFixed(2)}`:(maxed?`Lv${lv} · 더없이 단단하다 (최대)`:`Lv${lv} · 걸음/초 +${cur.toFixed(1)}`),
+    const rw = firstMeet?[`🫀 몸조각 +1 (${bodyCount()}/${BODY_TOTAL})`,`📈 걸음/초 +${n.gen.toFixed(2)}`,`사람에 한 걸음 더`]
+             :(maxed?[`📖 ${bd.name} — 더없이 단단해졌다`,`📈 걸음/초 +${fmt(cur)} · 최대 Lv${MAX_LV}`]
+                    :[`📖 ${bd.name}이(가) 더 깊어진다`,`📈 걸음/초 +${fmt(cur)} → +${fmt(nxt)}`]);
+    if(justAch) rw.unshift("✨ 달성 보너스! 이 몸의 산출 ×2");
+    fillModal({ badge:firstMeet?"몸의 한 부분을 얻다":(maxed?"가장 단단해졌다":(justAch?"✨ 달성 보너스!":"몸이 더 단단해진다")),
+      emo:`〔 ${bd.name} 〕`, lv:firstMeet?`걸음/초 +${n.gen.toFixed(2)}`:(maxed?`Lv${lv} · 더없이 단단하다 (최대)`:`Lv${lv} · 걸음/초 +${fmt(cur)}`),
       situ: firstMeet?bd.situ:"", log: firstMeet?bd.lines[0]:bd.lines[lineIdx],
-      reward: firstMeet?[`🫀 몸조각 +1 (${bodyCount()}/${BODY_TOTAL})`,`📈 걸음/초 +${n.gen.toFixed(2)}`,`사람에 한 걸음 더`]
-             :(maxed?[`📖 ${bd.name} — 더없이 단단해졌다`,`📈 걸음/초 +${cur.toFixed(1)} · 최대 Lv${MAX_LV}`]
-                    :[`📖 ${bd.name}이(가) 더 깊어진다`,`📈 걸음/초 +${cur.toFixed(1)} → +${nxt.toFixed(1)}`]),
-      closeText:"다음 길로",
-      upText: (firstMeet||maxed)?null:`더 단단히 — ${upCost(n,lv+1)} 걸음`, onUp:()=>upgrade(n) });
+      reward: rw, closeText:"다음 길로",
+      upText: (firstMeet||maxed)?null:`더 단단히 — ${fmt(upCost(n,lv+1))} 걸음${nextAch?' ✨×2':''}`, onUp:()=>upgrade(n) });
     return;
   }
   {
@@ -1145,13 +1149,15 @@ function openNode(n, firstMeet){
       });
       return;
     }
-    fillModal({ badge:(maxed?"마음 끝까지 닿았다":"다시 만나, 더 깊이"),
-      emo:`『 ${pp.name} 』`, lv:(maxed?`재회 ${lv-1}회 · 마음 끝까지 (최대)`:`재회 ${lv-1}회 · 걸음/초 +${cur.toFixed(1)}`),
+    const rw = (maxed?[`📖 ${pp.name} — 마음 끝까지 닿았다`,`📈 걸음/초 +${fmt(cur)} · 최대 Lv${MAX_LV}`,`(이 인연은 더없이 깊어졌다)`]
+                    :[`📖 ${pp.name}의 더 깊은 이야기`,`📈 더 깊이 이해하면 걸음/초 +${fmt(cur)} → +${fmt(nxt)}`,`(깊은 마음일수록 걸음이 더 빨라진다)`]);
+    if(justAch) rw.unshift("✨ 달성 보너스! 이 인연의 산출 ×2");
+    fillModal({ badge:(maxed?"마음 끝까지 닿았다":(justAch?"✨ 달성 보너스!":"다시 만나, 더 깊이")),
+      emo:`『 ${pp.name} 』`, lv:(maxed?`재회 ${lv-1}회 · 마음 끝까지 (최대)`:`재회 ${lv-1}회 · 걸음/초 +${fmt(cur)}`),
       situ:"", log: pp.lines[lineIdx],
-      reward:(maxed?[`📖 ${pp.name} — 마음 끝까지 닿았다`,`📈 걸음/초 +${cur.toFixed(1)} · 최대 Lv${MAX_LV}`,`(이 인연은 더없이 깊어졌다)`]
-                    :[`📖 ${pp.name}의 더 깊은 이야기`,`📈 더 깊이 이해하면 걸음/초 +${cur.toFixed(1)} → +${nxt.toFixed(1)}`,`(깊은 마음일수록 걸음이 더 빨라진다)`]),
+      reward: rw,
       closeText:"다음 길로",
-      upText: maxed?null:`다시 만나 더 깊이 — ${upCost(n,lv+1)} 걸음`, onUp:()=>upgrade(n) });
+      upText: maxed?null:`다시 만나 더 깊이 — ${fmt(upCost(n,lv+1))} 걸음${nextAch?' ✨×2':''}`, onUp:()=>upgrade(n) });
   }
 }
 function nextUpLabel(n){
