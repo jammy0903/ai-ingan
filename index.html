@@ -882,7 +882,7 @@ NODES.forEach(n => S.levels[n.id] = n.completed ? 1 : 0);
    여기 rateMult/effTap만 손대면 idle·HUD·탭에 일괄 반영됨. */
 function rateMult(){ return 1; }                 // 전역 산출 배율(마일스톤·프레스티지에서 곱함)
 function effRate(){ return S.rate * rateMult(); } // 실제 걸음/초
-function effTap(){ return TAP_GAIN; }             // 탭 1회 이득(Phase 1에서 rate 비례로 교체)
+function effTap(){ return Math.max(TAP_GAIN, Math.round(effRate()*TAP_FRAC)); } // 탭 = max(1, 걸음/초 비례) — 후반에도 손맛 유지
 
 
 /* ===================== DOM ===================== */
