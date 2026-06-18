@@ -263,6 +263,18 @@
   .tapfx { position:fixed; pointer-events:none; z-index:30; font-family:'Nanum Pen Script',cursive;
     color:#9a7b4a; font-size:16px; animation:tapup .7s ease-out forwards; }
   @keyframes tapup { from{opacity:.9; transform:translate(-50%,0)} to{opacity:0; transform:translate(-50%,-34px)} }
+  /* 크리 탭 = 더 크고 금빛 */
+  .tapfx.crit { color:#e0892a; font-size:26px; font-weight:700; text-shadow:0 1px 7px rgba(224,138,42,.5);
+    animation:tapcrit .9s ease-out forwards; }
+  @keyframes tapcrit { 0%{opacity:1; transform:translate(-50%,0) scale(.6)} 22%{transform:translate(-50%,-6px) scale(1.28)}
+    100%{opacity:0; transform:translate(-50%,-46px) scale(1)} }
+  /* 연타 콤보 뱃지 */
+  #comboBadge { position:fixed; left:50%; top:62px; transform:translate(-50%,-6px); z-index:31; pointer-events:none;
+    font-family:'Nanum Pen Script',cursive; color:#e0892a; font-size:20px; background:rgba(255,250,240,.84);
+    padding:3px 13px; border-radius:14px; box-shadow:0 2px 10px rgba(180,120,40,.18);
+    opacity:0; transition:opacity .25s, transform .25s; }
+  #comboBadge.show { opacity:1; transform:translate(-50%,0); }
+  #comboBadge b { font-size:23px; } #comboBadge span { color:#b07b3a; font-size:15px; }
 
   /* ---------- 온보딩 후 길 위 만남 장면: 로봇 ↔ 샘이 말풍선으로 대화 ---------- */
   #samScene { position:absolute; inset:0; z-index:6; display:none; }
@@ -433,7 +445,7 @@
 
   <div class="hud">
     <div class="titlebar">
-      <div class="title">강철의 인간술사 <span id="robotName" class="rn" title="이름 바꾸기"></span></div>
+      <div class="title">강철의 인간술사 <span id="robotName" class="rn" title="이름 바꾸기"></span><span id="appVer" style="font-size:11px;opacity:.42;font-weight:400;margin-left:6px">v1.0.6</span></div>
       <button id="authBtn" class="authbtn">구글 로그인</button>
     </div>
     <div class="stats">
@@ -876,6 +888,23 @@ const S = {
 };
 NODES.forEach(n => S.levels[n.id] = n.completed ? 1 : 0);
 
+/* ---------- 유효 산출/탭 (메타 배율 솔기) ----------
+   S.rate(걸음/초 누적 base)·탭 이득을 '한 곳'에서 계산한다.
+   지금은 배율 1이라 동작 불변. Phase 1(탭 비례)·3(마일스톤)·4(프레스티지)가
+   여기 rateMult/effTap만 손대면 idle·HUD·탭에 일괄 반영됨. */
+function milestoneMult(){                          // 달성한 수집 마일스톤 배율의 곱(cells식 랭크 돌파 점프)
+  const c=learnedCount()+bodyCount();             // learnedCount/bodyCount는 아래에 선언(함수 호이스팅)
+  let m=1; for(const ms of MILESTONES) if(c>=ms.at) m*=ms.mult; return m;
+}
+function nextMilestone(){                          // 다음 속도업까지 남은 수집 개수(다 넘었으면 null)
+  const c=learnedCount()+bodyCount();
+  for(const ms of MILESTONES) if(c<ms.at) return {need:ms.at-c, at:ms.at, mult:ms.mult};
+  return null;
+}
+function rateMult(){ return milestoneMult(); }     // 전역 산출 배율(추후 프레스티지 배율도 여기 곱)
+function effRate(){ return S.rate * rateMult(); } // 실제 걸음/초
+function effTap(){ return Math.max(TAP_GAIN, Math.round(effRate()*TAP_FRAC)); } // 탭 = max(1, 걸음/초 비례) — 후반에도 손맛 유지
+
 
 /* ===================== DOM ===================== */
 const $ = s => document.querySelector(s);
@@ -1014,7 +1043,7 @@ function placeRobot(animate){
 }
 function refreshHUD(){
   elWalks.textContent=fmt(S.walks);
-  elRate.textContent=S.rate.toFixed(1);
+  elRate.textContent=effRate().toFixed(1);
   const rn=document.getElementById('robotName');
   if(rn) rn.textContent = (S.robotName?("· "+S.robotName):"") + (S.cycle>0?` · ${S.cycle}회차`:"") + (S.robotName?" ✎":"");
   const ds=document.getElementById('depthStat');
@@ -1030,8 +1059,12 @@ function refreshHUD(){
 function renderMind(){
   const emo=learnedCount(), bodyN=bodyCount();
   const emoDone=emo>=FRAG_TOTAL, bodyDone=bodyN>=BODY_TOTAL, both=emoDone&&bodyDone;
+  const mult=milestoneMult(), nm=nextMilestone();
+  const multTxt = mult>1 ? `⚡ 속도 ×${mult>=10?Math.round(mult):mult.toFixed(1)}` : '';
+  const nextTxt = nm ? `🎯 다음 속도업까지 <b>${nm.need}</b>개` : (mult>1?'<span class="ck">속도 최대</span>':'');
   mindsky.innerHTML=`<div class="fragline">🧩 <b>${emo}</b>/27${emoDone?' <span class="ck">✓</span>':''}`
-         + `<span class="sep">·</span>🫀 <b>${bodyN}</b>/11${bodyDone?' <span class="ck">✓</span>':''}</div>`;
+         + `<span class="sep">·</span>🫀 <b>${bodyN}</b>/11${bodyDone?' <span class="ck">✓</span>':''}</div>`
+         + ((multTxt||nextTxt)?`<div class="fragline" style="opacity:.85">${multTxt}${multTxt&&nextTxt?' <span class="sep">·</span> ':''}${nextTxt}</div>`:'');
 }
 function renderAll(){ sizeCanvas(); renderEdges(); renderNodes(); placeRobot(); refreshHUD(); updateFilterBtns(); }
 
@@ -1279,17 +1312,33 @@ function syncSteps(){ const w=Math.floor(S.walks); if(w>wholeWalks) stepOnce(); 
 
 /* ---------- 탭 = 걸음 ---------- */
 let sceneActive=false, sceneReady=false, sceneStep=0; // 샘 대화 장면 진행 중 상태
+let comboCount=0, lastTapAt=0, comboHideTimer=null, comboBadge=null;  // 연타 콤보 상태
 function addWalk(x,y){
   if(sceneActive){ advanceScene(); return; }           // 대화 중엔 탭=다음 대사
-  S.walks+=TAP_GAIN;
+  const now=Date.now();
+  comboCount = (now-lastTapAt<=COMBO_WINDOW) ? comboCount+1 : 0;       // 연타 창 안이면 누적, 끊기면 리셋
+  lastTapAt=now;
+  const cMult = 1 + COMBO_STEP*Math.min(comboCount, COMBO_MAX);        // 콤보 배율
+  const crit = Math.random() < CRIT_CHANCE;                            // 변동보상: 가끔 크리(gap-analysis ⑤)
+  const g = Math.max(1, Math.round(effTap()*cMult*(crit?CRIT_MULT:1)));
+  S.walks+=g;
   if(x!=null){ const m=document.createElement("div"); m.className="mote";
     m.style.left=x+"px"; m.style.top=y+"px"; document.body.appendChild(m);
     setTimeout(()=>m.remove(),1300);
-    const t=document.createElement("div"); t.className="tapfx"; t.textContent="+"+TAP_GAIN;
-    t.style.left=x+"px"; t.style.top=(y-8)+"px"; document.body.appendChild(t); setTimeout(()=>t.remove(),700);
+    const t=document.createElement("div"); t.className="tapfx"+(crit?" crit":""); t.textContent=(crit?"크리! +":"+")+g;
+    t.style.left=x+"px"; t.style.top=(y-8)+"px"; document.body.appendChild(t); setTimeout(()=>t.remove(),crit?900:700);
   }
+  showCombo(cMult, comboCount);
   elWalks.textContent=fmt(S.walks);
-  syncSteps();                                         // 탭 1회 = 1걸음 = 1보 (연달아 3탭 → 3보)
+  syncSteps();                                         // 탭 1회 = 1보(+콤보·크리 가속)
+}
+function showCombo(mult, n){                            // 연타 콤보 뱃지(2연타부터, 끊기면 자동 페이드)
+  if(n<2){ if(comboBadge) comboBadge.classList.remove("show"); return; }
+  if(!comboBadge){ comboBadge=document.createElement("div"); comboBadge.id="comboBadge"; document.body.appendChild(comboBadge); }
+  comboBadge.innerHTML=`🔥 <b>×${mult.toFixed(1)}</b> <span>${n} 콤보</span>`;
+  comboBadge.classList.add("show");
+  clearTimeout(comboHideTimer);
+  comboHideTimer=setTimeout(()=>{ if(comboBadge) comboBadge.classList.remove("show"); }, COMBO_WINDOW+250);
 }
 // 길 페이지 = 핵심 손맛: 두드리면 걷는다
 $("#pageWalk").addEventListener("pointerdown", e=>addWalk(e.clientX, e.clientY));
@@ -1478,7 +1527,8 @@ function applyState(d){
   S.named = !!d.named;
   S.depth = d.depth || 0; S.cycle = d.cycle || 0; S.lookback = d.lookback || 0;
   S.seenIntro = !!(d.seenIntro || d.named);   // 기존 이름지은 유저는 자동으로 '봤음' 처리(게이트 안 띄움)
-  let off=0; if(d.t){ const sec=Math.max(0,(Date.now()-d.t)/1000); off=Math.min(d.rate*sec, d.rate*3600*OFFLINE_CAP_H); S.walks+=off; }
+  // 오프라인 적립도 effRate(마일스톤 배율 포함)로 — idle/탭과 일관(여기선 S.rate·S.levels 복원 뒤라 배율 정확).
+  let off=0; if(d.t){ const sec=Math.max(0,(Date.now()-d.t)/1000); const er=effRate(); off=Math.min(er*sec, er*3600*OFFLINE_CAP_H); S.walks+=off; }
   wholeWalks=Math.floor(S.walks);
   return off;
 }
@@ -1715,7 +1765,7 @@ $("#renameInput")?.addEventListener("keydown", e=>{ if(e.key==="Enter") applyRen
 
 /* ---------- idle 루프 (기본 1초 1걸음 → 1초 1보) ---------- */
 setInterval(()=>{ if(sceneActive) return;             // 샘 대화/설명 중엔 걷지 않음(걸음 정지)
-  S.walks += S.rate*0.1; elWalks.textContent=fmt(S.walks); syncSteps();
+  S.walks += effRate()*0.1; elWalks.textContent=fmt(S.walks); syncSteps();
   if(updateDiscovered() && curPage==="map"){ renderEdges(); renderNodes(); placeRobot(); } }, 100);
 
 /* ---------- 줌 입력 ---------- */
