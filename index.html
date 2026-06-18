@@ -238,7 +238,7 @@
     font-family:'Nanum Pen Script',cursive; font-size:18px; color:#8a8071; animation:breathe 2.6s ease-in-out infinite; }
   @keyframes breathe { 0%,100%{opacity:.55} 50%{opacity:1} }
   /* 걷는 동안 로봇의 상태 로그 — 감정을 '오류/고장'으로 읽는 순진한 독백이 흐른다 */
-  #syslog { position:absolute; left:14px; right:14px; top:50px; bottom:auto; z-index:4; pointer-events:none;
+  #syslog { position:absolute; left:14px; right:14px; top:72px; bottom:auto; z-index:4; pointer-events:none;   /* mindsky(감정카운터+'다음 속도업까지' 2줄, ~64px)와 안 겹치게 아래로 */
     display:flex; flex-direction:column; align-items:center; gap:4px; text-align:center; }
   .syslog-line { font-family:'Gaegu',cursive; font-size:14px; line-height:1.4; color:#7c7468; max-width:300px;
     opacity:0; transform:translateY(8px); transition:opacity .8s ease, transform .8s ease;
@@ -294,6 +294,11 @@
   #sceneTapHint { position:absolute; left:0; right:0; bottom:4%; text-align:center; z-index:6; display:none;
     font-family:'Nanum Pen Script',cursive; font-size:17px; color:#8a8071; animation:breathe 2.6s ease-in-out infinite; }
   #sceneTapHint.show { display:block; }
+  /* 샘 장면(튜토리얼) 넘어가기 — #samScene 자식이라 장면 표시될 때만 보임 */
+  #samSkip { position:absolute; top:10px; right:12px; z-index:8;
+    padding:7px 13px; border:1px solid #cbbfae; border-radius:16px; background:rgba(251,248,243,.82);
+    font-family:'Nanum Myeongjo',serif; font-size:12px; color:#9a917f; cursor:pointer; }
+  #samSkip:active { background:#ece3d0; }
 
   /* ---------- 엔딩 시네마틱 ---------- */
   .endcine { position:absolute; inset:0; z-index:46; display:none; flex-direction:column; align-items:center; justify-content:center;
@@ -458,7 +463,7 @@
 
   <div class="hud">
     <div class="titlebar">
-      <div class="title">강철의 인간술사 <span id="robotName" class="rn" title="이름 바꾸기"></span><span id="appVer" style="font-size:11px;opacity:.42;font-weight:400;margin-left:6px">v1.0.11</span></div>
+      <div class="title">강철의 인간술사 <span id="robotName" class="rn" title="이름 바꾸기"></span><span id="appVer" style="font-size:11px;opacity:.42;font-weight:400;margin-left:6px">v1.0.12</span></div>
       <button id="authBtn" class="authbtn">구글 로그인</button>
     </div>
     <div class="stats">
@@ -588,6 +593,7 @@
         </svg>
       </div>
       <div id="sceneTapHint">화면을 톡 — 다음 ›</div>
+      <button id="samSkip" type="button">튜토리얼 넘어가기 ›</button>
     </div>
 
     <div id="syslog"></div>
@@ -1829,6 +1835,9 @@ function endSamScene(){
 }
 $("#rerollBtn").addEventListener("click",()=>{ S.robotName=""; ensureRobotName(); $("#nameInput").value=S.robotName; });
 $("#introSkip").addEventListener("click",()=>{ introStep=INTRO.length; renderIntro(); });
+// 샘 장면(튜토리얼) 넘어가기 → 바로 게임 시작
+$("#samSkip").addEventListener("pointerdown", e=>e.stopPropagation());            // 버튼 탭이 대사진행(addWalk)으로 새지 않게
+$("#samSkip").addEventListener("click", e=>{ e.stopPropagation(); if(sceneActive) endSamScene(); });
 
 /* ---------- 닉네임 변경 (헤더 이름 ✎ 클릭) — 저장 시 saveState로 로컬+Supabase 반영 ---------- */
 const renameOv=$("#renameOv");
