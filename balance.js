@@ -12,8 +12,15 @@ const COMBO_MAX    = 40;         // 콤보 상한 → 최대 탭 배율 1 + 0.15
 const CRIT_CHANCE  = 0.12;       // 탭 크리티컬 확률
 const CRIT_MULT    = 6;          // 크리 시 탭 ×
 const UP_BASE = { person: 30 };   // 재회 업그레이드 1레벨 비용 기준
-const upCost = (node, lv) => Math.round(UP_BASE.person * Math.pow(1.22, lv-1));  // 재회 비용 곡선(완만 — 거지키우기식 다수 레벨 그라인드)
+const upCost = (node, lv) => Math.round(UP_BASE.person * Math.pow(1.15, lv-1));  // 재회 비용 곡선(1.15 = 5레벨당 ×2.0, 달성보너스 ×2와 균형 → '국소 벽' 제거. 재회 = 막힘없는 잔잔한 잼)
 const MAX_LV = 50;                // 재회 심화 상한 — 끝없는 sink(거지 알바식). 5레벨마다 ×2 달성보너스(achieveMult)
+// 발견(이동) 비용 = '내 걸음 속도 추종' + '순번별 목표 탭수 곡선'.
+// 비용 = effRate(걸음/초) × TAP_CURVE[순번]. TAP_FRAC=1.0라 "목표 탭수 = 목표 초"(가만 두면 그 초만큼 idle로도 도달).
+// income이 K/M/B로 폭발해도 비용이 income추종이라 다음 발견은 늘 "목표 탭수" 거리 → 탭("다음 이야기 당겨오기")이 영원히 의미를 가짐.
+// 곡선 의도: 첫 노드는 즉각(훅) → 그담부터 묵직(+20대) → 이후 평탄(끝값 유지). 걷기(idle)가 부담 절반쯤 먹어줌.
+// ⚠️ 콤보 최대 ×7 쓰면 체감 탭수는 1/7로 압축됨(예: 80 → ~11탭).
+const TAP_CURVE = [5, 25, 42, 58, 80];   // 발견 순번(0,1,2,…)별 목표 탭수. 길이 넘으면 끝값(80) 평탄 유지.
+const OFFLINE_RATE = 0.1;         // 앱 끈 동안 걸음 적립 배율(1/10). base 1걸음/초 → 오프라인 0.1걸음/초 = 1분에 6걸음. 켜고 놀 유인(접속 유도).
 const TIER = {
   joy:"big", adore:"mid", amuse:"mid", flutter:"mid", curious:"small", beauty:"small", admire:"small", awe:"small", trance:"small", satisfy:"small",
   fear:"big", confuse:"mid", bored:"mid", awkward:"mid", anxiety:"small", disgust:"small", horror:"small",

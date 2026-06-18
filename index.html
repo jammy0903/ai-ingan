@@ -30,8 +30,11 @@
     overflow:hidden; background:#fbf8f3; box-shadow:0 24px 80px rgba(70,50,90,.32);
     display:flex; flex-direction:column;
   }
-  /* 모바일: 앱이 화면을 꽉 채워 어두운 레터박스 여백 제거 (이전엔 880px 캡 밖이 검게 보였음) */
-  @media (max-width:480px){ html,body{ background:#fbf8f3; } #app{ max-width:none; max-height:none; box-shadow:none; } }
+  /* 모바일: 앱이 화면을 꽉 채워 어두운 레터박스 여백 제거 (이전엔 880px 캡 밖이 검게 보였음).
+     ⚠️ ≤480px '하나'에만 의존하면 일부 폰(보고 CSS폭>480·고DPR·삼성 등)에서 분기가 안 걸려 #app이 420px로 박스처리→'화면이 작게' 보임.
+     그래서 터치 기기(pointer:coarse)는 폭과 무관하게 꽉 차게 + px 분기도 600으로 상향(태블릿 큰 모니터 제외 ≤1024). */
+  @media (max-width:600px), (pointer:coarse) and (max-width:1024px){
+    html,body{ background:#fbf8f3; } #app{ max-width:none; max-height:none; box-shadow:none; } }
   #app::before { content:""; position:absolute; inset:0; pointer-events:none; opacity:.16; mix-blend-mode:multiply; z-index:1;
     background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.35'/></svg>"); }
   svg.defs { position:absolute; width:0; height:0; }
@@ -401,6 +404,26 @@
   .card button.btn2 { margin-top:8px; width:100%; padding:9px; border:1px dashed #c4b79c; background:transparent;
     font-family:'Nanum Myeongjo',serif; font-weight:400; font-size:12.5px; color:#9a7b4a; letter-spacing:1px; cursor:pointer; transition:background .2s; }
   .card button.btn2:active { background:#f0e8d6; }
+  /* ---------- 안내(코치) 오버레이 ---------- */
+  .coach { position:absolute; inset:0; z-index:46; display:none; align-items:center; justify-content:center; padding:30px;
+    background:rgba(40,42,44,.5); }
+  .coach.show { display:flex; animation:fade .35s ease; }
+  .coach .ccard { width:100%; max-width:300px; text-align:center; background:#fcf9f5; border:1px solid #e3dcec;
+    border-radius:8px; padding:24px 22px 20px; box-shadow:0 18px 50px rgba(0,0,0,.3); }
+  .coach .ctitle { font-family:'Gaegu',cursive; font-weight:700; font-size:21px; color:#7a6440; margin-bottom:14px; }
+  .coach .cbody { font-size:14px; line-height:1.85; color:#5a5750; word-break:keep-all; }
+  .coach .cbody b { color:#9a7b4a; }
+  .coach #coachBtn { margin-top:20px; width:100%; padding:12px; border:1px solid #b9a98c; background:#ece3d0;
+    font-family:'Nanum Myeongjo',serif; font-weight:700; font-size:15px; color:#6f5d3c; letter-spacing:1px; cursor:pointer; border-radius:4px; }
+  .coach #coachBtn:active { background:#e0d4ba; }
+  /* ---------- '다시 만나기'(재회) 버튼 — 노드 위에 서 있을 때만 ---------- */
+  .reunionbtn { position:absolute; left:50%; bottom:18px; transform:translateX(-50%); z-index:8; display:none;
+    padding:11px 20px; border:1px solid #c9a86a; border-radius:24px; background:#fbf2dd;
+    font-family:'Gaegu',cursive; font-weight:700; font-size:15px; color:#7a5f33; cursor:pointer;
+    box-shadow:0 6px 18px rgba(120,95,40,.28); white-space:nowrap; max-width:72%; overflow:hidden; text-overflow:ellipsis; }
+  .reunionbtn.show { display:block; animation:fadein .3s ease; }
+  .reunionbtn:active { background:#f1e4c2; }
+  .reunionbtn b { color:#9a6a3a; }
 </style>
 </head>
 <body>
@@ -435,7 +458,7 @@
 
   <div class="hud">
     <div class="titlebar">
-      <div class="title">강철의 인간술사 <span id="robotName" class="rn" title="이름 바꾸기"></span><span id="appVer" style="font-size:11px;opacity:.42;font-weight:400;margin-left:6px">v1.0.10</span></div>
+      <div class="title">강철의 인간술사 <span id="robotName" class="rn" title="이름 바꾸기"></span><span id="appVer" style="font-size:11px;opacity:.42;font-weight:400;margin-left:6px">v1.0.11</span></div>
       <button id="authBtn" class="authbtn">구글 로그인</button>
     </div>
     <div class="stats">
@@ -643,6 +666,9 @@
     <button id="zout" aria-label="축소">−</button>
     <div class="zlvl" id="zlvl">1.0×</div>
   </div>
+
+  <!-- 현재 노드 위에 서 있을 때만: 로봇이 노드를 가려도 여기서 재회 가능 -->
+  <button id="reunionBtn" class="reunionbtn" type="button">🔁 <b id="reunionName"></b> 다시 만나기</button>
   </div><!-- /#pageMap -->
 
   </div><!-- /.pages -->
@@ -662,6 +688,13 @@
     <div class="reward" id="mReward"></div>
     <button id="mBtn">다음 길로</button>
     <button id="mBtn2" class="btn2" style="display:none"></button>
+  </div></div>
+
+  <!-- 안내(코치): 재회로만 다음 감정이 열리는 순간, 화면 멈추고 가르침(1회) -->
+  <div class="coach" id="coach"><div class="ccard">
+    <div class="ctitle">💡 다음 감정을 열려면</div>
+    <div class="cbody" id="coachBody"></div>
+    <button id="coachBtn" type="button">알겠어요</button>
   </div></div>
 
   <!-- 첫 플레이 온보딩: 튜토리얼 + 이름짓기 -->
@@ -872,6 +905,7 @@ const S = {
   cycle: 0,              // 걸어온 회차 수 (0=첫 생)
   lookback: 0,           // '기억 재해석'으로 되돌아본 기억 수 (마음의 깊이로 구매, §3)
   seenIntro: false,      // 시작 게이트/온보딩을 한 번이라도 지났는가 (이후 강제 재노출 안 함)
+  seenReunionHint: false, // 재회(다음 티어 해금) 안내를 한 번이라도 봤는가
 };
 NODES.forEach(n => S.levels[n.id] = n.completed ? 1 : 0);
 
@@ -920,6 +954,24 @@ function centerOn(id, smooth){
   const n=NODES.find(x=>x.id===id); if(!n) return; const p=px(n);
   map.scrollTo({ left:p.x*zoom-map.clientWidth/2, top:p.y*zoom-map.clientHeight/2, behavior:smooth?"smooth":"auto" });
 }
+// 네이티브 behavior:'smooth'가 막힌 환경(일부 모바일/자동화) 대비 — rAF로 직접 부드럽게 카메라 이동 + 살짝 줌인.
+let panRAF=0;
+const REVEAL_ZOOM=1.1;          // 발견 연출 줌. '최소 이 값까지'만 당김(누적 안 됨; 이미 더 크면 줌 유지하고 이동만)
+function panTo(id, ms){
+  const n=NODES.find(x=>x.id===id); if(!n) return;
+  const z0=zoom, z1=Math.max(zoom, Math.min(ZMAX, REVEAL_ZOOM));   // 목표 줌(고정 상한 → 발견마다 누적 줌인 방지)
+  const dur=ms||700, t0=performance.now();
+  cancelAnimationFrame(panRAF);
+  (function step(now){
+    const k=Math.min(1,(now-t0)/dur), e=1-Math.pow(1-k,3);   // easeOutCubic
+    zoom=z0+(z1-z0)*e; sizeCanvas();                          // 줌 보간(매 프레임 캔버스 재크기)
+    const p=px(n);                                            // 노드는 줌 무관 논리좌표 → 현재 줌으로 중앙 정렬
+    map.scrollLeft=Math.max(0, Math.min(map.scrollWidth-map.clientWidth,  p.x*zoom-map.clientWidth/2));
+    map.scrollTop =Math.max(0, Math.min(map.scrollHeight-map.clientHeight, p.y*zoom-map.clientHeight/2));
+    if(k<1) panRAF=requestAnimationFrame(step);
+    else { const zl=document.getElementById('zlvl'); if(zl) zl.textContent=zoom.toFixed(1)+"×"; }   // 줌 표시 갱신
+  })(t0);
+}
 function setZoom(z){
   const old=zoom;
   zoom = Math.max(ZMIN, Math.min(ZMAX, z));
@@ -948,34 +1000,54 @@ function neighbors(id){
   EDGES.forEach(([a,b,c])=>{ if(a===id) out.push([b,c]); if(b===id) out.push([a,c]); });
   return out;
 }
-function reachCost(id){ // 완료 노드와 잇는 간선 중 최소 비용(=열 수 있는 비용)
-  let c=Infinity;
-  neighbors(id).forEach(([nb,cost])=>{ if(S.levels[nb]>0) c=Math.min(c,cost); });
-  return c;
+// 지금까지 연 노드 수(start 제외) = 발견 '순번'. TAP_CURVE 인덱스로 쓴다.
+function unlockedCount(){ let c=0; for(const n of NODES){ if(n.id!=="start" && S.levels[n.id]>0) c++; } return c; }
+// 다음 발견의 목표 탭수(=목표 초). 순번이 곡선 길이를 넘으면 끝값(평탄).
+function discoverTaps(){ return TAP_CURVE[Math.min(unlockedCount(), TAP_CURVE.length-1)]; }
+function reachCost(id){ // 발견(이동) 비용 — 걸음수입 × 순번별 목표 탭수
+  // 도달 가능?: 완료된 이웃이 하나라도 있어야 연다(그래프 토폴로지 게이트). 없으면 무한.
+  let reachable=false;
+  for(const [nb] of neighbors(id)){ if(S.levels[nb]>0){ reachable=true; break; } }
+  if(!reachable) return Infinity;
+  // 비용 = effTap(탭 1번 걸음) × TAP_CURVE[순번]. → 순수 탭수 = 정확히 곡선값(5→25→42→58→80, 이후 평탄).
+  // effRate가 아니라 effTap 기준이라 저속 구간 반올림 오차 없이 '목표 탭수'가 보장됨. income추종(effTap이 effRate 따라 큼)이라 후반에도 거리 유지.
+  return effTap()*discoverTaps();
 }
 // 갈래 안 대/중/소 티어 (대=대표 1 / 중=다음 / 소=깊은 마지막). 갈래 안에서 단계적으로 공개.
 // 한 갈래에서 '재회' 누적 횟수(레벨2 이상으로 다시 만난 만큼)
 function regionReunions(catId){ let r=0; NODES.forEach(n=>{ if(n.type==="person"&&n.parent===catId) r+=Math.max(0,(S.levels[n.id]||0)-1); }); return r; }
 // 노드는 '걸음을 그 비용만큼 모은' 순간 처음 희미하게 발견된다(이후 계속 보임).
+// 대분류 갈래 순서(긍정→강한자극→불안·불편→잔잔·시림) — 한 갈래를 '다 끝내야' 다음 갈래가 열린다(순차).
+const CAT_ORDER = ["cat_pos","cat_intense","cat_unease","cat_calm"];
+function categoryComplete(catId){                  // 그 갈래의 감정을 전부 수집했나
+  const ps = NODES.filter(n=>n.type==="person" && n.parent===catId);
+  return ps.length>0 && ps.every(n=>S.levels[n.id]>0);
+}
 function gateOk(n){                                 // 챕터 게이트
   if(n.type==="ending") return learnedCount()>=FRAG_TOTAL && bodyCount()>=BODY_TOTAL; // 샘 재회 = 마음27 + 몸11 둘 다
   if(n.type==="human")  return S.levels["becoming"]>0;                                // 샘을 만난 뒤에 사람
+  if(n.type==="category"){                          // 대분류 허브: 긍정만 처음부터, 나머지는 '이전 갈래 완성' 후 해금(순차)
+    const i=CAT_ORDER.indexOf(n.id);
+    if(i<=0) return true;                           // 긍정(첫 갈래)은 항상 열림
+    return categoryComplete(CAT_ORDER[i-1]);        // 이전 갈래를 다 끝내야 이 갈래가 열림
+  }
   if(n.type==="person"){                           // 갈래 안 단계 공개: 대 → (재회) → 중 → (재회) → 소
     const tier=TIER[n.key];
     if(tier==="mid")   return regionReunions(n.parent)>=1;   // 중: 그 갈래에서 재회 1회 이상
     if(tier==="small") return regionReunions(n.parent)>=2;   // 소: 재회 2회 이상
     return true;                                   // 대(대표 감정): 평소대로(허브 완료 + 걸음)
   }
-  return true;   // 대분류 허브·몸 등은 평소 발견 규칙
+  if(n.type==="body") return learnedCount()>=FRAG_TOTAL;   // 신체는 맨 마지막 — 감정 27개 다 모은 뒤에 열린다(병렬 → 순차로 변경)
+  return true;
 }
 function updateDiscovered(){
-  let changed=false;
+  let newId=null;                                  // 이번에 새로 발견된 노드(첫 1개) — 카메라 이동용
   NODES.forEach(n=>{
     if(n.id==="start" || S.levels[n.id]>0 || S.discovered[n.id]) return;
     const c=reachCost(n.id);                       // 부모가 완료돼야 비용이 유한
-    if(c!==Infinity && S.walks>=c && gateOk(n)){ S.discovered[n.id]=true; changed=true; }
+    if(c!==Infinity && S.walks>=c && gateOk(n)){ S.discovered[n.id]=true; if(!newId) newId=n.id; }
   });
-  return changed;
+  return newId;                                    // truthy면 '새로 열림'(기존 boolean 용법과 호환)
 }
 function isRevealed(id){ return S.levels[id]>0 || !!S.discovered[id]; }
 
@@ -1028,7 +1100,7 @@ function renderNodes(){
     el.innerHTML =
       `<div class="ring"><span class="ic">${n.type==="teaser"?"?":n.icon}</span>${done&&n.gen?`<span class="lv">Lv${lv}</span>`:""}</div>`+
       `<div class="label">${n.type==="teaser"?"안갯속 무언가":name}</div>`+
-      (reach?`<div class="cost">${cost} 걸음</div>`:
+      (reach?`<div class="cost">${fmt(cost)} 걸음</div>`:
         (done&&n.gen?`<div class="cost rate">+${(n.gen*lv).toFixed(1)}/초</div>`:""));
     if(reach) el.onclick = ()=>tryUnlock(n);
     else if(done && n.gen) el.onclick = ()=>openNode(n,false);
@@ -1038,7 +1110,20 @@ function renderNodes(){
 function placeRobot(animate){
   const n=NODES.find(x=>x.id===S.current), p=px(n);
   robot.style.left=p.x+"px"; robot.style.top=p.y+"px";
+  updateReunionBtn();   // 로봇이 선 노드가 재회 가능하면 '다시 만나기' 버튼 노출(로봇이 노드 가려도 재회 가능)
 }
+// 지금 서 있는 노드를 재회할 수 있나 (완료·생성기·상한 미만 / 허브·시작 제외)
+function isReunionable(n){ return !!(n && n.type!=="start" && n.type!=="category" && S.levels[n.id]>0 && n.gen>0 && S.levels[n.id]<MAX_LV); }
+function updateReunionBtn(){
+  const btn=$("#reunionBtn"); if(!btn) return;
+  const n=NODES.find(x=>x.id===S.current);
+  if(curPage==="map" && isReunionable(n)){
+    const nm = n.type==="person"?PEOPLE[n.key].name : (n.type==="body"?BODY[n.key].name : "");
+    $("#reunionName").textContent=nm;
+    btn.classList.add("show");
+  } else btn.classList.remove("show");
+}
+$("#reunionBtn").onclick=()=>{ const n=NODES.find(x=>x.id===S.current); if(isReunionable(n)) openNode(n,false); };
 function refreshHUD(){
   elWalks.textContent=fmt(S.walks);
   const _r=effRate(); elRate.textContent = _r<1000 ? _r.toFixed(1) : fmt(_r);   // 초반엔 소수1자리, 커지면 K/M/B
@@ -1075,7 +1160,7 @@ function travelTo(n, cb){
 }
 function tryUnlock(n){
   const cost=reachCost(n.id);
-  if(S.walks < cost){ nudge(`걸음이 ${cost-Math.floor(S.walks)|0} 더 필요해`); return; }
+  if(S.walks < cost){ nudge(`걸음이 ${fmt(cost-Math.floor(S.walks))} 더 필요해`); return; }
   S.walks -= cost; syncSteps();
   travelTo(n, ()=>{
     S.levels[n.id]=1; spark();   // rate는 baseRate()가 levels에서 계산(누적 안 함)
@@ -1136,7 +1221,8 @@ function openNode(n, firstMeet){
     const pp=PEOPLE[n.key];
     const lineIdx=Math.min(lv-1, pp.lines.length-1);
     if(firstMeet){
-      // 1페이지: 상황 + 만남 장면 → 2페이지: "○○을 알게 됐다" 해금 + 그 사람 기억
+      afterClose = ()=>maybeTeachReunion(n);   // 첫 감정 닫은 뒤, 재회로만 다음이 열리는 상황이면 1회 안내
+      // 1페이지: 상황 + 만남 장면 → 2페이지: "○○을 알게 됐다" 해금 + 그 감정 곱씹기(mem)
       fillModal({ badge:"하나의 감정을 만나다",
         emo:`『 ${pp.name} 』`, lv:`걸음/초 +${n.gen.toFixed(2)}`,
         situ: pp.situ, log: pp.lines[0], closeText:"…",
@@ -1144,7 +1230,7 @@ function openNode(n, firstMeet){
           badge:"새로운 마음, 해금",
           emo:`『 ${pp.name} 』`, lv:`${objParticle(pp.name)} 알게 됐다`, situ:"",
           log: pp.mem,
-          reward:[`🧩 감정조각 +1 (${learnedCount()}/${FRAG_TOTAL})`,`🎨 회색 세계에 ${pp.name}의 색이 번진다`,`🧩 그 사람의 얼굴이 조금 또렷해진다`],
+          reward:[`🧩 감정조각 +1 (${learnedCount()}/${FRAG_TOTAL})`,`🎨 회색 세계에 ${pp.name}의 색이 번진다`,`🧩 마음이 한 조각 또렷해진다`],
           closeText:"다음 길로" })
       });
       return;
@@ -1196,6 +1282,28 @@ modal.addEventListener("click", e=>{ if(e.target!==modal) return;            // 
   if(modalNext){ const f=modalNext; modalNext=null; f(); } else closeModal(); });  // = 다음 페이지 or 닫기
 function closeModal(){ modal.classList.remove("show"); renderAll();
   const a=afterClose; afterClose=null; if(a) setTimeout(a, 280); }
+
+/* ---------- 안내(코치): "재회해야 다음 감정이 열린다"를 막히기 직전 1회 가르침 ---------- */
+let coachActive=false;
+function maybeTeachReunion(n){
+  if(S.seenReunionHint || n.type!=="person") return;
+  // 이 갈래에 '재회(티어) 게이트로 잠긴' 형제 감정이 있나? (대표는 열렸는데 중/소가 재회 대기 = 막다른 길 직전)
+  const locked = NODES.some(m=> m.type==="person" && m.parent===n.parent
+      && !(S.levels[m.id]>0) && reachCost(m.id)!==Infinity && !gateOk(m));
+  if(!locked) return;
+  S.seenReunionHint=true; saveState();
+  showReunionHint(PEOPLE[n.key].name);
+}
+function showReunionHint(emoName){
+  $("#coachBody").innerHTML =
+    `방금 만난 『${emoName}』을(를) <b>한 번 더 만나보세요.</b><br><br>`+
+    `아래 <b>〈🔁 다시 만나기〉</b> 버튼을 눌러 <b>재회</b>하면 —<br>`+
+    `이 갈래의 <b>다음 감정들이 안갯속에서 드러나요.</b>`;
+  coachActive=true; $("#coach").classList.add("show");   // 화면 멈춤(걸음·탭 정지) + 가림
+}
+function hideCoach(){ coachActive=false; $("#coach").classList.remove("show"); }
+$("#coachBtn").onclick=hideCoach;
+$("#coach").addEventListener("click", e=>{ if(e.target.id==="coach") hideCoach(); });  // 배경 클릭도 닫기
 
 /* ---------- 엔딩 시네마틱 (샘 재회 → 마법 불발 정적 → "넌 이미 사람이었다" 반전) ---------- */
 let endStep=0, endHold=false;
@@ -1293,6 +1401,7 @@ function syncSteps(){ const w=Math.floor(S.walks); if(w>wholeWalks) stepOnce(); 
 let sceneActive=false, sceneReady=false, sceneStep=0; // 샘 대화 장면 진행 중 상태
 let comboCount=0, lastTapAt=0, comboHideTimer=null, comboBadge=null;  // 연타 콤보 상태
 function addWalk(x,y){
+  if(coachActive) return;                              // 안내(코치) 표시 중엔 탭 무시(화면 멈춤)
   if(sceneActive){ advanceScene(); return; }           // 대화 중엔 탭=다음 대사
   const now=Date.now();
   comboCount = (now-lastTapAt<=COMBO_WINDOW) ? comboCount+1 : 0;       // 연타 창 안이면 누적, 끊기면 리셋
@@ -1417,7 +1526,7 @@ const SYS_REINTERP=[
   { old:"[경고] 코어 회전수 비정상 ↑. 고장인가?",          fix:"고장이 아니라… 설렘이었어." },
   { old:"[오류] 가슴 부근 압력 이상. 통증 아님. 분류 불가.", fix:"누군가가 그리웠던 거래." },
   { old:"[오류] 두 발이 명령 없이 멈춤. 원인 불명.",        fix:"꽃을 보느라 멈춰 섰던 거야." },
-  { old:"[경고] 연산 지연 발생. 무언가 자꾸 떠오름.",       fix:"자꾸 그 사람이 떠올랐던 거고." },
+  { old:"[경고] 연산 지연 발생. 무언가 자꾸 떠오름.",       fix:"그냥, 뭔가 자꾸 떠올랐던 거고." },
   { old:"[오류] 출력 신호에 미세한 떨림. 손상 아님?",       fix:"그건 웃음이었어. 손상이 아니라." },
   { old:"[시스템] 외피 부식 31%. 무시함.",                 fix:"부식이 아니라 흉터야. 걸어온 자국." },
   { old:"[스캔] 바람 4.2m/s. 분류: 무의미.",               fix:"바람이 좋다는 걸, 이제 안다." },
@@ -1472,7 +1581,7 @@ function addSysLogs(cold=[], warm=[]){ SYS_COLD.push(...cold); SYS_WARM.push(...
 
 /* ---------- 세이브 (localStorage 즉시 + 새 Supabase 키 넣으면 클라우드 동기화) ---------- */
 const SAVE_KEY = "aingan_save_v1";   // localStorage 키 이름(레거시 — 바꾸면 기존 미러를 못 읽으니 고정)
-const SAVE_VERSION = 1;              // 세이브 '데이터' 스키마 버전(SAVE_KEY와 별개). 필드/노드id/규칙을 바꾸면 +1 하고 migrate()에 변환 한 칸 추가.
+const SAVE_VERSION = 2;              // 세이브 '데이터' 스키마 버전(SAVE_KEY와 별개). 필드/노드id/규칙을 바꾸면 +1 하고 migrate()에 변환 한 칸 추가. (v2: 비용곡선 개편 — 전 유저 1회 강제 리셋)
 // 강철의 인간술사 전용 Supabase 프로젝트. publishable 키는 클라 공개용(안전·RLS 보호).
 const SUPA = { url:"https://irpavlciywhjnigqsjxn.supabase.co", anon:"sb_publishable_SNr6tjf-JX5-4NhLBo8oEg_mNqoClDf" };
 
@@ -1483,14 +1592,14 @@ function saveKey(){ return authUser ? ("u_"+authUser.id) : null; }
 const ROBOT_NAMES=["삐삐","또르","깡통이","녹슬이","별이","콩이","또롱","삐릭","깡총","또또","모리","단추","나사","볼트","깜빡이","또각","삐약","동그리","네모","철이","구리","뚜뚜","링링","찌릿","오백","뽀삐","고철이","반짝","덜컹","깡깡"];
 function ensureRobotName(){ if(!S.robotName) S.robotName = ROBOT_NAMES[Math.floor(Math.random()*ROBOT_NAMES.length)]; }
 
-function snapshot(){ return { v:SAVE_VERSION, walks:S.walks, rate:S.rate, current:S.current, levels:S.levels, discovered:S.discovered, robotName:S.robotName, named:S.named, depth:S.depth, cycle:S.cycle, lookback:S.lookback, seenIntro:S.seenIntro, t:Date.now() }; }
+function snapshot(){ return { v:SAVE_VERSION, walks:S.walks, rate:S.rate, current:S.current, levels:S.levels, discovered:S.discovered, robotName:S.robotName, named:S.named, depth:S.depth, cycle:S.cycle, lookback:S.lookback, seenIntro:S.seenIntro, seenReunionHint:S.seenReunionHint, t:Date.now() }; }
 function loadLocal(){ try{ const r=localStorage.getItem(SAVE_KEY); return r?JSON.parse(r):null; }catch(e){ return null; } }
 // 옛 세이브를 현재 스키마로 끌어올린다. v 필드 없으면 버전 도입 이전(레거시) = v1로 간주.
 // 스키마 바꿀 때: SAVE_VERSION +1 하고 아래 체인에 `if(v<N){ /* 변환 */ v=N; }` 한 칸 추가(순서대로 누적 적용).
 function migrate(d){
   if(!d || typeof d!=="object") return d;
   let v = d.v || 1;
-  // if(v<2){ /* 예: d.levels 이름 변경 등 v1→v2 변환 */ v=2; }
+  if(v<2){ d = { v:2 };  v=2; }      // v2: 비용곡선(경제) 개편 → 기존 진행 전체 폐기, 처음부터. 진행 필드 제거 → applyState가 새 게임 기본값으로 채움(걸음0·레벨초기화·온보딩 재등장). t 빼서 오프라인 적립도 0.
   d.v = Math.min(v, SAVE_VERSION);   // 미래 버전 세이브(다운그레이드 케이스)는 현재로 클램프 → 알 수 없는 스키마로 크래시 방지
   return d;
 }
@@ -1506,8 +1615,9 @@ function applyState(d){
   S.named = !!d.named;
   S.depth = d.depth || 0; S.cycle = d.cycle || 0; S.lookback = d.lookback || 0;
   S.seenIntro = !!(d.seenIntro || d.named);   // 기존 이름지은 유저는 자동으로 '봤음' 처리(게이트 안 띄움)
+  S.seenReunionHint = !!d.seenReunionHint;     // 재회 안내 1회 표시 플래그
   // 오프라인 적립도 effRate(마일스톤 배율 포함)로 — idle/탭과 일관(여기선 S.rate·S.levels 복원 뒤라 배율 정확).
-  let off=0; if(d.t){ const sec=Math.max(0,(Date.now()-d.t)/1000); const er=effRate(); off=Math.min(er*sec, er*3600*OFFLINE_CAP_H); S.walks+=off; }
+  let off=0; if(d.t){ const sec=Math.max(0,(Date.now()-d.t)/1000); const er=effRate()*OFFLINE_RATE; off=Math.min(er*sec, er*3600*OFFLINE_CAP_H); S.walks+=off; }   // 오프라인 = effRate의 1/10(접속 유도). 캡도 같은 1/10 기준
   wholeWalks=Math.floor(S.walks);
   return off;
 }
@@ -1530,14 +1640,14 @@ async function supaLoad(){ if(!authUser || !SUPA.url || !SUPA.anon) return null;
 function resetState(){                                   // 메모리 상태를 새 게임으로 초기화
   S.walks=0; S.rate=1.0; S.current="start"; S.discovered={};
   NODES.forEach(n=>S.levels[n.id]= n.completed?1:0);
-  S.robotName=""; S.named=false; S.depth=0; S.cycle=0; S.lookback=0; S.seenIntro=false;
+  S.robotName=""; S.named=false; S.depth=0; S.cycle=0; S.lookback=0; S.seenIntro=false; S.seenReunionHint=false;
   wholeWalks=0; worldX=0;
 }
 function bootSave(){
   const off = applyState(loadLocal());                 // 직전 로그인 계정 미러가 있으면 즉시 반영(빠른 부팅)
   decideEntry();                                        // 게이트 / 온보딩 / 바로 게임 중 결정 (클라우드는 onAuthChanged가 처리)
-  if(S.seenIntro && off>=1){ const h=$("#hint"); h.textContent=`당신이 없는 동안 ${S.robotName}가 ${Math.floor(off)}걸음을 걸었어요`;
-    setTimeout(()=>{ h.textContent="이 길을 두드릴수록 로봇이 더 빨리 걷는다"; }, 4500); }
+  if(S.seenIntro && off>=1){ const h=$("#hint"); h.textContent=`당신이 없는 동안 ${fmt(Math.floor(off))}걸음이나 걸었어요`;   // 오프라인=온라인 1/10로 적립(OFFLINE_RATE)
+    setTimeout(()=>{ h.textContent="이 길을 두드릴수록 로봇이 더 빨리 걷는다"; }, 5500); }
 }
 setInterval(saveState, 10000);
 window.addEventListener("beforeunload", saveState);
@@ -1743,9 +1853,10 @@ renameOv?.addEventListener("click", e=>{ if(e.target===renameOv) closeRename(); 
 $("#renameInput")?.addEventListener("keydown", e=>{ if(e.key==="Enter") applyRename(); else if(e.key==="Escape") closeRename(); });
 
 /* ---------- idle 루프 (기본 1초 1걸음 → 1초 1보) ---------- */
-setInterval(()=>{ if(sceneActive) return;             // 샘 대화/설명 중엔 걷지 않음(걸음 정지)
+setInterval(()=>{ if(sceneActive||coachActive) return;   // 샘 대화/설명·안내(코치) 중엔 걷지 않음(걸음 정지)
   S.walks += effRate()*0.1; elWalks.textContent=fmt(S.walks); syncSteps();
-  if(updateDiscovered() && curPage==="map"){ renderEdges(); renderNodes(); placeRobot(); } }, 100);
+  const _opened=updateDiscovered();                   // 새로 안갯속에 열린 노드(있으면 id)
+  if(_opened && curPage==="map"){ renderEdges(); renderNodes(); placeRobot(); panTo(_opened); } }, 100);  // 열린 곳으로 부드럽게 카메라 이동
 
 /* ---------- 줌 입력 ---------- */
 document.getElementById('zin').addEventListener('click', ()=>setZoom(zoom*1.25));
@@ -1767,6 +1878,7 @@ function showPage(name){
   document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active", t.dataset.page===name));
   if(name==="map"){ renderAll(); centerOn(S.current); }   // 숨어있던 지도 → 표시될 때 치수 잡고 렌더
   else if(name==="walk"){ setTimeout(emitSys, 400); }     // 길로 돌아오면 곧 상태 로그 한 줄
+  updateReunionBtn();                                     // 페이지 전환 시 '다시 만나기' 버튼 노출/숨김 재평가
 }
 document.querySelectorAll(".tab").forEach(t=> t.addEventListener("click", ()=>showPage(t.dataset.page)) );
 
