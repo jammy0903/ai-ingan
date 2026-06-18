@@ -16,3 +16,10 @@ const TIER = {
 };
 const LOOKBACK_COST = 2;                            // 기억 한 조각 재해석 비용(마음의 깊이)
 const OFFLINE_CAP_H = 4;            // 오프라인 적립 상한(시간)
+// 수집(감정+몸) 누적 개수가 at를 넘을 때마다 전역 걸음/초 ×mult 점프.
+// cells 근거: 제너레이터 '랭크 돌파마다 ×3' — 선형 덧셈이 아니라 '돌파=배율'로 자릿수 점프(gap-analysis Phase 3 ①).
+const MILESTONES = [
+  {at:3, mult:1.5}, {at:6, mult:1.5}, {at:10, mult:1.5},
+  {at:15, mult:2.0}, {at:20, mult:2.0}, {at:27, mult:2.0},
+  {at:33, mult:2.5}, {at:38, mult:3.0},
+];

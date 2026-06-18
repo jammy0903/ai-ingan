@@ -1,7 +1,7 @@
 /* AI인간 PWA 서비스워커 — 오프라인 플레이 + 최신 유지 */
 // ⚠️ data.js·balance.js·index.html 등 '캐시 자산'을 고치면 이 번호를 반드시 올려라(v2→v3…).
 // SW가 스크립트를 '캐시 우선'으로 서빙하므로, 안 올리면 고쳐도 옛 캐시가 나간다(stale). plan.md ④
-const CACHE = "aingan-v4";
+const CACHE = "aingan-v5";
 const CORE = [
   "./", "./index.html", "./manifest.json",
   "./data.js", "./balance.js",            // 전역 데이터·밸런스(인라인보다 먼저 로드) — 오프라인 프리캐시
