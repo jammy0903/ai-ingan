@@ -862,7 +862,8 @@ computeRadialLayout();
 
 /* ===================== 상태 ===================== */
 const S = {
-  walks: 0, rate: 1.0, current: "start",   // 기본 1초 1걸음 (설계서 §5)
+  walks: 0, rate: 1.0, current: "start",   // rate는 레거시(미사용) — baseRate()가 levels에서 계산. 세이브 호환 위해 필드만 보존
+
   levels: {},            // nodeId -> 레벨(0=미완료)
   discovered: {},        // nodeId -> true (걸음을 비용만큼 모아 희미하게 발견됨)
   robotName: "",         // 로봇 이름(사람마다 다름)
@@ -888,7 +889,10 @@ function nextMilestone(){                          // 다음 속도업까지 남
   return null;
 }
 function rateMult(){ return milestoneMult(); }     // 전역 산출 배율(추후 프레스티지 배율도 여기 곱)
-function effRate(){ return S.rate * rateMult(); } // 실제 걸음/초
+// 걸음/초 base를 levels에서 '계산'(누적 S.rate 폐기) — 노드별 산출에 달성보너스 등 얹기 쉬움(C단계).
+function nodeOut(n){ const lv=S.levels[n.id]; return (lv>0 && n.gen) ? n.gen*lv : 0; }   // 노드 기여(현재=gen×lv)
+function baseRate(){ let r=1; for(const n of NODES) r+=nodeOut(n); return r; }            // 1 = 기본 1걸음/초
+function effRate(){ return baseRate() * rateMult(); } // 실제 걸음/초 = base × 마일스톤 배율
 function effTap(){ return Math.max(TAP_GAIN, Math.round(effRate()*TAP_FRAC)); } // 탭 = max(1, 걸음/초 비례) — 후반에도 손맛 유지
 
 
@@ -1073,7 +1077,7 @@ function tryUnlock(n){
   if(S.walks < cost){ nudge(`걸음이 ${cost-Math.floor(S.walks)|0} 더 필요해`); return; }
   S.walks -= cost; syncSteps();
   travelTo(n, ()=>{
-    S.levels[n.id]=1; S.rate+=n.gen; spark();
+    S.levels[n.id]=1; spark();   // rate는 baseRate()가 levels에서 계산(누적 안 함)
     renderAll();                       // 자리를 '열림(done)' 상태로 먼저 그리고
     flashNode(n);                      // 그 자리가 한 번 반짝 → 열렸다는 신호
     setTimeout(()=>openNode(n,true), 720);  // 반짝임을 본 뒤 모달
@@ -1158,7 +1162,7 @@ function upgrade(n){
   if(S.levels[n.id]>=MAX_LV){ nudge(`이미 끝까지 깊어졌다 (최대 Lv${MAX_LV})`); return false; }
   const cost=upCost(n, S.levels[n.id]+1);
   if(S.walks<cost){ nudge(`${cost-Math.floor(S.walks)|0} 걸음 더`); return false; }
-  S.walks-=cost; syncSteps(); S.levels[n.id]++; S.rate+=n.gen;
+  S.walks-=cost; syncSteps(); S.levels[n.id]++;   // rate는 levels에서 계산(baseRate)
   spark(); travelTo(n, ()=>openNode(n,false));
   renderAll();
   return true;
