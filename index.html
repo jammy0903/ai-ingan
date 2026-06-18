@@ -156,6 +156,11 @@
   .bot .smile{ stroke:#6a6258; stroke-width:1.8; stroke-linecap:round; fill:none; opacity:.7; }
   .bot .tip{ fill:color-mix(in srgb,#b6bcae calc((1 - var(--p,0))*100%),#e89a4e); transition:fill 1s; }
   .bot .tipHalo{ fill:url(#gAura); opacity:calc(var(--p,0)*.5); }
+  /* 빈 코어(결핍) — 아직 감정을 한 조각도 못 모았을 때 가슴 코어는 어두운 빈 구멍. 첫 감정부터 --p가 채운다(엔딩=하트). */
+  #app.coreEmpty .bot .core{ fill:#243231; transition:fill 1.2s; }
+  #app.coreEmpty .bot .coreHi, #app.coreEmpty .bot .spark{ opacity:0 !important; }
+  #app.coreEmpty .bot .core{ animation:coreVoid 2.6s ease-in-out infinite; }
+  @keyframes coreVoid{ 0%,100%{opacity:.85} 50%{opacity:.55} }
 
   /* 지도 로봇 토큰 */
   #robot { position:absolute; transform:translate(-50%,-60%); z-index:4; width:92px; pointer-events:none;
@@ -166,6 +171,8 @@
   /* 길 페이지 걷기 로봇 (옆모습) — 걸음당 1보(이벤트 구동, 상시 루프 아님) */
   #walkRobot { position:absolute; left:44%; bottom:2%; width:130px; z-index:4; pointer-events:none; transform:translateX(-50%); transition:left .55s ease; }
   #walkRobot svg { width:100%; filter:url(#paintSoft) drop-shadow(0 5px 6px rgba(70,66,60,.20)); }
+  /* 깨우기: 발(바닥)을 축으로 누운 자세→기립. 스프링 베지어로 탭마다 통! 하고 일어선다 */
+  #walkRobot.waking { transform-origin:50% 100%; transition:transform .5s cubic-bezier(.34,1.45,.5,1), filter .4s ease, opacity .4s ease; }
   @keyframes stepbob { 0%{transform:translateY(0)} 38%{transform:translateY(-6px)} 100%{transform:translateY(0)} }
   /* 다리·팔: 한 보마다 전후 스탠스 전환 (걸음이 들어올 때만) */
   #walkRobot .leg, #walkRobot .arm { transform-box:fill-box; transform-origin:top center; transition:transform .15s ease-out; }
@@ -342,6 +349,16 @@
     font-family:'Nanum Myeongjo',serif; font-weight:700; font-size:15px; color:#6f5d3c; letter-spacing:2px; cursor:pointer; border-radius:2px; }
   .intro #introBtn:active { background:#e0d4ba; }
   .introskip { margin-top:15px; font-size:12px; color:#a59b8a; cursor:pointer; }
+
+  /* ---------- 탭으로 깨우기(온보딩 첫 비트) — 화면 중앙 프롬프트 ---------- */
+  #wakePrompt { position:absolute; left:50%; top:30%; transform:translate(-50%,-50%); z-index:6;
+    font-family:'Gaegu',cursive; font-size:22px; color:#5b5247; text-align:center; white-space:pre-line;
+    opacity:0; transition:opacity .5s; pointer-events:none; text-shadow:0 1px 3px rgba(255,255,255,.7); }
+  #wakePrompt.show { opacity:1; }
+  #wakePrompt.show:not(.deficit):not(.cold) { animation:wakePulse 1.5s ease-in-out infinite; }
+  #wakePrompt.deficit { font-size:20px; color:#7a6f63; }   /* 결핍 한 줄 — 조용히 */
+  #wakePrompt.cold { font-family:'Courier New',monospace; font-size:14px; letter-spacing:1px; color:#9a7676; }  /* [ERROR] 동기화 실패 */
+  @keyframes wakePulse { 0%,100%{opacity:.5} 50%{opacity:1} }
 
   /* ---------- 회차 정산 (프레스티지) ---------- */
   .prestige { position:absolute; inset:0; z-index:42; display:none; flex-direction:column; align-items:center; justify-content:center;
@@ -596,6 +613,7 @@
       <button id="samSkip" type="button">튜토리얼 넘어가기 ›</button>
     </div>
 
+    <div id="wakePrompt"></div>
     <div id="syslog"></div>
     <div class="walkhint" id="hint">이 길을 두드릴수록 로봇이 더 빨리 걷는다</div>
   </div>
@@ -1142,6 +1160,7 @@ function refreshHUD(){
   const p = persons.length ? learned/persons.length : 0;
   elWarm.textContent=Math.round(p*100);
   app.style.setProperty("--p",p);   // 두 로봇 공유(상속)
+  app.classList.toggle("coreEmpty", learned===0);   // 첫 감정 전엔 가슴 코어 = 빈 구멍(결핍). 첫 조각부터 --p가 채움
   renderMind();
 }
 // 하늘엔 진행도(감정/몸 조각 수)만 — 감정 이름 나열은 하지 않는다(하늘은 로그용 비움)
@@ -1406,7 +1425,12 @@ function syncSteps(){ const w=Math.floor(S.walks); if(w>wholeWalks) stepOnce(); 
 /* ---------- 탭 = 걸음 ---------- */
 let sceneActive=false, sceneReady=false, sceneStep=0; // 샘 대화 장면 진행 중 상태
 let comboCount=0, lastTapAt=0, comboHideTimer=null, comboBadge=null;  // 연타 콤보 상태
+/* 온보딩 페이즈 — 기존/복귀 유저는 "play". 신규는 startWake()가 "wake"로 진입.
+   "wake"=탭으로 깨우기 / "wakedone"=결핍·동기화 비트(손맛 멈춤) / "play"=평소 */
+const intro={phase:"play"}; let wakeTaps=0; const WAKE_TAPS=6;
 function addWalk(x,y){
+  if(intro.phase==="wake"){ wakeTap(x,y); return; }    // 깨우기: 탭=생명 불어넣기
+  if(intro.phase==="wakedone") return;                 // 결핍 한 줄/동기화 실패 비트 — 잠깐 손맛 멈춤
   if(coachActive) return;                              // 안내(코치) 표시 중엔 탭 무시(화면 멈춤)
   if(sceneActive){ advanceScene(); return; }           // 대화 중엔 탭=다음 대사
   const now=Date.now();
@@ -1496,6 +1520,14 @@ setTimeout(spawnBird, 1600);
    진행도(배운 감정 수)에 따라 차가운 기계 로그 → 감정이 새어나오는 로그로 따뜻해진다.
    ▸ 지금은 큐레이션 풀. 추후 §7대로 LLM 미리생성 풀로 보충(addSysLogs()로 주입). */
 const syslogEl=document.getElementById('syslog');
+// 첫 걷기 직후 고정 3줄(랜덤 X) — 둘째 줄 오독개그(…새다)를 1분 안에 터뜨린다(첫 미소 = 차별점·바이럴 씨앗).
+// startWake()에서만 introSysQueue에 채움 → 복귀 유저는 안 봄(평소 랜덤 풀).
+const INTRO_SYSLOG=[
+  "[시스템] 좌측 모터 효율 0.81. 수리 권장.",
+  "[스캔] 머리 위 비행체 1기. 위협 아님. (…새다)",
+  "[감지] 전방에 신호원. 정체 불명.",
+];
+let introSysQueue=[];
 const SYS_COLD=[                                     // 아직 마음이 없을 때 — 건조한 진단
   "[시스템] 좌측 모터 효율 0.81. 수리 권장.",
   "[시스템] 외피 부식 31%. 무시함.",
@@ -1564,13 +1596,14 @@ function emitSys(){
   if(document.getElementById('intro')?.classList.contains('show')) return;
   if(document.getElementById('prestige')?.classList.contains('show')) return;
   const div=document.createElement('div'); div.className='syslog-line';
+  // 첫 걷기엔 고정 인트로 로그를 먼저 소비(오독개그 보장) → 비면 평소 풀
   // 회차를 산 뒤(cycle≥1)·되돌아본 기억이 있으면(lookback>0) 가끔 옛 로그를 줄 긋고 다시 읽는다
-  const rein = (S.cycle>=1 && S.lookback>0 && Math.random()<0.42) ? pickReinterp() : null;
+  const rein = (!introSysQueue.length && S.cycle>=1 && S.lookback>0 && Math.random()<0.42) ? pickReinterp() : null;
   if(rein){
     div.classList.add('reinterp');
     div.innerHTML = `<span class="struck">${rein.old}</span><span class="rewrite"><span class="pen">✎</span>${rein.fix}</span>`;
   } else {
-    const text=pickSys();
+    const text = introSysQueue.length ? introSysQueue.shift() : pickSys();
     const m=text.match(/^(\[[^\]]+\])\s*([\s\S]*)$/);    // 앞 [태그]는 차갑게, 나머지는 기본
     div.innerHTML = m ? `<span class="pre">${m[1]}</span> ${m[2]}` : text;
   }
@@ -1693,30 +1726,69 @@ function onAuthChanged(){
   });
 }
 
-/* ---------- 첫 플레이 온보딩: 튜토리얼 스토리 + 이름짓기 ---------- */
-// 온보딩 모달은 3컷(고철에서 깨어남)까지만. 샘과의 대화는 이름 짓기 후 길 위 애니메이션으로.
-const INTRO=[
-  "고철 더미 속에서\n눈을 떴다.",
-  "가슴 한가운데가\n텅 비어 있었다.\n…뭔가, 허전하다.",
-  "[ERROR: 창조주 동기화 실패]\n[응답 없음 · 좌표 미상]" ];
-let introStep=0;
+/* ---------- 첫 플레이 온보딩: 탭으로 깨우기 → 샘 퀘스트 → 이름짓기 → 규칙설명 → 걷기 ----------
+   2026-06-19 개편: 옛 모달 3컷(깨어남·결핍·동기화실패)은 startWake()의 탭 연출로 흡수됨
+   (깨어남=탭 / 결핍=빈 코어+한 줄 / 동기화실패=기립 직후). 이름짓기는 샘 퀘스트 뒤로 이동. */
 function hasProgress(){ return S.seenIntro || S.named || S.cycle>0 || S.depth>0 || (S.discovered && Object.keys(S.discovered).length>0); }
 function startIntro(){
   if(hasProgress()){ S.seenIntro=true; closeGate(); decideEntry(); return; }  // 이미 시작/진행한 유저 — 튜토리얼 강제 안 함
   S.seenIntro=true; saveState();                       // 온보딩이 시작되면 '봤음' — 이후 강제 재노출 안 함
   closeGate();
-  introStep=0; document.getElementById('intro').classList.add('show'); renderIntro();
+  startWake();                                          // 모달 3컷 대신: 탭으로 깨우기부터(손맛 먼저)
 }
 function closeIntro(){ document.getElementById('intro')?.classList.remove('show'); }
+
+/* ---------- 온보딩 비트0: 탭으로 깨우기 (손맛 먼저, 설명 0) ----------
+   탭마다 로봇이 깨어나지만(밝아짐·기립) 가슴 코어만 어두운 빈 구멍으로 남는다(coreEmpty).
+   기립(WAKE_TAPS) 순간 결핍 한 줄 "…여기만, 비어 있다" → [ERROR 동기화 실패] → 샘 등장. */
+function startWake(){
+  showPage('walk');
+  intro.phase="wake"; wakeTaps=0;
+  app.classList.add("coreEmpty");                       // 코어 = 빈 구멍(첫 감정 전까지)
+  introSysQueue=INTRO_SYSLOG.slice();                  // 걷기 시작하면 흐를 고정 syslog(오독개그 포함)
+  $("#hint").style.visibility="hidden";
+  if(syslogEl) syslogEl.innerHTML="";
+  walkRobot.classList.add("waking"); renderWakeFrame(0);
+  showWakePrompt("눌러서 깨워주세요");
+}
+function renderWakeFrame(n){                            // n: 0→WAKE_TAPS 비례로 누운 자세(어둡고 -80°)→기립(밝고 0°)
+  const f=Math.min(1,n/WAKE_TAPS);
+  const ang=((1-f)*-80).toFixed(1);                    // -80°(고철 더미에 누움) → 0°(똑바로 섬), 발이 축
+  walkRobot.style.opacity=(0.5+f*0.5).toFixed(2);
+  walkRobot.style.filter=`grayscale(${(1-f).toFixed(2)}) brightness(${(0.78+f*0.22).toFixed(2)})`;
+  walkRobot.style.transform=`translateX(-50%) rotate(${ang}deg)`;
+}
+function wakeTap(x,y){
+  wakeTaps++; renderWakeFrame(wakeTaps);
+  if(x!=null){ const m=document.createElement("div"); m.className="mote";
+    m.style.left=x+"px"; m.style.top=y+"px"; document.body.appendChild(m); setTimeout(()=>m.remove(),1300); }
+  if(wakeTaps>=WAKE_TAPS) finishWake();
+}
+function finishWake(){
+  intro.phase="wakedone";                              // 결핍 비트 동안 탭 멈춤
+  walkRobot.classList.remove("waking");
+  walkRobot.style.opacity=""; walkRobot.style.filter=""; walkRobot.style.transform="";  // 기립 완료(coreEmpty는 #app에 유지)
+  showWakePrompt("…여기만, 비어 있다.", true);          // 결핍 한 줄 — 조용히
+  // 가드: 도중에 dismissOnboarding(세이브 늦게 도착)이 phase를 바꾸면 비트 취소
+  setTimeout(()=>{ if(intro.phase==="wakedone") showWakePrompt("[ERROR: 창조주 동기화 실패]", false, true); }, 1700);
+  setTimeout(()=>{ if(intro.phase!=="wakedone") return; hideWakePrompt(); intro.phase="play"; startSamScene(); }, 3700);  // → 길 위 샘 등장(퀘스트)
+}
+function showWakePrompt(text, deficit, cold){
+  const w=$("#wakePrompt"); if(!w) return;
+  w.textContent=text; w.classList.toggle("deficit",!!deficit); w.classList.toggle("cold",!!cold); w.classList.add("show");
+}
+function hideWakePrompt(){ $("#wakePrompt")?.classList.remove("show"); }
 // 진행 중인 온보딩(인트로 모달 + 길 위 샘 대화)을 즉시 걷어낸다 — 세이브가 늦게 도착했을 때 등
 function dismissOnboarding(){
   closeIntro();
   const sc=document.getElementById('samScene');
   if(sc){ sc.classList.remove("show"); sc.querySelectorAll(".scenebub").forEach(x=>x.remove()); }
   sceneActive=false; samVisible=false;
+  intro.phase="play"; wakeTaps=0;                       // 깨우기 비트도 걷어냄
+  document.getElementById('wakePrompt')?.classList.remove("show");
   document.getElementById('sceneTapHint')?.classList.remove("show");
   document.getElementById('sam')?.classList.remove("in","out");
-  if(typeof walkRobot!=="undefined" && walkRobot) walkRobot.style.left="";
+  if(typeof walkRobot!=="undefined" && walkRobot){ walkRobot.classList.remove("waking"); walkRobot.style.left=""; walkRobot.style.opacity=""; walkRobot.style.filter=""; walkRobot.style.transform=""; }
 }
 
 /* ---------- 시작 게이트 (로그인 권장 — 스킵 가능) ---------- */
@@ -1741,22 +1813,20 @@ function decideEntry(){
 }
 $("#gGoogle")?.addEventListener("click", ()=>{ if(typeof googleLogin==="function") googleLogin(); });
 $("#gBrowse")?.addEventListener("click", ()=>{ startIntro(); });          // 로그인 없이 둘러보기 → 온보딩
-function renderIntro(){
+// 이름짓기 모달 — 샘 퀘스트 직후 호출(사명을 받은 뒤 이름 = 각오). onDone에서 샘 장면을 이어감.
+function openNamingModal(onDone){
+  sceneReady=false;                                     // 모달 동안 탭(대사진행) 잠금
+  $("#sceneTapHint").classList.remove("show");
   const t=$("#introText"), nb=$("#introName"), btn=$("#introBtn"), skip=$("#introSkip");
-  if(introStep < INTRO.length){
-    t.textContent=INTRO[introStep]; t.classList.toggle("cold", INTRO[introStep].startsWith("["));
-    nb.style.display="none"; skip.style.display="block"; btn.textContent="다음";
-    btn.onclick=()=>{ introStep++; renderIntro(); };
-  } else {
-    t.textContent="그런데… 내 이름은?\n뭐라고 부를래?"; t.classList.remove("cold");
-    nb.style.display="flex"; skip.style.display="none"; btn.textContent="이 이름으로, 출발";
-    const inp=$("#nameInput"); if(!inp.value){ S.robotName=""; ensureRobotName(); inp.value=S.robotName; }
-    btn.onclick=()=>{ S.robotName=(inp.value||"").trim().slice(0,8) || S.robotName; finishIntro(); };
-  }
-}
-function finishIntro(){
-  ensureRobotName(); S.named=true; closeIntro(); refreshHUD(); saveState();
-  startSamScene();                                     // 이름 확정 → 길 위에서 샘과 대화(애니메이션)
+  document.getElementById('intro').classList.add('show');
+  t.textContent="…이제 이름이 필요해.\n날 뭐라고 부를래?"; t.classList.remove("cold");
+  nb.style.display="flex"; if(skip) skip.style.display="none"; btn.textContent="이 이름으로, 출발";
+  const inp=$("#nameInput"); if(!inp.value){ S.robotName=""; ensureRobotName(); inp.value=S.robotName; }
+  btn.onclick=()=>{
+    S.robotName=(inp.value||"").trim().slice(0,8) || S.robotName;
+    ensureRobotName(); S.named=true; closeIntro(); refreshHUD(); saveState();
+    sceneReady=true; if(onDone) onDone();
+  };
 }
 function beginAdventure(){
   const h=$("#hint"); h.style.visibility=""; h.textContent=`그렇게, ${S.robotName}의 모험이 시작된다!`;
@@ -1776,8 +1846,9 @@ const SAM_SCRIPT=[
   {who:'bot', t:"그럼 사람으로\n만들어줘!"},
   {who:'sam', t:"그래. 근데 그냥은 안 돼.\n마음 27, 몸 11.\n전부 모아 와."},
   {who:'sam', t:"다 모으면 그때\n진짜 사람으로\n만들어줄게."},
-  // ↓ 샘 퇴장 후, 로봇이 사용자에게 규칙 설명 (걷기 전)
-  {who:'bot', samGone:true, t:"[목표 수신]\n마음 27 · 몸 11"},
+  {naming:true},                                       // ← 샘 퇴장 + 이름 짓기(사명 직후 = 각오)
+  // ↓ 이름 지은 뒤, 로봇이 사용자에게 규칙 설명 (걷기 전)
+  {who:'bot', t:"[목표 수신]\n마음 27 · 몸 11"},
   {who:'bot', t:"…근데\n어떻게 모으지?"},
   {who:'bot', t:"아~\n길에서 사람을 만나면\n마음도 몸도 한 조각씩!"},
   {who:'bot', t:"가만히 둬도 걸어.\n근데 네가 화면을 톡톡!\n그럼 내가 더 빨리 걸어."},
@@ -1800,10 +1871,10 @@ function renderSceneBubble(){
   sc.querySelectorAll(".scenebub").forEach(b=>{ b.classList.add("out"); setTimeout(()=>b.remove(),360); });
   if(sceneStep>=SAM_SCRIPT.length){ endSamScene(); return; }
   const cur=SAM_SCRIPT[sceneStep];
-  if(cur.samGone && samVisible){                       // 샘 퇴장 + 로봇은 가운데로 (혼자 설명)
-    samVisible=false;
-    $("#sam").classList.remove("in"); $("#sam").classList.add("out");
-    walkRobot.style.left=ROBOT_X_PLAY;
+  if(cur.naming){                                      // 사명 직후: 샘 퇴장 + 이름 짓기 → 이어서 로봇이 규칙 설명
+    if(samVisible){ samVisible=false; $("#sam").classList.remove("in"); $("#sam").classList.add("out"); walkRobot.style.left=ROBOT_X_PLAY; }
+    openNamingModal(()=>{ sceneStep++; $("#sceneTapHint").classList.add("show"); renderSceneBubble(); });
+    return;
   }
   const b=document.createElement("div");
   b.className="scenebub "+(cur.who==="sam"?"fromSam":"fromBot");
@@ -1834,7 +1905,6 @@ function endSamScene(){
   setTimeout(emitSys, 900);
 }
 $("#rerollBtn").addEventListener("click",()=>{ S.robotName=""; ensureRobotName(); $("#nameInput").value=S.robotName; });
-$("#introSkip").addEventListener("click",()=>{ introStep=INTRO.length; renderIntro(); });
 // 샘 장면(튜토리얼) 넘어가기 → 바로 게임 시작
 $("#samSkip").addEventListener("pointerdown", e=>e.stopPropagation());            // 버튼 탭이 대사진행(addWalk)으로 새지 않게
 $("#samSkip").addEventListener("click", e=>{ e.stopPropagation(); if(sceneActive) endSamScene(); });
@@ -1862,7 +1932,7 @@ renameOv?.addEventListener("click", e=>{ if(e.target===renameOv) closeRename(); 
 $("#renameInput")?.addEventListener("keydown", e=>{ if(e.key==="Enter") applyRename(); else if(e.key==="Escape") closeRename(); });
 
 /* ---------- idle 루프 (기본 1초 1걸음 → 1초 1보) ---------- */
-setInterval(()=>{ if(sceneActive||coachActive) return;   // 샘 대화/설명·안내(코치) 중엔 걷지 않음(걸음 정지)
+setInterval(()=>{ if(sceneActive||coachActive||intro.phase!=="play") return;   // 샘 대화/안내(코치)/깨우기 중엔 걷지 않음(걸음 정지)
   S.walks += effRate()*0.1; elWalks.textContent=fmt(S.walks); syncSteps();
   const _opened=updateDiscovered();                   // 새로 안갯속에 열린 노드(있으면 id)
   if(_opened && curPage==="map"){ renderEdges(); renderNodes(); placeRobot(); panTo(_opened); } }, 100);  // 열린 곳으로 부드럽게 카메라 이동
