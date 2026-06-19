@@ -268,6 +268,18 @@
     animation:tapcrit .9s ease-out forwards; }
   @keyframes tapcrit { 0%{opacity:1; transform:translate(-50%,0) scale(.6)} 22%{transform:translate(-50%,-6px) scale(1.28)}
     100%{opacity:0; transform:translate(-50%,-46px) scale(1)} }
+  /* 감정 첫 도착 = 글자 조각 줍기 + 오독(pick) — 모달(정정) 전 작은 비트 */
+  .pickFrag { position:fixed; transform:translate(-50%,-50%); z-index:30; pointer-events:none; font-size:20px;
+    opacity:0; transition:opacity .3s ease, transform .7s cubic-bezier(.3,1,.4,1); }
+  .pickFrag.in { opacity:.95; transform:translate(-50%,-50%) translateY(-44px); }
+  .pickFrag.out { opacity:0; }
+  .pickCap { position:fixed; transform:translate(-50%,-50%); z-index:31; pointer-events:none; max-width:230px;
+    font-family:'Gaegu',cursive; font-size:18px; line-height:1.35; color:#6a5f52; text-align:center; white-space:pre-line;
+    background:rgba(255,253,247,.94); border:1px solid #e3d8c2; border-radius:13px; padding:8px 14px;
+    box-shadow:0 4px 13px rgba(80,72,60,.16);
+    opacity:0; transition:opacity .35s ease, transform .55s cubic-bezier(.3,1,.5,1); }
+  .pickCap.in { opacity:1; transform:translate(-50%,-50%) translateY(-12px); }
+  .pickCap.out { opacity:0; transform:translate(-50%,-50%) translateY(-36px); }
   /* 연타 콤보 뱃지 */
   #comboBadge { position:fixed; left:50%; top:62px; transform:translate(-50%,-6px); z-index:31; pointer-events:none;
     font-family:'Nanum Pen Script',cursive; color:#e0892a; font-size:20px; background:rgba(255,250,240,.84);
@@ -1191,8 +1203,29 @@ function tryUnlock(n){
     S.levels[n.id]=1; spark();   // rate는 baseRate()가 levels에서 계산(누적 안 함)
     renderAll();                       // 자리를 '열림(done)' 상태로 먼저 그리고
     flashNode(n);                      // 그 자리가 한 번 반짝 → 열렸다는 신호
-    setTimeout(()=>openNode(n,true), 720);  // 반짝임을 본 뒤 모달
+    const pp = n.type==="person" && PEOPLE[n.key];
+    if(pp && pp.pick){                 // 감정 첫 만남 = 글자 조각 줍기·오독 → 그 뒤 모달(정정)
+      setTimeout(()=>pickFx(n, ()=>openNode(n,true)), 560);
+    } else {
+      setTimeout(()=>openNode(n,true), 720);  // 반짝임을 본 뒤 모달
+    }
   });
+}
+// 첫 도착 글자 조각 줍기 연출: 조각(📃)이 떠오르고 로봇이 오독(pick)한다 → cb로 모달(정정)
+function pickFx(n, cb){
+  const pp=PEOPLE[n.key], txt=pp&&pp.pick;
+  if(!txt){ cb&&cb(); return; }
+  const el=document.querySelector(`.node[data-id="${n.id}"]`);
+  const r=el?el.getBoundingClientRect():{left:innerWidth/2,top:innerHeight*0.5,width:0,height:0};
+  const cx=r.left+r.width/2, cy=r.top+r.height/2;
+  const frag=document.createElement("div"); frag.className="pickFrag"; frag.textContent="📃";
+  frag.style.left=cx+"px"; frag.style.top=cy+"px"; document.body.appendChild(frag);
+  const cap=document.createElement("div"); cap.className="pickCap"; cap.textContent=txt;
+  cap.style.left=cx+"px"; cap.style.top=(cy-46)+"px"; document.body.appendChild(cap);
+  requestAnimationFrame(()=>frag.classList.add("in"));
+  setTimeout(()=>cap.classList.add("in"), 260);          // 조각 떠오른 뒤 오독 말풍선
+  setTimeout(()=>{ cap.classList.add("out"); frag.classList.add("out"); }, 1650);
+  setTimeout(()=>{ cap.remove(); frag.remove(); cb&&cb(); }, 2050);
 }
 // 막 도착해 열린 노드 자리를 한 번 반짝이게(모달 뜨기 전 인식)
 function flashNode(n){
