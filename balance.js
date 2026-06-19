@@ -19,7 +19,12 @@ const MAX_LV = 50;                // 재회 심화 상한 — 끝없는 sink(거
 // income이 K/M/B로 폭발해도 비용이 income추종이라 다음 발견은 늘 "목표 탭수" 거리 → 탭("다음 이야기 당겨오기")이 영원히 의미를 가짐.
 // 곡선 의도: 첫 노드는 즉각(훅) → 그담부터 묵직(+20대) → 이후 평탄(끝값 유지). 걷기(idle)가 부담 절반쯤 먹어줌.
 // ⚠️ 콤보 최대 ×7 쓰면 체감 탭수는 1/7로 압축됨(예: 80 → ~11탭).
-const TAP_CURVE = [5, 25, 42, 58, 80];   // 발견 순번(0,1,2,…)별 목표 탭수. 길이 넘으면 끝값(80) 평탄 유지.
+const TAP_CURVE = [5, 25, 42, 58, 80];   // (폴백) w 없는 노드용 발견순번 곡선. 평소엔 data.js의 node.w 사용.
+// 발견비용 = node.w(감정별 목표걸음) × max(1, effTap/DISCOVER_BASE).
+// effTap이 이 기준 이하인 '초반'에선 비용 = w 그대로(화면에 정확히 그 숫자) → "재미=250걸음" 보장.
+// effTap이 이 기준을 넘는 '후반'(마일스톤으로 income 폭발)부턴 income추종으로 커짐(후반 공짜/벽 방지).
+// 6 = 자연경로상 긍정 갈래(호기심까지, effTap≤6)가 전부 정확값으로 뜨는 경계.
+const DISCOVER_BASE = 6;
 const OFFLINE_RATE = 0.1;         // 앱 끈 동안 걸음 적립 배율(1/10). base 1걸음/초 → 오프라인 0.1걸음/초 = 1분에 6걸음. 켜고 놀 유인(접속 유도).
 const TIER = {
   joy:"big", adore:"mid", amuse:"mid", flutter:"mid", curious:"small", beauty:"small", admire:"small", awe:"small", trance:"small", satisfy:"small",
