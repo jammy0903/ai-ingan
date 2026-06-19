@@ -201,7 +201,7 @@ cells에서 이미 언락한 생성기(세포·세균…)로 **되돌아가 반�
 
 | 대상 | 경로 |
 |---|---|
-| 리포 루트 | `/home/jammy/projects/ai-ingan` (git, 원격: `git@github.com:jammy0903/ai-ingan.git`, branch `main`) |
+| 리포 루트 | `/home/jammy/projects/ingan` (로컬 폴더명은 `ingan`, 원격 리포명은 `ai-ingan`) (git, 원격: `https://github.com/jammy0903/ai-ingan.git`, branch `main`) |
 | 게임 본체 | `index.html` (단일 파일, CSS+JS 인라인 / 빌드·번들러 없음) |
 | 확정 아트톤 목업 | `mockup/tone-c-watercolor.html` |
 | 참고(탈락) 목업 | `mockup/tone-a-pixar.html` |
