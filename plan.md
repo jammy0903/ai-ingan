@@ -182,5 +182,7 @@ caches.match(req).then(hit => hit || fetch(req)...)
   - 깨우기 애니 = **발 축 회전**(option 2): 누움 -80° → 탭마다 기립 0°, 스프링 베지어(`#walkRobot.waking` `cubic-bezier(.34,1.45,.5,1)`)로 통! 하고 섬. (옛 opacity/translateY 안은 폐기 — "서 있는 채 밝아짐"이라 부자연스러웠음)
   - 빈 코어 = `#app.coreEmpty`(learned===0), 첫 감정부터 기존 `--p`가 채움(엔딩=하트). blast radius: 기존 마음온도 피드백과 통합(안 죽임)
   - 검증: 게이트→둘러보기→누운 로봇→6탭 기립→"…여기만, 비어 있다"→[ERROR]→샘 등장 정상
-- [ ] 스테이지 3: 첫 해금 3분내 보장 + 연출 + SW 범프(data/연출 변경 시)
-- ⚠️ 미커밋 — 유저 리뷰 후 커밋(데이터/밸런스 파일 불변이라 SW 범프 불필요: 변경은 index.html 인라인뿐, navigate=네트워크우선이라 stale 없음)
+- [x] 스테이지 3: **코드 변경 불필요 — 둘 다 기존 시스템으로 이미 충족(2026-06-19 검증)**
+  - 3분 도달: `start→cat_pos(reachCost≈effTap×5)→joy(≈effTap×25)` ≈ 30걸음. idle 1/초+탭이면 1분 내. `joy="big"`(`TIER`)이라 cat_pos 첫 감정 = **기쁨(따뜻함)** 자동. **introDiscount 불필요**.
+  - 따뜻한 성취: 첫 감정에서만 `#app.coreEmpty` off → `--p`가 빈 코어를 데우기 시작(브라우저 검증: 어두운 구멍→teal 코어). 카지노 연출은 멘토 경고대로 의도적으로 안 더함.
+- ✅ 커밋 완료: feat `3a785f8`(코드) + docs `aa79c0a`(문서). 데이터/밸런스 불변이라 SW 범프·버전업 불필요(인라인만, navigate=네트워크우선).
