@@ -492,7 +492,8 @@
 
   <div class="hud">
     <div class="titlebar">
-      <div class="title">강철의 인간술사 <span id="robotName" class="rn" title="이름 바꾸기"></span><span id="appVer" style="font-size:11px;opacity:.42;font-weight:400;margin-left:6px">v1.0.13</span></div>
+      <div class="title">강철의 인간술사 <span id="robotName" class="rn" title="이름 바꾸기"></span><span id="appVer" style="font-size:11px;opacity:.42;font-weight:400;margin-left:6px">v1.0.14</span></div>
+      <button id="muteBtn" title="소리 끄기" style="background:none;border:none;font-size:18px;cursor:pointer;padding:2px 6px;line-height:1;opacity:.8">🔊</button>
       <button id="authBtn" class="authbtn">구글 로그인</button>
     </div>
     <div class="stats">
@@ -1200,7 +1201,7 @@ function tryUnlock(n){
   if(S.walks < cost){ nudge(`걸음이 ${fmt(cost-Math.floor(S.walks))} 더 필요해`); return; }
   S.walks -= cost; syncSteps();
   travelTo(n, ()=>{
-    S.levels[n.id]=1; spark();   // rate는 baseRate()가 levels에서 계산(누적 안 함)
+    S.levels[n.id]=1; spark(); sfxMeet();   // rate는 baseRate()가 levels에서 계산(누적 안 함) / 게임필: 만남 차임
     renderAll();                       // 자리를 '열림(done)' 상태로 먼저 그리고
     flashNode(n);                      // 그 자리가 한 번 반짝 → 열렸다는 신호
     const pp = n.type==="person" && PEOPLE[n.key];
@@ -1461,6 +1462,30 @@ let comboCount=0, lastTapAt=0, comboHideTimer=null, comboBadge=null;  // 연타 
 /* 온보딩 페이즈 — 기존/복귀 유저는 "play". 신규는 startWake()가 "wake"로 진입.
    "wake"=탭으로 깨우기 / "wakedone"=결핍·동기화 비트(손맛 멈춤) / "play"=평소 */
 const intro={phase:"play"}; let wakeTaps=0; const WAKE_TAPS=6;
+
+/* 🔊 게임필 — WebAudio(에셋 0)로 탭/만남 효과음 + 햅틱(navigator.vibrate).
+   음소거는 localStorage('aingan_muted') — 진행도가 아니라 기기 UI 설정이라 둘러보기 유저도 저장 OK(세이브 정책과 무관). */
+let _ac=null, _muted=(()=>{ try{ return localStorage.getItem("aingan_muted")==="1"; }catch(_){ return false; } })();
+function _actx(){ if(_muted) return null;                        // 오디오 컨텍스트는 첫 탭(유저 제스처) 때 생성·resume(브라우저 autoplay 정책)
+  try{ _ac=_ac||new (window.AudioContext||window.webkitAudioContext)(); if(_ac.state==="suspended") _ac.resume(); return _ac; }catch(_){ return null; } }
+function tone(freq,dur,type,gain){                                // 짧은 비프 1개(감쇠 포함)
+  const ac=_actx(); if(!ac) return;
+  const t=ac.currentTime, o=ac.createOscillator(), g=ac.createGain();
+  o.type=type||"sine"; o.frequency.value=freq;
+  g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(gain||0.05,t+0.008);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  o.connect(g).connect(ac.destination); o.start(t); o.stop(t+dur+0.02);
+}
+function buzz(p){ if(_muted) return; try{ navigator.vibrate&&navigator.vibrate(p); }catch(_){} }
+function sfxTap(crit,comboN){                                     // 탭 틱 — 콤보 오를수록 음↑, 크리=화음+강한 진동(변동보상 청각화)
+  if(crit){ tone(660,0.12,"triangle",0.07); tone(990,0.18,"sine",0.05); buzz([12,28,16]); return; }
+  tone(320+Math.min(comboN,COMBO_MAX)*26,0.05,"sine",0.04); buzz(7);
+}
+function sfxMeet(){ tone(523,0.16,"sine",0.06); setTimeout(()=>tone(784,0.32,"sine",0.05),70); buzz([14,40,22]); }  // 만남 차임(도→솔)
+function toggleMute(){ _muted=!_muted; try{ localStorage.setItem("aingan_muted",_muted?"1":"0"); }catch(_){} updateMuteBtn(); if(!_muted) sfxTap(false,0); }
+function updateMuteBtn(){ const b=$("#muteBtn"); if(b){ b.textContent=_muted?"🔇":"🔊"; b.title=_muted?"소리 켜기":"소리 끄기"; } }
+$("#muteBtn")?.addEventListener("click",toggleMute); updateMuteBtn();
+
 function addWalk(x,y){
   if(intro.phase==="wake"){ wakeTap(x,y); return; }    // 깨우기: 탭=생명 불어넣기
   if(intro.phase==="wakedone") return;                 // 결핍 한 줄/동기화 실패 비트 — 잠깐 손맛 멈춤
@@ -1473,6 +1498,7 @@ function addWalk(x,y){
   const crit = Math.random() < CRIT_CHANCE;                            // 변동보상: 가끔 크리(gap-analysis ⑤)
   const g = Math.max(1, Math.round(effTap()*cMult*(crit?CRIT_MULT:1)));
   S.walks+=g;
+  sfxTap(crit, comboCount);                            // 게임필: 탭 틱·진동(콤보↑=음↑, 크리=화음)
   if(x!=null){ const m=document.createElement("div"); m.className="mote";
     m.style.left=x+"px"; m.style.top=y+"px"; document.body.appendChild(m);
     setTimeout(()=>m.remove(),1300);
