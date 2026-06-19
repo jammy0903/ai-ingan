@@ -5,7 +5,7 @@
 
 | 파일명(고정) | 곡 | 작곡가 / 출처 | 라이선스 | 게임 내 역할 |
 |---|---|---|---|---|
-| `bgm-main.mp3`   | Mellow Piano | leberch / Pixabay | Pixabay License(무표기 가능, 곡 페이지서 확인) | 평소 메인 루프 |
+| `bgm-main.mp3`   | Carousel Dreams | Jyproject / Pixabay | Pixabay License(작가가 표기 요청) | 평소 메인 루프(최종 확정) |
 | `bgm-ending.mp3` | The Long Dark | Scott Buckley (scottbuckley.com.au) | **CC-BY 4.0 — 크레딧 필수** | 엔딩 시네마틱(`#endcine`) |
 
 ## 받는 법
@@ -16,7 +16,9 @@
 게임 내 라이선스/크레딧 화면에 추가:
 > "The Long Dark" by Scott Buckley — www.scottbuckley.com.au · CC BY 4.0
 
-(메인 Mellow Piano는 Pixabay라 의무 아님 — 표기하려면: "Mellow Piano" by leberch / Pixabay)
+메인(Carousel Dreams)은 Pixabay지만 **작가가 표기를 요청**했으니 같이 넣기:
+> Music by Jyproject from Pixabay
+> https://pixabay.com/ko/users/jyproject-43084172/ · https://pixabay.com/
 
 ## 참고
 - 볼륨/전환은 `index.html`의 `BGM_VOL`·`bgmTo()`에서 조정(메인 0.45 / 엔딩 0.6).
