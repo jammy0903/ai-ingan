@@ -1502,13 +1502,20 @@ function _bgmFade(a,to,ms){ if(!a) return; const from=a.volume, t0=Date.now(), d
   clearInterval(a._fi); a._fi=setInterval(()=>{ const k=Math.min(1,(Date.now()-t0)/d);
     a.volume=Math.max(0,Math.min(1, from+(to-from)*k));
     if(k>=1){ clearInterval(a._fi); if(to<=0){ try{ a.pause(); }catch(_){} } } }, 40); }
+const _BGM_GEST=["pointerdown","click","keydown","touchend"];
+function _armBgmStart(){                                                         // 자동재생 차단 대비: 여러 제스처로 듣고, 거부되면 다음 제스처에 재시도
+  const h=()=>{ _BGM_GEST.forEach(t=>document.removeEventListener(t,h)); bgmTo(_bgmWhich); };
+  _BGM_GEST.forEach(t=>document.addEventListener(t,h,{once:true,passive:true}));
+}
 function bgmTo(which){ _bgmWhich=which; if(_muted) return;
   const cur=_bgmEl(which); if(!cur) return;
   for(const k in _bgm){ if(k!==which) _bgmFade(_bgm[k],0,800); }                 // 다른 트랙 페이드아웃
-  try{ const p=cur.play(); if(p&&p.catch) p.catch(()=>{}); }catch(_){}           // 파일 없음/차단 무해
+  try{ const p=cur.play();
+    if(p&&p.catch) p.catch(()=>{ if(!_muted) _armBgmStart(); });                // 차단(NotAllowedError) → 다음 제스처에 재시도
+  }catch(_){ if(!_muted) _armBgmStart(); }
   _bgmFade(cur, BGM_VOL[which]||0.45, 1500);
 }
-document.addEventListener("pointerdown", ()=>bgmTo(_bgmWhich), {once:true});     // 첫 제스처에 시작(autoplay 정책)
+_armBgmStart();                                                                 // 첫 제스처에 시작(autoplay 정책) — 실패 시 자동 재무장
 
 function toggleMute(){ _muted=!_muted; try{ localStorage.setItem("aingan_muted",_muted?"1":"0"); }catch(_){}
   updateMuteBtn();
