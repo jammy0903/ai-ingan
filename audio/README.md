@@ -5,15 +5,16 @@
 
 | 파일명(고정) | 곡 | 작곡가 / 출처 | 라이선스 | 게임 내 역할 |
 |---|---|---|---|---|
-| `bgm-main.mp3`   | Emotional Ambient Piano | Olexandr (olexandrmusic) / Pixabay | Pixabay License(무표기 가능, 곡 페이지서 확인) | 평소 메인 루프 |
+| `bgm-main.mp3`   | Carefree | Kevin MacLeod (incompetech.com) | **CC-BY 3.0 — 크레딧 필수** | 평소 메인 루프 |
 | `bgm-ending.mp3` | The Long Dark | Scott Buckley (scottbuckley.com.au) | **CC-BY 4.0 — 크레딧 필수** | 엔딩 시네마틱(`#endcine`) |
 
 ## 받는 법
 1. **bgm-main.mp3** — Pixabay에서 다운로드 → 이 폴더에 `bgm-main.mp3`로 저장. 곡 페이지의 라이선스·업로드 날짜를 캡처해 보관.
 2. **bgm-ending.mp3** — https://www.scottbuckley.com.au/library/the-long-dark/ 에서 mp3 다운로드 → `bgm-ending.mp3`로 저장.
 
-## ⚠️ 크레딧 표기 (The Long Dark = CC-BY 필수)
-게임 내 라이선스/크레딧 화면에 한 줄 추가:
+## ⚠️ 크레딧 표기 (둘 다 CC-BY = 필수)
+게임 내 라이선스/크레딧 화면에 추가:
+> "Carefree" by Kevin MacLeod (incompetech.com) — CC BY 3.0
 > "The Long Dark" by Scott Buckley — www.scottbuckley.com.au · CC BY 4.0
 
 ## 참고
