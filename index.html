@@ -542,7 +542,7 @@
 
   <div class="hud">
     <div class="titlebar">
-      <div class="title">강철의 인간술사 <span id="robotName" class="rn" title="이름 바꾸기"></span><span id="appVer" style="font-size:11px;opacity:.42;font-weight:400;margin-left:6px">v1.0.19</span></div>
+      <div class="title">강철의 인간술사 <span id="robotName" class="rn" title="이름 바꾸기"></span><span id="appVer" style="font-size:11px;opacity:.42;font-weight:400;margin-left:6px">v1.0.20</span></div>
       <button id="muteBtn" title="소리 끄기" style="background:none;border:none;font-size:18px;cursor:pointer;padding:2px 6px;line-height:1;opacity:.8">🔊</button>
       <button id="authBtn" class="authbtn">구글 로그인</button>
     </div>
@@ -1098,7 +1098,7 @@ function neighbors(id){
 // 지금까지 연 노드 수(start 제외) = 발견 '순번'. TAP_CURVE 인덱스로 쓴다.
 function unlockedCount(){ let c=0; for(const n of NODES){ if(n.id!=="start" && S.levels[n.id]>0) c++; } return c; }
 // 다음 발견의 목표 탭수(=목표 초). 순번이 곡선 길이를 넘으면 끝값(평탄).
-function discoverTaps(){ return TAP_CURVE[Math.min(unlockedCount(), TAP_CURVE.length-1)]; }
+function discoverTaps(){ const C=(typeof TAP_CURVE!=='undefined')?TAP_CURVE:[5,25,42,58,80]; return C[Math.min(unlockedCount(), C.length-1)]; }  // 가드: balance.js 버전 엇갈려 TAP_CURVE 없어도 throw 안 하고 폴백(지도 크래시 방지)
 function reachCost(id){ // 발견(이동) 비용 — 걸음수입(effTap) × 그 노드의 '목표 탭수'(data.js w)
   // 도달 가능?: 완료된 이웃이 하나라도 있어야 연다(그래프 토폴로지 게이트). 없으면 무한.
   let reachable=false;
@@ -1108,7 +1108,8 @@ function reachCost(id){ // 발견(이동) 비용 — 걸음수입(effTap) × 그
   // effTap≤DISCOVER_BASE인 초반: 비용 = w 그대로(화면에 정확히 그 숫자, "재미=250"). effTap이 넘는 후반: income추종으로 커짐.
   const node=NODES.find(x=>x.id===id);
   const w=(node&&node.w!=null)?node.w:discoverTaps();
-  const scale=Math.max(1, effTap()/DISCOVER_BASE);
+  const base=(typeof DISCOVER_BASE!=='undefined')?DISCOVER_BASE:6;   // 가드: 버전 엇갈려도 NaN 비용 방지
+  const scale=Math.max(1, effTap()/base);
   return Math.round(w*scale);
 }
 // 갈래 안 대/중/소 티어 (대=대표 1 / 중=다음 / 소=깊은 마지막). 갈래 안에서 단계적으로 공개.

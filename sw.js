@@ -2,7 +2,7 @@
 // ⚠️ 버전 = 앱 버전(semver). data.js·balance.js·index.html 등 '캐시 자산'을 고치면 반드시 올려라(1.0.6→1.0.7…).
 // SW가 스크립트를 '캐시 우선'으로 서빙하므로, 안 올리면 고쳐도 옛 캐시가 나간다(stale). plan.md ④
 // 🔢 버전 올릴 때 3곳 동기화: 이 CACHE · manifest.json "version" · index.html #appVer 표시.
-const CACHE = "aingan-1.0.19";
+const CACHE = "aingan-1.0.20";
 const CORE = [
   "./", "./index.html", "./manifest.json",
   "./data.js", "./balance.js",            // 전역 데이터·밸런스(인라인보다 먼저 로드) — 오프라인 프리캐시
@@ -27,19 +27,23 @@ self.addEventListener("fetch", e => {
   const url = new URL(req.url);
   if (url.hostname.includes("supabase")) return;     // Supabase API/Auth는 항상 네트워크
 
-  // 문서(내비게이션)는 네트워크 우선 → 항상 최신 index, 오프라인이면 캐시 폴백
-  if (req.mode === "navigate") {
+  // ⚠️ 핵심 코드(index.html + data.js + balance.js)는 '함께' 네트워크 우선 → 항상 일관된 최신, 오프라인이면 캐시 폴백.
+  // (옛 버그: index는 network-first인데 data/balance는 cache-first라 배포마다 버전 엇갈림 → 새 index가 옛 balance의 없는 심볼 참조 → reachCost ReferenceError로 지도 크래시. 함께 network-first로 일관화해 차단.)
+  const isCode = req.mode === "navigate" ||
+                 (url.origin === location.origin && /\/(index\.html|data\.js|balance\.js)$/.test(url.pathname));
+  if (isCode) {
+    const key = req.mode === "navigate" ? "./index.html" : req;
     e.respondWith(
       fetch(req).then(res => {
         const copy = res.clone();
-        caches.open(CACHE).then(c => c.put("./index.html", copy));
+        caches.open(CACHE).then(c => c.put(key, copy));
         return res;
-      }).catch(() => caches.match("./index.html"))
+      }).catch(() => caches.match(key))
     );
     return;
   }
 
-  // 그 외(스크립트·폰트·아이콘)는 캐시 우선 + 런타임 캐시
+  // 그 외(폰트·아이콘·vendor)는 캐시 우선 + 런타임 캐시
   e.respondWith(
     caches.match(req).then(hit => hit || fetch(req).then(res => {
       if (res.ok && (url.origin === location.origin || url.hostname.includes("fonts."))) {
