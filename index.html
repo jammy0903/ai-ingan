@@ -512,21 +512,34 @@
   /* ---------- 자루(인벤토리) — 로봇 앞손에 쥐고, 터치하면 모은 감정 ---------- */
   #walkRobot #sack { pointer-events:auto; cursor:pointer; }   /* 로봇 SVG 안 자루만 터치 가능(로봇 본체는 pointer-events:none) */
   #walkRobot #sack:active { opacity:.85; }
-  .sackov { position:absolute; inset:0; z-index:30; display:none; align-items:center; justify-content:center; padding:24px; background:rgba(40,40,36,.45); }
+  /* ── 자루 내부: 기억 약장 ── */
+  .sackov { position:absolute; inset:0; z-index:30; display:none; align-items:center; justify-content:center; padding:24px; background:rgba(10,8,4,.55); }
   .sackov.show { display:flex; animation:fade .3s ease; }
-  .sackcard { width:100%; max-width:340px; max-height:84%; overflow-y:auto; background:#fbf6ee; border:1px solid #d8c8a8;
-    border-radius:10px; padding:20px 18px 16px; box-shadow:0 18px 50px rgba(60,50,30,.35); animation:risein .4s ease; }
-  .sacktitle { font-family:'Gaegu',cursive; font-weight:700; font-size:20px; color:#7a5f33; text-align:center; }
-  .sackcount { font-size:12px; color:#9a8a6a; text-align:center; margin:4px 0 12px; }
-  .sackcat { font-size:11px; color:#a59275; letter-spacing:1px; margin:12px 0 6px; }
-  .sackchips { display:flex; flex-wrap:wrap; gap:7px; }
-  .chip { display:inline-flex; align-items:center; gap:6px; padding:5px 11px 5px 8px; border-radius:14px;
-    background:#fff; border:1px solid #e6ddc8; font-family:'Gaegu',cursive; font-size:14px; color:#5a5040; }
-  .chip .dot { width:13px; height:13px; border-radius:50%; box-shadow:inset 0 0 0 1px rgba(0,0,0,.10); }
-  .sackempty { text-align:center; color:#a59275; font-size:13px; line-height:1.7; padding:16px 0; }
-  .sackcard #sackClose { margin-top:18px; width:100%; padding:11px; border:1px solid #c9a86a; border-radius:8px;
-    background:#ece3d0; font-family:'Nanum Myeongjo',serif; font-weight:700; color:#6f5d3c; cursor:pointer; }
-  .sackcard #sackClose:active { background:#e0d4ba; }
+  .sackcard { width:100%; max-width:340px; max-height:86%; overflow-y:auto; background:#3a2410;
+    border:2px solid #8a5c28; border-radius:6px; padding:18px 16px 14px;
+    box-shadow:0 0 0 5px #2c1a08, 0 0 0 7px #a07030, 0 28px 70px rgba(0,0,0,.7); animation:risein .4s ease; }
+  .sacktitle { font-family:'Gaegu',cursive; font-size:15px; color:#f0c870; text-align:center; letter-spacing:3px;
+    border:1px solid #7a4e1e; border-radius:3px; padding:5px 10px; margin-bottom:5px; background:#4e3018; }
+  .sackcount { font-size:10px; color:#b08040; text-align:center; margin:0 0 6px; font-family:monospace; letter-spacing:1px; }
+  .sackshelf { padding:10px 2px 14px; border-bottom:4px solid #6a3e18; box-shadow:0 4px 0 #4a2c10, 0 6px 12px rgba(0,0,0,.35); margin-bottom:2px; }
+  .sackshelf:last-child { border-bottom:none; box-shadow:none; padding-bottom:4px; }
+  .sackcat { font-size:9.5px; color:#c89048; letter-spacing:1.5px; margin:0 0 9px; font-family:monospace; text-transform:uppercase; }
+  .sackbottles { display:flex; flex-wrap:wrap; gap:7px; }
+  .btl { display:flex; flex-direction:column; align-items:center; width:26px; }
+  .btl-cork { width:10px; height:5px; background:#c8a050; border-radius:2px 2px 0 0; border:1px solid #8a6820; }
+  .btl-neck { width:9px; height:7px; border:1px solid rgba(255,255,255,.18); border-bottom:none; }
+  .btl-body { width:22px; height:38px; border-radius:3px 3px 8px 8px; border:1px solid rgba(255,255,255,.2); position:relative; overflow:hidden; }
+  .btl.filled .btl-body::before { content:''; position:absolute; left:3px; top:3px; width:3px; height:55%; background:rgba(255,255,255,.3); border-radius:2px; }
+  .btl.filled .btl-body::after { content:''; position:absolute; bottom:0; left:0; right:0; height:30%; background:rgba(0,0,0,.15); }
+  .btl.empty .btl-body { background:rgba(255,255,255,.05); border-color:rgba(255,255,255,.12); }
+  .btl.empty .btl-cork { background:#5a3c18; border-color:#3a2408; opacity:.5; }
+  .btl.empty .btl-neck { border-color:rgba(255,255,255,.08); }
+  .btl-lbl { font-size:6px; text-align:center; margin-top:3px; line-height:1.3; white-space:nowrap; font-family:monospace; color:#8a6030; }
+  .btl.filled .btl-lbl { color:#f0c870; }
+  .sackempty { text-align:center; color:#b08040; font-size:13px; line-height:1.9; padding:20px 0; font-family:'Gaegu',cursive; }
+  .sackcard #sackClose { margin-top:14px; width:100%; padding:10px; border:1px solid #7a4e1e; border-radius:4px;
+    background:#4e3018; font-family:'Gaegu',cursive; font-size:14px; color:#f0c870; cursor:pointer; letter-spacing:2px; }
+  .sackcard #sackClose:active { background:#5e3c20; }
   /* ---------- 상황 figure (길 위, 그 노드의 장면 동물/사람) — 노드 바뀌면 스르륵 교체 ---------- */
   #situFig { position:absolute; right:-2%; bottom:4%; width:296px; z-index:4; pointer-events:none;
     opacity:0; transform:translateY(8px) scale(.96); transition:opacity .5s ease, transform .5s ease; }
@@ -689,7 +702,7 @@
     <!-- 자루 내부(인벤토리): 모은 감정을 색 칩으로 -->
     <div class="sackov" id="sackModal">
       <div class="sackcard">
-        <div class="sacktitle">🎒 자루 내부</div>
+        <div class="sacktitle">기억 약장</div>
         <div class="sackcount" id="sackCount"></div>
         <div class="sackbody" id="sackBody"></div>
         <button id="sackClose" type="button">닫기</button>
@@ -1331,19 +1344,47 @@ function updateReunionBtn(){
 }
 $("#reunionBtn").onclick=()=>{ const n=NODES.find(x=>x.id===S.current); if(isReunionable(n) && S.walks>=upCost(n,S.levels[n.id]+1)) openNode(n,false); };
 
-/* ---------- 자루(인벤토리) — 모은 감정/몸을 대분류별 색 칩으로 ---------- */
+/* ---------- 자루(인벤토리) — 기억 약장: 감정=유리병, 로봇 오류코드 라벨 ---------- */
 function openSack(){
-  const persons=NODES.filter(n=>n.type==="person"), got=persons.filter(n=>S.levels[n.id]>0);
-  $("#sackCount").textContent = `🧩 마음 ${got.length}/${FRAG_TOTAL}` + (bodyCount()>0?` · 🫀 몸 ${bodyCount()}/${BODY_TOTAL}`:"");
+  const ERR={
+    adore:"잔열",  joy:"거품",    amuse:"루프",  flutter:"노이즈", curious:"스캔",
+    beauty:"포화", admire:"정지", awe:"공명",    trance:"불능",    satisfy:"자진단",
+    bored:"유휴",  horror:"냉각", fear:"위협",   confuse:"불명",   anxiety:"잡음",
+    disgust:"오염",awkward:"발열",
+    excite:"과속", relief:"정압", attract:"인력",crave:"부족",     triumph:"달성",
+    sorrow:"누수", empathy:"보호",longing:"구형",compassion:"공감",calm:"대기",
+    skin:"외피",bone:"골격",muscle:"구동",nerve:"전선",endocrine:"화학",
+    heart:"펌프",lymph:"면역",lung:"통기",stomach:"분해",kidney:"정수",repro:"복제"
+  };
+  const btl=(n,data)=>{
+    const ok=S.levels[n.id]>0, c=data.color;
+    return `<div class="btl ${ok?'filled':'empty'}" title="${data.name}">
+      <div class="btl-cork"></div>
+      <div class="btl-neck" style="${ok?`border-color:${c}50`:''}" ></div>
+      <div class="btl-body"  style="${ok?`background:${c}`:''}"></div>
+      <div class="btl-lbl">${ERR[n.key]||'??'}</div>
+    </div>`;
+  };
+  const persons=NODES.filter(n=>n.type==="person");
+  const bodyNodes=NODES.filter(n=>n.type==="body");
+  const got=persons.filter(n=>S.levels[n.id]>0);
+  const gotB=bodyNodes.filter(n=>S.levels[n.id]>0);
+  $("#sackCount").textContent=`[오류 ${got.length}/${FRAG_TOTAL}건 수집됨]`+(gotB.length?` · 신체 ${gotB.length}/${BODY_TOTAL}`:"");
+  const CATS=[
+    {id:"cat_pos",    label:"ERR-L1  /  기쁨류"},
+    {id:"cat_intense",label:"ERR-L2  /  강렬류"},
+    {id:"cat_unease", label:"ERR-L3  /  불안류"},
+    {id:"cat_calm",   label:"ERR-L4  /  잔잔류"},
+  ];
   let html="";
-  const chip=(color,name)=>`<span class="chip"><span class="dot" style="background:${color}"></span>${name}</span>`;
-  NODES.filter(n=>n.type==="category").forEach(cat=>{                       // 대분류별 묶음
-    const g=persons.filter(n=>n.parent===cat.id && S.levels[n.id]>0);
-    if(g.length) html += `<div class="sackcat">${cat.name}</div><div class="sackchips">`+g.map(n=>chip(PEOPLE[n.key].color, PEOPLE[n.key].name)).join("")+`</div>`;
+  CATS.forEach(cat=>{
+    const ns=persons.filter(n=>n.parent===cat.id);
+    if(!ns.length) return;
+    html+=`<div class="sackshelf"><div class="sackcat">${cat.label}</div><div class="sackbottles">${ns.map(n=>btl(n,PEOPLE[n.key])).join("")}</div></div>`;
   });
-  const gb=NODES.filter(n=>n.type==="body" && S.levels[n.id]>0);
-  if(gb.length) html += `<div class="sackcat">몸</div><div class="sackchips">`+gb.map(n=>chip(BODY[n.key].color, BODY[n.key].name)).join("")+`</div>`;
-  $("#sackBody").innerHTML = html || `<div class="sackempty">아직 자루가 비어 있다.<br>길에서 사람을 만나면 마음이 한 조각씩 담긴다.</div>`;
+  if(bodyNodes.length)
+    html+=`<div class="sackshelf"><div class="sackcat">ERR-L5  /  신체류</div><div class="sackbottles">${bodyNodes.map(n=>btl(n,BODY[n.key])).join("")}</div></div>`;
+  $("#sackBody").innerHTML=html||`<div class="sackempty">약장이 비어 있다.<br><span style="font-size:11px;opacity:.5">길에서 만나야 채워진다</span></div>`;
   $("#sackModal").classList.add("show");
 }
 function closeSack(){ $("#sackModal").classList.remove("show"); }
