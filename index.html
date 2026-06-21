@@ -1299,7 +1299,13 @@ function renderNodes(){
     world.appendChild(el);
   });
 }
+function safeCurrentId(){   // 좌초 복구용: 가장 깊이 진행한(레벨 높은) '보이는' 노드, 없으면 start
+  let best="start", bl=-1;
+  for(const n of NODES){ if(isRevealed(n.id) && (S.levels[n.id]||0)>bl){ bl=S.levels[n.id]||0; best=n.id; } }
+  return best;
+}
 function placeRobot(animate){
+  if(!NODES.find(x=>x.id===S.current) || !isRevealed(S.current)) S.current=safeCurrentId();  // 안 보이는 노드(워프 잔재 등)면 진행한 노드로 스냅
   const n=NODES.find(x=>x.id===S.current), p=px(n);
   robot.style.left=p.x+"px"; robot.style.top=p.y+"px";
   updateReunionBtn();   // 로봇이 선 노드가 재회 가능하면 '다시 만나기' 버튼 노출(로봇이 노드 가려도 재회 가능)
@@ -1537,12 +1543,13 @@ const FIGS = (function(){
       </g></svg></div>`]
   };
 })();
-let _figT=null;
+let _figT=null, previewNode=null;   // previewNode = 관리자 워프 미리보기(그림만, S.current 안 건드림 → 지도 로봇 좌초 방지)
 function renderSituFig(){
   const el=document.getElementById('situFig'); if(!el) return;
-  const n=NODES.find(x=>x.id===S.current);
+  const cid=previewNode||S.current;
+  const n=NODES.find(x=>x.id===cid);
   const key=(curPage==="walk" && n && n.type==="person" && FIGS[n.key]) ? n.key : null;
-  const lv=Math.max(1,(S.levels[S.current]||1));
+  const lv=Math.max(1,(S.levels[cid]||1));
   const sig=key ? (key+':'+((lv-1)%FIGS[key].length)) : '';
   if(sig===el.dataset.sig) return;                 // 안 바뀌면 무시
   el.dataset.sig=sig;
@@ -1596,7 +1603,7 @@ function renderAll(){ sizeCanvas(); renderEdges(); renderNodes(); placeRobot(); 
 /* ---------- 이동 + 만남 ---------- */
 let busyMeet=false;   // 만남 진행 중(이동 시작 ~ 모달 닫을 때까지) — 그동안 다음 노드 발견·포커스 보류
 function travelTo(n, cb){
-  busyMeet=true;      // 도착~모달 사이 갭에도 다음 노드가 미리 생기지 않게
+  busyMeet=true; previewNode=null;      // 실제 이동 = 워프 미리보기 해제 / 도착~모달 갭에 다음 노드 미생성
   S.current=n.id; placeRobot(true);
   centerOn(n.id, true);
   setTimeout(cb, 1100);
@@ -2287,7 +2294,7 @@ function applyState(d){
   S.seenIntro = !!(d.seenIntro || d.named);   // 기존 이름지은 유저는 자동으로 '봤음' 처리(게이트 안 띄움)
   S.seenReunionHint = !!d.seenReunionHint;     // 재회 안내 1회 표시 플래그
   // 오프라인 적립도 effRate(마일스톤 배율 포함)로 — idle/탭과 일관(여기선 S.rate·S.levels 복원 뒤라 배율 정확).
-  let off=0; if(d.t){ const sec=Math.max(0,(Date.now()-d.t)/1000); const er=effRate()*OFFLINE_RATE; off=Math.min(er*sec, er*3600*OFFLINE_CAP_H); S.walks+=off; }   // 오프라인 = effRate의 1/10(접속 유도). 캡도 같은 1/10 기준
+  let off=0; if(d.t){ const sec=Math.max(0,(Date.now()-d.t)/1000); const er=effRate()*OFFLINE_RATE; off=Math.min(er*sec, er*3600*OFFLINE_CAP_H, 1280); S.walks+=off; }   // 오프라인 하드캡 1280걸음   // 오프라인 = effRate의 1/10(접속 유도). 캡도 같은 1/10 기준
   wholeWalks=Math.floor(S.walks);
   return off;
 }
@@ -2434,8 +2441,8 @@ function adminRenderWarps(){
 // ⚠️ 진행/세이브 무변경: discovered·levels 안 건드림(그림은 레벨 없이 뜨고, 모달은 firstMeet라 레벨 불필요).
 function adminWarp(id, withScene){
   const n=NODES.find(x=>x.id===id); if(!n) return;
-  S.current=id; busyMeet=false;
-  showPage('walk');                       // 관리자 탭 → 길로 전환(renderSituFig로 그 구간 그림)
+  previewNode=id; busyMeet=false;         // ⚠️ S.current는 안 건드림(지도 로봇 좌초 방지) — 그림만 미리보기
+  showPage('walk');                       // renderSituFig가 previewNode 그림 표시
   if(withScene) setTimeout(()=>openNode(n,true), 80);   // 첫 만남 장면(상황+대사) 미리보기
 }
 // ── 경제 튜닝(실시간) — balance.js 객체형 곡선만(const 바인딩이라 원시값은 불가). 세이브 무관·새로고침 원복 ──
@@ -2708,6 +2715,7 @@ map.addEventListener('touchend', e=>{ if(e.touches.length<2){ pinch=null; window
 /* ---------- 페이지 전환 (거지키우기식: 길 ↔ 지도) ---------- */
 let curPage = "walk";
 function showPage(name){
+  if(name!=="walk") previewNode=null;   // 길을 떠나면 워프 미리보기 해제 → 지도 로봇은 실제 S.current로
   curPage = name;
   document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active", p.id==="page"+name[0].toUpperCase()+name.slice(1)));
   document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active", t.dataset.page===name));
