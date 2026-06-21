@@ -2333,7 +2333,7 @@ function initAuth(){
 async function googleLogin(){ if(sb) await sb.auth.signInWithOAuth({ provider:"google", options:{ redirectTo: location.origin+location.pathname, queryParams:{ prompt:"select_account" } } }); }  // 항상 구글 계정 선택창
 async function logout(){
   try{ if(sb) await sb.auth.signOut(); }catch(e){}
-  authUser=null; lastKey=null;
+  authUser=null; lastKey=null; isAdmin=false; renderAdminUI();   // 어드민 UI도 내림
   try{ localStorage.removeItem(SAVE_KEY); }catch(e){}   // 익명 로컬 기록 남기지 않음
   resetState();                                          // 메모리 초기화 → 옛 기록 안 보이게
   closeIntro(); closeModal && closeModal();
@@ -2347,6 +2347,7 @@ function renderAuth(){
 }
 function onAuthChanged(){
   if(!authUser){ return; }                                // 로그아웃은 logout()에서 게이트로 처리(익명 복원 안 함)
+  checkAdmin();                                            // 어드민 여부 재확인(UI 토글) — 실제 권한은 RLS가 서버에서 강제
   const k=saveKey(); if(k===lastKey) return; lastKey=k;
   supaLoad().then(d=>{
     track("login",{returning:!!d});                     // 둘러보기→로그인 전환(세이브 정책 핵심 KPI)
@@ -2354,6 +2355,95 @@ function onAuthChanged(){
     saveState();                                          // 신규 계정이면 현재 진행 업로드 / 복귀면 미러 갱신
     decideEntry(); refreshHUD(); if(curPage==="map") renderAll();
   });
+}
+
+/* ---------- 어드민 스캐폴딩 ----------
+   ⚠️ 여기 isAdmin은 'UI 토글용'일 뿐. 실제 권한은 Supabase RLS(is_admin())가 서버에서 강제한다.
+   ⚠️ 모든 어드민 DB 호출은 반드시 sb(supabase-js)로 — 유저 JWT가 붙어야 RLS에서 auth.uid()가 동작.
+      (supaSave/supaLoad의 raw fetch는 anon 키라 auth.uid()=null → 어드민 판별 불가.)
+   셋업: Supabase에 admins 테이블 + is_admin() 함수 + 보호테이블 RLS 정책. 무야호를 admins에 1행 insert. */
+let isAdmin=false;
+async function checkAdmin(){
+  isAdmin=false;
+  if(sb && authUser){
+    try{ const {data,error}=await sb.rpc('is_admin'); if(!error) isAdmin=!!data; }catch(e){}
+  }
+  renderAdminUI();
+}
+function renderAdminUI(){
+  let btn=document.getElementById('adminBtn');
+  if(!isAdmin){ btn&&btn.remove(); document.getElementById('adminPanel')?.classList.remove('show'); return; }
+  if(!btn){
+    btn=document.createElement('button');
+    btn.id='adminBtn'; btn.type='button'; btn.textContent='🛠 ADMIN';
+    btn.style.cssText='position:fixed;left:8px;bottom:8px;z-index:9998;font:bold 12px sans-serif;background:#3a3540;color:#ffd98a;border:0;border-radius:8px;padding:6px 10px;box-shadow:0 3px 10px rgba(0,0,0,.25);cursor:pointer';
+    btn.onclick=openAdminPage;
+    document.body.appendChild(btn);
+  }
+}
+// ── 관리자 전용 페이지 (풀스크린 오버레이). isAdmin일 때만 버튼으로 열림 · 모든 DB는 sb(JWT)+RLS ──
+function aesc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function openAdminPage(){
+  let p=document.getElementById('adminPage');
+  if(!p){ p=buildAdminPage(); document.body.appendChild(p); }
+  p.style.display='flex'; adminRefreshMeta(); adminRenderWarps();
+}
+function closeAdminPage(){ const p=document.getElementById('adminPage'); if(p) p.style.display='none'; }
+function buildAdminPage(){
+  const p=document.createElement('div');
+  p.id='adminPage';
+  p.style.cssText='position:fixed;inset:0;z-index:10000;background:#f3efe6;display:none;flex-direction:column;font:14px sans-serif;color:#5a4d34;overflow:auto';
+  p.innerHTML=
+    '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:#3a3540;color:#ffd98a">'
+      +'<b style="font-size:16px">🛠 관리자 콘솔</b>'
+      +'<button type="button" id="adminClose" style="background:#5a5560;color:#fff;border:0;border-radius:8px;padding:6px 12px;cursor:pointer">닫기 ✕</button></div>'
+    +'<div id="adminMeta" style="padding:10px 16px;font-size:12px;color:#9a7b4a;border-bottom:1px solid #e3dcc8"></div>'
+    +'<div style="padding:16px;max-width:760px;margin:0 auto;width:100%;box-sizing:border-box">'
+      +'<section style="margin-bottom:22px">'
+        +'<h3 style="margin:0 0 8px;font-size:15px">🚀 감정 구간 이동 (테스트 워프)</h3>'
+        +'<div style="font-size:12px;color:#9a7b4a;margin-bottom:8px">이름=그 구간으로 이동(그림 표시) · 💬=장면/대사 모달</div>'
+        +'<div id="adminWarpList"></div>'
+      +'</section>'
+    +'</div>';
+  p.querySelector('#adminClose').onclick=closeAdminPage;
+  return p;
+}
+async function adminRefreshMeta(){
+  const m=document.getElementById('adminMeta'); if(!m) return;
+  if(!sb||!authUser){ m.textContent='로그인 필요'; return; }
+  let ia='?'; try{ const r=await sb.rpc('is_admin'); ia = r.error?('오류:'+r.error.message):String(r.data); }catch(e){ ia='호출실패'; }
+  m.textContent = `로그인: ${authUser.email||'?'} · is_admin: ${ia}`;
+}
+// 감정 구간 목록(4대분류별 person 노드)을 버튼으로 렌더
+function adminRenderWarps(){
+  const box=document.getElementById('adminWarpList'); if(!box) return;
+  let html='';
+  NODES.filter(c=>c.type==='category').forEach(c=>{
+    const kids=NODES.filter(n=>n.type==='person' && n.parent===c.id);
+    if(!kids.length) return;
+    html+=`<div style="margin:10px 0 4px;font-weight:700;color:#7a5f33">${aesc(c.icon||'')} ${aesc(c.name)}</div>`
+      +'<div style="display:flex;flex-wrap:wrap;gap:6px">';
+    kids.forEach(n=>{
+      const nm=(PEOPLE[n.key]&&PEOPLE[n.key].name)||n.key;
+      html+='<span style="display:inline-flex;border:1px solid #d8cdb6;border-radius:8px;overflow:hidden">'
+        +`<button type="button" data-warp="${aesc(n.id)}" style="border:0;background:#fff;padding:6px 9px;cursor:pointer;font:13px sans-serif;color:#5a4d34">${aesc(nm)}</button>`
+        +`<button type="button" data-scene="${aesc(n.id)}" title="장면/대사" style="border:0;border-left:1px solid #e3dcc8;background:#faf6ee;padding:6px 8px;cursor:pointer">💬</button>`
+        +'</span>';
+    });
+    html+='</div>';
+  });
+  box.innerHTML=html;
+  box.querySelectorAll('[data-warp]').forEach(b=> b.onclick=()=>adminWarp(b.dataset.warp,false));
+  box.querySelectorAll('[data-scene]').forEach(b=> b.onclick=()=>adminWarp(b.dataset.scene,true));
+}
+// 워프: 그 노드를 현재로 두고 걷기 화면 → 그림 표시. withScene이면 첫만남 장면 모달도.
+// ⚠️ 진행/세이브 무변경: discovered·levels 안 건드림(그림은 레벨 없이 뜨고, 모달은 firstMeet라 레벨 불필요).
+function adminWarp(id, withScene){
+  const n=NODES.find(x=>x.id===id); if(!n) return;
+  S.current=id; busyMeet=false;
+  closeAdminPage();
+  showPage('walk');                       // renderSituFig 포함 → 그 구간 그림이 뜸
+  if(withScene) setTimeout(()=>openNode(n,true), 80);   // 첫 만남 장면(상황+대사) 미리보기
 }
 
 /* ---------- 첫 플레이 온보딩: 탭으로 깨우기 → 샘 퀘스트 → 이름짓기 → 규칙설명 → 걷기 ----------
