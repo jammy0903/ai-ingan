@@ -2404,10 +2404,21 @@ function adminRenderPage(){
           +'<div style="font-size:12px;color:#9a7b4a;margin-bottom:8px">이 세션에서만 적용 · 새로고침 시 원복. balance.js 객체형 곡선만 노출(원시 상수는 let 리팩토링 필요).</div>'
           +'<div id="adminTuning"></div>'
         +'</section>'
+        +'<section style="margin-bottom:22px">'
+          +'<h3 style="margin:0 0 8px;font-size:15px">🧪 테스트</h3>'
+          +'<button type="button" id="admReplay" style="border:1px solid #d8cdb6;border-radius:8px;background:#fff;padding:7px 12px;cursor:pointer;font:13px sans-serif;color:#5a4d34">온보딩 다시보기 (비파괴)</button>'
+          +'<div style="font-size:12px;color:#9a7b4a;margin-top:6px">샘 튜토리얼(깨우기→샘→이름→규칙)을 진행도 안 지우고 재생. 끝나면 원래 게임으로.</div>'
+        +'</section>'
       +'</div>';
+    p.querySelector('#admReplay').onclick=adminReplayOnboarding;
     p.dataset.built='1';
   }
   adminRefreshMeta(); adminRenderWarps(); adminBuildTuning();
+}
+function adminReplayOnboarding(){   // 세이브/진행 안 건드리고 온보딩 재생(비파괴). forceOnboard로 샘 생략 가드 우회
+  forceOnboard=true;
+  dismissOnboarding();               // 진행 중이던 씬/모달 정리
+  startWake();                       // 누운 로봇 → 깨우기 → 샘 → 이름 → 규칙 → 걷기 (showPage('walk')로 관리자 탭 벗어남)
 }
 async function adminRefreshMeta(){
   const m=document.getElementById('adminMeta'); if(!m) return;
@@ -2618,9 +2629,9 @@ const SAM_SCRIPT=[
   {who:'bot', t:"아~\n길에서 사람을 만나면\n마음도 몸도 한 조각씩!"},
   {who:'bot', t:"가만히 둬도 걸어.\n근데 네가 화면을 톡톡!\n그럼 내가 더 빨리 걸어."},
   {who:'bot', t:"그러니까…\n같이 걸어줘."} ];
-let samVisible=false;
+let samVisible=false, forceOnboard=false;   // forceOnboard = 관리자 '온보딩 다시보기'(진행 있어도 샘 생략 가드 우회, 비파괴)
 function startSamScene(){
-  if(S.cycle>0 || S.depth>0 || (S.discovered && Object.keys(S.discovered).length>0)){ beginAdventure(); return; }  // 이미 진행한 유저 — 샘 대화 생략
+  if(!forceOnboard && (S.cycle>0 || S.depth>0 || (S.discovered && Object.keys(S.discovered).length>0))){ beginAdventure(); return; }  // 이미 진행한 유저 — 샘 대화 생략
   showPage('walk');
   sceneActive=true; sceneReady=false; sceneStep=0; samVisible=true;
   if(syslogEl) syslogEl.innerHTML="";                  // 대화 동안 상태 로그 비움
@@ -2667,6 +2678,7 @@ function endSamScene(){
   sc.classList.remove("show");
   sc.querySelectorAll(".scenebub").forEach(x=>x.remove());
   $("#sam").classList.remove("in","out"); samVisible=false;
+  forceOnboard=false;                                  // 재생 종료
   beginAdventure();
   setTimeout(emitSys, 900);
 }
