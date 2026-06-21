@@ -846,11 +846,14 @@
   <button id="reunionBtn" class="reunionbtn" type="button">🔁 <b id="reunionName"></b> 다시 만나기</button>
   </div><!-- /#pageMap -->
 
+  <div id="pageAdmin" class="page"></div><!-- 관리자(admin 전용, 탭으로 노출) -->
+
   </div><!-- /.pages -->
 
   <div class="tabbar">
     <button class="tab active" data-page="walk"><span class="ic">🚶</span> 길</button>
     <button class="tab" data-page="map"><span class="ic">🗺</span> 지도</button>
+    <button class="tab" data-page="admin" id="adminTab" style="display:none"><span class="ic">🛠</span> 관리자</button>
   </div>
 
   <!-- 만남 / 재회 모달 -->
@@ -2371,42 +2374,33 @@ async function checkAdmin(){
   renderAdminUI();
 }
 function renderAdminUI(){
-  let btn=document.getElementById('adminBtn');
-  if(!isAdmin){ btn&&btn.remove(); document.getElementById('adminPanel')?.classList.remove('show'); return; }
-  if(!btn){
-    btn=document.createElement('button');
-    btn.id='adminBtn'; btn.type='button'; btn.textContent='🛠 ADMIN';
-    btn.style.cssText='position:fixed;left:8px;bottom:8px;z-index:9998;font:bold 12px sans-serif;background:#3a3540;color:#ffd98a;border:0;border-radius:8px;padding:6px 10px;box-shadow:0 3px 10px rgba(0,0,0,.25);cursor:pointer';
-    btn.onclick=openAdminPage;
-    document.body.appendChild(btn);
-  }
+  const tab=document.getElementById('adminTab');
+  if(tab) tab.style.display = isAdmin ? '' : 'none';          // 관리자 탭은 admin에게만 노출
+  if(!isAdmin && curPage==='admin' && typeof showPage==='function') showPage('walk');  // 권한 사라지면 길로
 }
-// ── 관리자 전용 페이지 (풀스크린 오버레이). isAdmin일 때만 버튼으로 열림 · 모든 DB는 sb(JWT)+RLS ──
+// ── 관리자 탭 페이지 (#pageAdmin). isAdmin일 때만 탭 노출 · 모든 DB는 sb(JWT)+RLS ──
 function aesc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
-function openAdminPage(){
-  let p=document.getElementById('adminPage');
-  if(!p){ p=buildAdminPage(); document.body.appendChild(p); }
-  p.style.display='flex'; adminRefreshMeta(); adminRenderWarps();
-}
-function closeAdminPage(){ const p=document.getElementById('adminPage'); if(p) p.style.display='none'; }
-function buildAdminPage(){
-  const p=document.createElement('div');
-  p.id='adminPage';
-  p.style.cssText='position:fixed;inset:0;z-index:10000;background:#f3efe6;display:none;flex-direction:column;font:14px sans-serif;color:#5a4d34;overflow:auto';
-  p.innerHTML=
-    '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:#3a3540;color:#ffd98a">'
-      +'<b style="font-size:16px">🛠 관리자 콘솔</b>'
-      +'<button type="button" id="adminClose" style="background:#5a5560;color:#fff;border:0;border-radius:8px;padding:6px 12px;cursor:pointer">닫기 ✕</button></div>'
-    +'<div id="adminMeta" style="padding:10px 16px;font-size:12px;color:#9a7b4a;border-bottom:1px solid #e3dcc8"></div>'
-    +'<div style="padding:16px;max-width:760px;margin:0 auto;width:100%;box-sizing:border-box">'
-      +'<section style="margin-bottom:22px">'
-        +'<h3 style="margin:0 0 8px;font-size:15px">🚀 감정 구간 이동 (테스트 워프)</h3>'
-        +'<div style="font-size:12px;color:#9a7b4a;margin-bottom:8px">이름=그 구간으로 이동(그림 표시) · 💬=장면/대사 모달</div>'
-        +'<div id="adminWarpList"></div>'
-      +'</section>'
-    +'</div>';
-  p.querySelector('#adminClose').onclick=closeAdminPage;
-  return p;
+function adminRenderPage(){
+  const p=document.getElementById('pageAdmin'); if(!p) return;
+  if(!p.dataset.built){
+    p.innerHTML=
+      '<div style="padding:16px 16px 80px;max-width:760px;margin:0 auto;width:100%;box-sizing:border-box;font:14px sans-serif;color:#5a4d34;overflow:auto;height:100%">'
+        +'<b style="font-size:17px">🛠 관리자 콘솔</b>'
+        +'<div id="adminMeta" style="font-size:12px;color:#9a7b4a;border-bottom:1px solid #e3dcc8;padding:8px 0 8px;margin-bottom:14px"></div>'
+        +'<section style="margin-bottom:22px">'
+          +'<h3 style="margin:0 0 8px;font-size:15px">🚀 감정 구간 이동 (테스트 워프)</h3>'
+          +'<div style="font-size:12px;color:#9a7b4a;margin-bottom:8px">이름=그 구간으로 이동(그림 표시) · 💬=장면/대사 모달</div>'
+          +'<div id="adminWarpList"></div>'
+        +'</section>'
+        +'<section style="margin-bottom:22px">'
+          +'<h3 style="margin:0 0 8px;font-size:15px">💰 경제 튜닝 (실시간 · 세이브 무관)</h3>'
+          +'<div style="font-size:12px;color:#9a7b4a;margin-bottom:8px">이 세션에서만 적용 · 새로고침 시 원복. balance.js 객체형 곡선만 노출(원시 상수는 let 리팩토링 필요).</div>'
+          +'<div id="adminTuning"></div>'
+        +'</section>'
+      +'</div>';
+    p.dataset.built='1';
+  }
+  adminRefreshMeta(); adminRenderWarps(); adminBuildTuning();
 }
 async function adminRefreshMeta(){
   const m=document.getElementById('adminMeta'); if(!m) return;
@@ -2441,9 +2435,45 @@ function adminRenderWarps(){
 function adminWarp(id, withScene){
   const n=NODES.find(x=>x.id===id); if(!n) return;
   S.current=id; busyMeet=false;
-  closeAdminPage();
-  showPage('walk');                       // renderSituFig 포함 → 그 구간 그림이 뜸
+  showPage('walk');                       // 관리자 탭 → 길로 전환(renderSituFig로 그 구간 그림)
   if(withScene) setTimeout(()=>openNode(n,true), 80);   // 첫 만남 장면(상황+대사) 미리보기
+}
+// ── 경제 튜닝(실시간) — balance.js 객체형 곡선만(const 바인딩이라 원시값은 불가). 세이브 무관·새로고침 원복 ──
+let _balDefaults=null;
+function adminBuildTuning(){
+  const box=document.getElementById('adminTuning'); if(!box) return;
+  if(!_balDefaults) _balDefaults={ up:UP_BASE.person, ms:MILESTONES.map(m=>m.mult), curve:TAP_CURVE.slice() };
+  const row=(label,id,val,step)=>'<label style="display:flex;align-items:center;gap:8px;margin:6px 0;font-size:13px">'
+    +`<span style="width:190px;color:#7a5f33">${label}</span>`
+    +`<input id="${id}" type="number" step="${step}" value="${val}" style="width:90px;padding:4px 6px;border:1px solid #d8cdb6;border-radius:6px">`
+    +'</label>';
+  const btn='border:1px solid #d8cdb6;border-radius:8px;padding:7px 12px;cursor:pointer;font:13px sans-serif';
+  box.innerHTML = row('재회 1레벨 비용 (UP_BASE)','tuneUp',UP_BASE.person,1)
+    + row('마일스톤 배율 ×스케일','tuneMs',1,0.1)
+    + row('발견곡선 ×스케일 (폴백 TAP_CURVE)','tuneCv',1,0.1)
+    + `<div style="display:flex;gap:8px;margin-top:8px"><button type="button" id="tuneApply" style="${btn};background:#ece3d0;color:#5a4d34">적용</button>`
+    + `<button type="button" id="tuneReset" style="${btn};background:#fff;color:#9a7b4a">기본값</button></div>`
+    + '<div id="tuneMsg" style="font-size:12px;color:#9a7b4a;margin-top:6px"></div>';
+  box.querySelector('#tuneApply').onclick=adminApplyTuning;
+  box.querySelector('#tuneReset').onclick=adminResetTuning;
+}
+function adminApplyTuning(){
+  const up=parseFloat(document.getElementById('tuneUp').value);
+  const ms=parseFloat(document.getElementById('tuneMs').value);
+  const cv=parseFloat(document.getElementById('tuneCv').value);
+  if(up>0) UP_BASE.person=up;
+  if(ms>0) MILESTONES.forEach((m,i)=> m.mult=_balDefaults.ms[i]*ms);
+  if(cv>0) TAP_CURVE.forEach((_,i)=> TAP_CURVE[i]=Math.round(_balDefaults.curve[i]*cv));
+  if(typeof refreshHUD==='function') refreshHUD();
+  const m=document.getElementById('tuneMsg'); if(m) m.textContent='적용됨 (이 세션만 · 새로고침 시 원복)';
+}
+function adminResetTuning(){
+  if(_balDefaults){ UP_BASE.person=_balDefaults.up;
+    MILESTONES.forEach((m,i)=> m.mult=_balDefaults.ms[i]);
+    TAP_CURVE.forEach((_,i)=> TAP_CURVE[i]=_balDefaults.curve[i]); }
+  if(typeof refreshHUD==='function') refreshHUD();
+  adminBuildTuning();
+  const m=document.getElementById('tuneMsg'); if(m) m.textContent='기본값 복원';
 }
 
 /* ---------- 첫 플레이 온보딩: 탭으로 깨우기 → 샘 퀘스트 → 이름짓기 → 규칙설명 → 걷기 ----------
@@ -2683,6 +2713,7 @@ function showPage(name){
   document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active", t.dataset.page===name));
   if(name==="map"){ renderAll(); centerOn(S.current); }   // 숨어있던 지도 → 표시될 때 치수 잡고 렌더
   else if(name==="walk"){ setTimeout(emitSys, 400); }     // 길로 돌아오면 곧 상태 로그 한 줄
+  else if(name==="admin"){ adminRenderPage(); }           // 관리자 탭 — 콘솔 렌더
   updateReunionBtn();                                     // 페이지 전환 시 '다시 만나기' 버튼 노출/숨김 재평가
   renderSituFig();                                        // 길 화면이면 현재 노드의 상황 figure 표시(스르륵)
 }
