@@ -1107,8 +1107,8 @@ function rateMult(){ return milestoneMult(); }     // 전역 산출 배율(추�
 // 걸음/초 base를 levels에서 '계산'(누적 S.rate 폐기) — 노드별 산출에 달성보너스 등 얹기 쉬움(C단계).
 function achieveMult(lv){ return Math.pow(2, Math.floor(lv/5)); }   // (레거시) — 재회 곡선이 nodeSps로 이동, 미사용
 // 재회 = '초/걸음' 곡선(관리자 튜닝). 초/걸음 = 시작값 × 배율^재회횟수, 걸음/초 = 1/(초/걸음). (시작0.1·배율0.5 → 10·20·40 걸음/초)
-let REUNION_START_SPS = 0.1;   // 재회0(첫만남) 초/걸음
-let REUNION_FACTOR    = 0.5;   // 재회당 배율(<1, 작을수록 빨라짐)
+let REUNION_START_SPS = 1.0;   // 재회0(첫만남) 초/걸음 — 1 = 1걸음/초/노드(옛 baseline 수준, 폭발 방지)
+let REUNION_FACTOR    = 0.85;  // 재회당 배율(<1, 작을수록 빨라짐) — 0.85 ≈ 재회당 1.18배(완만). 관리자 슬라이더로 조절
 function nodeSps(lv){ return REUNION_START_SPS * Math.pow(REUNION_FACTOR, Math.max(0,(lv||1)-1)); }   // lv의 초/걸음
 function fmtSps(lv){ const v=nodeSps(lv); return (v>=0.001 ? +v.toFixed(3) : v.toExponential(1)) + "초/걸음"; }
 function nodeOut(n, lv){ if(lv==null) lv=S.levels[n.id]; return (lv>0 && n.gen) ? 1/nodeSps(lv) : 0; }   // 걸음/초 = 1 / (초/걸음)
