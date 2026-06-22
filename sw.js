@@ -4,8 +4,9 @@
 // 🔢 버전 올릴 때 3곳 동기화: 이 CACHE · manifest.json "version" · index.html #appVer 표시.
 const CACHE = "aingan-1.0.34";
 const CORE = [
-  "./", "./index.html", "./manifest.json",
+  "./", "./index.html", "./styles.css", "./manifest.json",
   "./data.js", "./balance.js",            // 전역 데이터·밸런스(인라인보다 먼저 로드) — 오프라인 프리캐시
+  // 🆕 구조 분리(2026-06-22): 인라인 JS를 전역 스크립트 여러 개로 추출(로드 순서 = 원본 순서). 파일은 단계마다 여기에 추가.
   "./vendor/supabase.js",
   "./icon-192.png", "./icon-512.png", "./icon.svg",
   // 감정27 일러스트(누끼 webp) — 오프라인 프리캐시
@@ -38,7 +39,7 @@ self.addEventListener("fetch", e => {
   // ⚠️ 핵심 코드(index.html + data.js + balance.js)는 '함께' 네트워크 우선 → 항상 일관된 최신, 오프라인이면 캐시 폴백.
   // (옛 버그: index는 network-first인데 data/balance는 cache-first라 배포마다 버전 엇갈림 → 새 index가 옛 balance의 없는 심볼 참조 → reachCost ReferenceError로 지도 크래시. 함께 network-first로 일관화해 차단.)
   const isCode = req.mode === "navigate" ||
-                 (url.origin === location.origin && /\/(index\.html|data\.js|balance\.js)$/.test(url.pathname));
+                 (url.origin === location.origin && /\/(index\.html|styles\.css|data\.js|balance\.js|engine\.js|view\.js|save-auth\.js|onboarding\.js|main\.js)$/.test(url.pathname));
   if (isCode) {
     const key = req.mode === "navigate" ? "./index.html" : req;
     e.respondWith(

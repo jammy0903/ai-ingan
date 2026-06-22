@@ -1,0 +1,583 @@
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { height:100%; overflow:hidden; color-scheme:only light; }
+  body {
+    font-family:'Nanum Myeongjo','Apple SD Gothic Neo','Batang',serif;
+    background:#e9e3ef; display:flex; justify-content:center; align-items:center;
+    color:#5a5750; user-select:none;
+  }
+  #app {
+    position:relative; width:100%; max-width:420px; height:100%; max-height:880px;
+    overflow:hidden; background:#fbf8f3; box-shadow:0 24px 80px rgba(70,50,90,.32);
+    display:flex; flex-direction:column;
+  }
+  /* 모바일: 앱이 화면을 꽉 채워 어두운 레터박스 여백 제거 (이전엔 880px 캡 밖이 검게 보였음).
+     ⚠️ ≤480px '하나'에만 의존하면 일부 폰(보고 CSS폭>480·고DPR·삼성 등)에서 분기가 안 걸려 #app이 420px로 박스처리→'화면이 작게' 보임.
+     그래서 터치 기기(pointer:coarse)는 폭과 무관하게 꽉 차게 + px 분기도 600으로 상향(태블릿 큰 모니터 제외 ≤1024). */
+  @media (max-width:600px), (pointer:coarse) and (max-width:1024px){
+    html,body{ background:#fbf8f3; } #app{ max-width:none; max-height:none; box-shadow:none; } }
+  #app::before { content:""; position:absolute; inset:0; pointer-events:none; opacity:.16; mix-blend-mode:multiply; z-index:1;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.35'/></svg>"); }
+  svg.defs { position:absolute; width:0; height:0; }
+
+  /* ---------- HUD ---------- */
+  .hud { position:relative; z-index:6; padding:7px 16px 6px; flex:0 0 auto;
+    background:linear-gradient(#f7f2fa, #fbf8f3); border-bottom:1px solid rgba(150,130,170,.18); }
+  .titlebar { display:flex; justify-content:space-between; align-items:baseline; }
+  .title { font-weight:700; font-size:14px; color:#54514a; letter-spacing:0; white-space:nowrap; }
+  .tag { font-size:10px; color:#8a857a; border:1px solid #c9c2b3; padding:2px 7px; border-radius:3px; }
+  .rn { font-size:13px; color:#9a7b4a; font-family:'Gaegu',cursive; cursor:pointer; }
+  .rn:hover { text-decoration:underline; opacity:.85; }
+  /* 닉네임 변경 다이얼로그 */
+  .renameov { position:absolute; inset:0; z-index:45; display:none; align-items:center; justify-content:center;
+    padding:30px; background:rgba(40,44,40,.34); }
+  .renameov.show { display:flex; animation:fade .25s ease; }
+  .renamecard { width:100%; max-width:290px; text-align:center; background:linear-gradient(160deg,#f3f1ea,#ebe5d8);
+    border:1px solid #cdc6b6; border-radius:6px; padding:22px 20px 20px; box-shadow:0 8px 30px rgba(60,55,45,.22); }
+  .renamecard .rt { font-family:'Nanum Myeongjo',serif; font-weight:700; font-size:15px; color:#6f5d3c; letter-spacing:2px; margin-bottom:16px; }
+  .renamerow { display:flex; gap:8px; justify-content:center; align-items:center; }
+  .renamerow input { font-family:'Gaegu',cursive; font-size:23px; text-align:center; width:150px; padding:7px 10px;
+    border:none; border-bottom:2px solid #c9a86a; background:transparent; color:#6f5d3c; outline:none; }
+  .renamerow button { font-size:18px; background:rgba(247,243,234,.7); border:1px solid #c9c2b3; border-radius:50%;
+    width:40px; height:40px; cursor:pointer; }
+  .renamebtns { display:flex; gap:10px; margin-top:20px; }
+  .renamebtns button { flex:1; padding:11px; border:1px solid #b9a98c; border-radius:3px; cursor:pointer;
+    font-family:'Nanum Myeongjo',serif; font-weight:700; font-size:14px; letter-spacing:1px; }
+  .renamebtns .ok { background:#dfeae4; color:#3f6b62; border-color:#9bb3a8; }
+  .renamebtns .cancel { background:#efeae0; color:#8a7f6e; }
+  .authbtn { font-size:11px; color:#7d6a52; background:rgba(247,243,234,.7); border:1px solid #c9c2b3;
+    border-radius:14px; padding:4px 11px; cursor:pointer; font-family:'Nanum Myeongjo',serif; max-width:130px;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; transition:background .15s; }
+  .authbtn:active { background:#ece3d0; }
+  .authbtn.on { color:#5a7a4a; border-color:#b6c9a8; background:rgba(220,232,200,.4); }
+  .stats { display:flex; gap:13px; margin-top:3px; align-items:baseline; font-family:'Gaegu',cursive; }  /* 둥근 글씨(개구체) — 상단 바 전체(특히 다음속도업) */
+  .stat b { font-size:18px; font-weight:700; color:#7a6440; }
+  .stat span { font-size:10px; color:#8a857a; letter-spacing:.5px; }
+  .stat .unit { font-size:11px; color:#9a7b4a; }
+  .stat.frag b { color:#7a6440; }
+  .stat.frag.done b { color:#5a7a4a; }   /* 감정27+몸11 다 모으면 초록 강조 */
+  .stat.coin { margin-left:8px; } .stat.coin b { color:#c98a2a; }    /* ✨ 온기 조각 — 따뜻한 금빛 */
+  .stat.coin.pulse { animation:coinPulse .5s ease; transform-origin:center; }
+  @keyframes coinPulse { 0%{transform:scale(1)} 35%{transform:scale(1.18)} 100%{transform:scale(1)} }
+  .coinpop { position:fixed; transform:translate(-50%,0); z-index:60; pointer-events:none; color:#c98a2a; font-weight:700; font-size:13px; opacity:0; transition:opacity .25s ease, transform .9s cubic-bezier(.2,.8,.3,1); text-shadow:0 1px 2px rgba(255,255,255,.7); }
+  .coinpop.go { opacity:1; transform:translate(-50%,-26px); }
+  .adcoin { margin-left:6px; border:1px solid #e0c48a; background:#fbf3e0; color:#9a6a2a; font-size:11px; padding:2px 8px; border-radius:12px; cursor:pointer; font-family:inherit; }
+  .adcoin:active { transform:scale(.96); }
+  .warm { margin-left:auto; font-size:11px; color:#7d756a; text-align:right; line-height:1.25; }
+  .warm b { color:#9a7b4a; }
+
+  /* ---------- 지도 (스크롤 캔버스) ---------- */
+  #map { position:absolute; inset:0; z-index:2; overflow:auto; touch-action:none; cursor:grab; }
+  #map.grabbing { cursor:grabbing; }
+  #map::-webkit-scrollbar { width:0; height:0; }
+  #canvas { position:relative; margin:0 auto; }
+  #world { position:absolute; top:0; left:0; transform-origin:0 0; }
+
+  /* 다음 속도업까지 — 지도 상단 중앙 알약 */
+  .mapnextup { position:absolute; top:10px; left:50%; transform:translateX(-50%); z-index:8;
+    font-family:'Gaegu',cursive; font-size:14px; color:#7a6440; white-space:nowrap; pointer-events:none;
+    background:rgba(247,243,234,.82); border:1px solid #e0d3c2; border-radius:14px; padding:4px 13px;
+    box-shadow:0 2px 7px rgba(120,100,70,.12); }
+  .mapnextup b { color:#9a7b4a; font-size:17px; }
+  .mapnextup.maxed { color:#5a7a4a; border-color:#b6c9a8; }
+
+  /* 줌 컨트롤 */
+  .zoomctl { position:absolute; right:14px; bottom:18px; z-index:8; display:flex; flex-direction:column; gap:6px; }
+  .zoomctl button { width:38px; height:38px; border:1px solid #cdbce0; border-radius:50%;
+    background:rgba(251,248,244,.92); color:#7a6a8a; font-size:20px; font-weight:700;
+    font-family:'Nanum Myeongjo',serif; cursor:pointer; box-shadow:0 3px 10px rgba(90,70,120,.12);
+    display:flex; align-items:center; justify-content:center; line-height:1; transition:background .15s; }
+  .zoomctl button:active { background:#ece6f3; }
+  .zoomctl .zlvl { font-size:10px; color:#9a917f; text-align:center; }
+  .edges { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+  .edges line { stroke:#cbbce0; stroke-width:2; stroke-dasharray:5 7; opacity:.55; }
+  .edges line.live { stroke:#e3a7c6; opacity:.9; stroke-dasharray:none; }
+  /* 연관/반대 = 시각 전용 엣지(이동·발견 X) — 감정의 그라데이션·거울쌍 지형 */
+  .edges line.assoc { stroke:#9fb0bd; stroke-width:1.4; stroke-dasharray:none; opacity:.4; }
+  .edges line.oppo  { stroke:#c6a2ad; stroke-width:1.4; stroke-dasharray:2 6; opacity:.4; }
+
+  .node { position:absolute; transform:translate(-50%,-50%); z-index:3;
+    display:flex; flex-direction:column; align-items:center; gap:5px; cursor:default; }
+  .node .ring { width:58px; height:58px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    filter:url(#paint); transition:transform .3s, box-shadow .3s; position:relative; }
+  .node .ring .ic { font-size:22px; opacity:.85; }
+  .node .label { font-size:12px; color:#6a6358; letter-spacing:.3px; white-space:nowrap; opacity:.9; }
+  .node .cost { font-size:11px; color:#9a86b8; font-family:'Gaegu',cursive; }
+  .node .cost.rate { color:#6f9a72; font-weight:700; }
+
+  /* 빈 원 (예고) */
+  .node.empty .ring { background:transparent; border:2px dashed #ccbce2; opacity:.55; }
+  .node.empty .label { color:#9a917f; font-style:italic; }
+  /* 발견됨(아직 안 엶) = 희미하게. 열면 .done 으로 뚜렷해짐 */
+  .node.reachable { cursor:pointer; }
+  .node.reachable .ring { border:2px dashed #c6b6e0; background:rgba(200,168,224,.06);
+    animation:faintpulse 2.6s ease-in-out infinite; cursor:pointer; }
+  .node.reachable .ring .ic { opacity:.5; }
+  .node.reachable .label { color:#9a917f; opacity:.6; font-style:italic; }
+  .node.reachable .cost { opacity:.7; }
+  @keyframes faintpulse { 0%,100%{opacity:.4} 50%{opacity:.66} }
+  /* 완료 */
+  .node.done .ring { background:radial-gradient(circle,#fbfdfb,#cfe6d8); border:2px solid #a9d2bf; opacity:1; cursor:pointer; }
+  .node.done { cursor:pointer; }
+  .node.done.person .ring { background:radial-gradient(circle,#fffaf6,#f3cfdd); border-color:#e6aecb; }
+  /* 대분류(갈래) 허브 노드 — 감정보다 작고 차분하게 */
+  /* 갈래 안 대/중/소 크기 (중=기본 58px) */
+  .node.tier-big .ring { width:68px; height:68px; }
+  .node.tier-small .ring { width:48px; height:48px; }
+  .node.category .ring { width:48px; height:48px; }
+  .node.category .label { font-weight:700; color:#7a7060; letter-spacing:.6px; }
+  .node.done.category .ring { background:radial-gradient(circle,#faf7fd,#dcd0ee); border:2px solid #c3b2e0; }
+  /* 도착해서 막 열린 자리 — 한 번 반짝(열렸다는 신호) */
+  .node.flash .ring { animation:nodeflash .85s ease-out; z-index:6; }
+  @keyframes nodeflash {
+    0%   { box-shadow:0 0 0 0 rgba(255,236,180,0);   transform:scale(1); }
+    25%  { box-shadow:0 0 22px 11px rgba(255,233,170,.95); transform:scale(1.28); }
+    55%  { box-shadow:0 0 14px 6px rgba(255,233,170,.55);  transform:scale(1.05); }
+    100% { box-shadow:0 0 0 0 rgba(255,236,180,0);   transform:scale(1); }
+  }
+  .node .lv { position:absolute; bottom:-4px; right:-4px; background:#b79fd6; color:#fff;
+    font-size:9px; font-weight:700; min-width:15px; height:15px; line-height:15px; border-radius:8px; padding:0 3px;
+    font-family:'Nanum Myeongjo',serif; }
+
+  /* 로봇 공유 채색 (--p = 마음 온도, #app에서 상속) */
+  .bot .shadow{ fill:rgba(80,76,70,.16); }
+  .bot .visor{ fill:#33464a; }
+  .bot .grille line{ stroke:#4a5b5e; stroke-width:1.3; opacity:.7; }
+  .bot .ant{ stroke:#9aa19c; stroke-width:3; stroke-linecap:round; fill:none; }
+  .bot .aura{ fill:url(#gAura); opacity:calc(var(--p,0)*.55); transition:opacity 1s; }
+  .bot .core{ fill:color-mix(in srgb,#6f9c93 calc((1 - var(--p,0))*100%),#e6a85e); transition:fill 1s; }
+  .bot .coreHi{ opacity:calc(.22 + var(--p,0)*.6); }
+  .bot .spark{ fill:#fff7e6; opacity:calc(var(--p,0)*.9); }
+  .bot .eye{ fill:color-mix(in srgb,#5fcde4 calc((1 - var(--p,0))*100%),#ffc64f); transition:fill 1s; }
+  .bot .eyeHi{ fill:#fff; opacity:1; }
+  .bot .cheek{ fill:#eba0a0; opacity:.5; }                          /* 볼 홍조(귀엽게) */
+  .bot .smile{ stroke:#6a6258; stroke-width:1.8; stroke-linecap:round; fill:none; opacity:.7; }
+  .bot .tip{ fill:color-mix(in srgb,#b6bcae calc((1 - var(--p,0))*100%),#e89a4e); transition:fill 1s; }
+  .bot .tipHalo{ fill:url(#gAura); opacity:calc(var(--p,0)*.5); }
+  /* 빈 코어(결핍) — 아직 감정을 한 조각도 못 모았을 때 가슴 코어는 어두운 빈 구멍. 첫 감정부터 --p가 채운다(엔딩=하트). */
+  #app.coreEmpty .bot .core{ fill:#243231; transition:fill 1.2s; }
+  #app.coreEmpty .bot .coreHi, #app.coreEmpty .bot .spark{ opacity:0 !important; }
+  #app.coreEmpty .bot .core{ animation:coreVoid 2.6s ease-in-out infinite; }
+  @keyframes coreVoid{ 0%,100%{opacity:.85} 50%{opacity:.55} }
+
+  /* 지도 로봇 토큰 */
+  #robot { position:absolute; transform:translate(-50%,-60%); z-index:4; width:92px; pointer-events:none;
+    transition:left 1.1s cubic-bezier(.5,.05,.3,1), top 1.1s cubic-bezier(.5,.05,.3,1); }
+  #robot svg { width:100%; filter:url(#paintSoft) drop-shadow(0 4px 5px rgba(70,66,60,.22)); animation:bob 3.8s ease-in-out infinite; }
+  @keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
+
+  /* 길 페이지 걷기 로봇 (옆모습) — 걸음당 1보(이벤트 구동, 상시 루프 아님) */
+  #walkRobot { position:absolute; left:44%; bottom:2%; width:130px; z-index:4; pointer-events:none; transform:translateX(-50%); transition:left .55s ease; }
+  #walkRobot svg { width:100%; filter:url(#paintSoft) drop-shadow(0 5px 6px rgba(70,66,60,.20)); }
+  /* 깨우기: 발(바닥)을 축으로 누운 자세→기립. 스프링 베지어로 탭마다 통! 하고 일어선다 */
+  #walkRobot.waking { transform-origin:50% 100%; transition:transform .5s cubic-bezier(.34,1.45,.5,1), filter .4s ease, opacity .4s ease; }
+  @keyframes stepbob { 0%{transform:translateY(0)} 38%{transform:translateY(-6px)} 100%{transform:translateY(0)} }
+  /* 다리·팔: 한 보마다 전후 스탠스 전환 (걸음이 들어올 때만) */
+  #walkRobot .leg, #walkRobot .arm { transform-box:fill-box; transform-origin:top center; transition:transform .15s ease-out; }
+  #walkRobot.stepA .legFront{ transform:rotate(20deg) }  #walkRobot.stepA .legBack{ transform:rotate(-20deg) }
+  #walkRobot.stepA .armFront{ transform:rotate(-14deg) } #walkRobot.stepA .armBack{ transform:rotate(14deg) }
+  #walkRobot.stepB .legFront{ transform:rotate(-20deg) } #walkRobot.stepB .legBack{ transform:rotate(20deg) }
+  #walkRobot.stepB .armFront{ transform:rotate(14deg) }  #walkRobot.stepB .armBack{ transform:rotate(-14deg) }
+  /* 안테나만 잔잔한 분위기(걷기와 무관) */
+  #walkRobot .antG{ transform-box:fill-box; transform-origin:bottom center; animation:antsway 1.8s ease-in-out infinite; }
+  @keyframes antsway { 0%,100%{transform:rotate(-5deg)} 50%{transform:rotate(6deg)} }
+
+  /* 떠오르는 입자 */
+  .mote { position:absolute; width:16px; height:16px; border-radius:50%; pointer-events:none; z-index:5;
+    background:radial-gradient(circle, rgba(255,255,255,.92), rgba(244,190,216,.6) 55%, transparent);
+    animation:rise 1.3s ease-out forwards; }
+  @keyframes rise { 0%{transform:translate(-50%,-50%) scale(.4); opacity:0}
+    25%{opacity:.9} 100%{transform:translate(-50%,-130px) scale(1); opacity:0} }
+
+  /* ---------- 페이지 + 탭바 ---------- */
+  .pages { position:relative; z-index:2; flex:1 1 auto; overflow:hidden; }
+  .page { position:absolute; inset:0; display:none; }
+  .page.active { display:block; }
+  .tabbar { position:relative; z-index:7; flex:0 0 auto; display:flex;
+    background:linear-gradient(#fbf8f3,#f2ecf6); border-top:1px solid rgba(150,130,170,.22); }
+  .tab { flex:1; padding:12px 0 13px; background:transparent; border:none; cursor:pointer;
+    font-family:'Nanum Myeongjo',serif; font-size:14px; color:#9a917f; letter-spacing:1px; }
+  .tab .ic { font-size:16px; }
+  .tab.active { color:#7a6440; font-weight:700; box-shadow:inset 0 2px 0 #c9a86a; background:rgba(201,168,106,.08); }
+
+  /* ---------- 길 페이지 풍경 (수채, 옆모습) ---------- */
+  #pageWalk { overflow:hidden; }
+  #pageWalk .sky { position:absolute; inset:0; pointer-events:none;
+    background:
+      radial-gradient(120% 60% at 72% 6%, rgba(190,230,212,.55), transparent 60%),
+      radial-gradient(90% 55% at 18% 2%, rgba(245,205,222,.5), transparent 58%),
+      radial-gradient(80% 50% at 50% 0%, rgba(214,200,240,.42), transparent 55%),
+      linear-gradient(#f4f8f6 0%, #fbf8f3 48%); }
+  #pageWalk .scene { position:absolute; left:0; bottom:0; width:100%; height:52%; overflow:hidden; }
+  #pageWalk .hill { position:absolute; bottom:8%; border-radius:50% 50% 42% 42%; filter:url(#paint); opacity:.78; }
+  /* 먼 언덕은 아주 느린 바람(걷기와 무관한 분위기) */
+  #pageWalk .h1 { width:80%; height:42%; left:-12%; background:#c2e6d2; animation:drift 70s linear infinite; }
+  #pageWalk .h2 { width:78%; height:56%; left:40%;  background:#d3c7ee; opacity:.74; animation:drift 90s linear infinite; }
+  #pageWalk .h3 { width:74%; height:34%; left:80%;  background:#f4cfdd; opacity:.72; animation:drift 60s linear infinite; }
+  @keyframes drift { from{transform:translateX(0)} to{transform:translateX(-130%)} }
+  #pageWalk .ground { position:absolute; left:0; bottom:0; width:100%; height:18%; background:#e4eddf; filter:url(#paint); opacity:.82; }
+  /* 길 점선: 한 보마다 한 칸 전진 (상시 흐름 아님) */
+  #pageWalk .roadline { position:absolute; left:0; bottom:7%; width:100%; height:3px; opacity:.5;
+    background:repeating-linear-gradient(90deg,#cdb6e4 0 26px,transparent 26px 54px); transition:background-position .16s ease-out; }
+  /* 하늘의 마음 보유 표시 (한 줄 카운트 + 한 줄 칩) */
+  #mindsky { position:absolute; top:7px; left:12px; right:12px; z-index:5; display:flex; flex-direction:column; gap:5px; pointer-events:none; }
+  .fragline { align-self:flex-start; font-family:'Gaegu',cursive; font-size:14px; color:#7a6a4a; white-space:nowrap;
+    background:rgba(247,243,234,.66); border:1px solid rgba(150,140,120,.32); border-radius:12px; padding:2px 11px; }
+  .fragline b { color:#9a6a3a; font-size:15px; }
+  .fragline .sep { color:#c3b8a2; margin:0 6px; }
+  .fragline .goal { color:#9a917f; font-size:11px; margin-left:5px; }
+  .fragline .ck { color:#9a7b4a; }
+  @keyframes fadein { from{opacity:0; transform:translateY(-4px)} to{opacity:1; transform:none} }
+
+  /* 새 (하늘) + 꽃·동물 (땅) */
+  #birds, #gprops { position:absolute; left:0; right:0; pointer-events:none; }
+  #birds { top:0; height:46%; z-index:3; }
+  #gprops { bottom:0; height:20%; z-index:3; }
+  .bird { position:absolute; animation-name:birdfly; animation-timing-function:linear; animation-fill-mode:forwards; }
+  @keyframes birdfly { from{ left:106%; } to{ left:-16%; } }
+  .bird svg { display:block; animation:flap .5s ease-in-out infinite; }
+  @keyframes flap { 0%,100%{transform:scaleY(1)} 50%{transform:scaleY(.6)} }
+  .gprop { position:absolute; bottom:8%; left:0; filter:url(#paint); transition:transform .16s ease-out; will-change:transform; }
+  /* 하늘 광고 비행기 + 펄럭이는 배너 — 지금은 귀여운 문구, 나중에 배너 텍스트를 광고로 교체 */
+  #planes { position:absolute; left:0; right:0; top:0; height:42%; z-index:3; pointer-events:none; }
+  .plane { position:absolute; display:flex; align-items:center; white-space:nowrap;
+    animation-name:planefly; animation-timing-function:linear; animation-fill-mode:forwards; }
+  @keyframes planefly { from{ left:-52%; } to{ left:122%; } }     /* 왼→오른쪽으로 천천히 가로지름 */
+  .plane .banner { font-family:'Gaegu',cursive; font-size:14px; font-weight:700; color:#7a5f33; letter-spacing:.2px;
+    background:rgba(251,242,221,.93); border:1px solid #d3b884; border-radius:5px; padding:5px 12px;
+    box-shadow:0 3px 9px rgba(120,95,40,.18); transform-origin:right center;   /* 플레인(오른쪽)에 매달린 깃발 → 왼쪽 끝이 펄럭 */
+    animation:bannerwave 1.1s ease-in-out infinite; }
+  @keyframes bannerwave {
+    0%,100%{ transform:skewY(-2.8deg) translateY(-1px) scaleX(1);    }
+    50%    { transform:skewY( 2.8deg) translateY( 1px) scaleX(.985); } }
+  .plane .rope { width:14px; height:0; border-top:2px dotted #b1b7bf; opacity:.65; margin:0 1px; }   /* 배너↔비행기 견인줄 */
+  .plane .planeimg svg { display:block; filter:drop-shadow(0 2px 3px rgba(70,66,60,.18)); animation:planebob 2.4s ease-in-out infinite; }
+  @keyframes planebob { 0%,100%{ transform:translateY(0) } 50%{ transform:translateY(-2px) } }
+  /* 표정 있는 구름 — 비행기보다 아래·더 느리게(다른 속도)·반대 방향으로 떠다님. z-index 2 = 배경 깊이감 */
+  #clouds { position:absolute; left:0; right:0; top:16%; height:30%; z-index:2; pointer-events:none; }
+  .cloud { position:absolute; animation-name:clouddrift; animation-timing-function:linear; animation-fill-mode:forwards; }
+  @keyframes clouddrift { from{ left:114%; } to{ left:-48%; } }     /* 오른→왼쪽(비행기와 반대) */
+  .cloud svg { display:block; filter:drop-shadow(0 3px 5px rgba(120,130,140,.16)); animation:cloudbob 3.6s ease-in-out infinite; }
+  @keyframes cloudbob { 0%,100%{ transform:translateY(0) } 50%{ transform:translateY(3px) } }
+  .cloud { pointer-events:auto; cursor:pointer; }   /* 터치 가능(컨테이너는 none → 구름만 받음) */
+  .cloud.pop svg { animation:cloudpop .34s ease-out forwards; }   /* 뿅 — 살짝 부풀었다 톡 사라짐 */
+  @keyframes cloudpop { 0%{ transform:scale(1) } 32%{ transform:scale(1.2) } 100%{ transform:scale(.2); opacity:0 } }
+  /* 터질 때 물방울 비 — 구름 자리에서 폭 터져 아래로 쏟아진다 */
+  .splash { position:fixed; z-index:7; pointer-events:none; transform:translate(-50%,-50%); }
+  .splash .drop { position:absolute; left:0; top:0; width:7px; height:9px; border-radius:50% 50% 50% 50%/60% 60% 42% 42%;
+    background:radial-gradient(circle at 38% 28%, #d2ecf5, #7fbcd6); box-shadow:0 1px 2px rgba(90,130,150,.25);
+    animation:raindrop .92s cubic-bezier(.32,.55,.5,1) forwards; }
+  @keyframes raindrop {
+    0%   { transform:translate(0,0) scale(.5);                                       opacity:0; }
+    18%  { transform:translate(calc(var(--dx)*.45), calc(var(--dy)*-.22)) scale(1);  opacity:1; }  /* 폭! 바깥+위로 */
+    100% { transform:translate(var(--dx), var(--dy)) scale(.85);                     opacity:0; }   /* 비처럼 아래로 */ }
+
+  .walkhint { position:absolute; left:0; right:0; bottom:4%; text-align:center; z-index:4;
+    font-family:'Nanum Pen Script',cursive; font-size:18px; color:#8a8071; animation:breathe 2.6s ease-in-out infinite; }
+  @keyframes breathe { 0%,100%{opacity:.55} 50%{opacity:1} }
+  /* 걷는 동안 로봇의 상태 로그 — 감정을 '오류/고장'으로 읽는 순진한 독백이 흐른다 */
+  #syslog { position:absolute; left:14px; right:14px; top:108px; bottom:auto; z-index:4; pointer-events:none;   /* mindsky(감정카운터 2줄, ~64px) + 하늘 비행기 띠(상단 ~90px) 둘 다 안 겹치게 아래로 */
+    display:flex; flex-direction:column; align-items:center; gap:4px; text-align:center; }
+  .syslog-line { font-family:'Gaegu',cursive; font-size:14px; line-height:1.4; color:#7c7468; max-width:300px;
+    opacity:0; transform:translateY(8px); transition:opacity .8s ease, transform .8s ease;
+    text-shadow:0 1px 0 rgba(247,243,234,.7); }
+  .syslog-line.in  { opacity:.92; transform:none; }
+  .syslog-line.out { opacity:0; transform:translateY(-6px); }
+  .syslog-line .pre  { color:#9a9384; letter-spacing:.3px; }   /* 차가운 기계 말투 */
+  .syslog-line .warm { color:#9a6a3a; }                        /* 감정이 새어나온 부분 */
+  /* 회차 후 '기억 재해석' — 옛 차가운 로그에 줄을 긋고 손글씨로 다시 읽는다 */
+  .syslog-line.reinterp { max-width:330px; }
+  .syslog-line .struck  { display:block; font-family:'Courier New',monospace; font-size:12px; color:#a7a08f;
+    text-decoration:line-through; text-decoration-color:#c7bda6; opacity:.85; }
+  .syslog-line .rewrite { display:block; font-family:'Gaegu',cursive; font-size:17px; color:#9a6a3a; margin-top:3px; }
+  .syslog-line .rewrite .pen { color:#bfa06a; margin-right:3px; }
+  .tapfx { position:fixed; pointer-events:none; z-index:30; font-family:'Nanum Pen Script',cursive;
+    color:#9a7b4a; font-size:16px; animation:tapup .7s ease-out forwards; }
+  @keyframes tapup { from{opacity:.9; transform:translate(-50%,0)} to{opacity:0; transform:translate(-50%,-34px)} }
+  /* 구름 선물 = 물빛, 살짝 크게 */
+  .tapfx.gift { color:#3d8fb0; font-size:22px; font-weight:700; text-shadow:0 1px 6px rgba(127,188,214,.5); }
+  /* 크리 탭 = 더 크고 금빛 */
+  .tapfx.crit { color:#e0892a; font-size:26px; font-weight:700; text-shadow:0 1px 7px rgba(224,138,42,.5);
+    animation:tapcrit .9s ease-out forwards; }
+  @keyframes tapcrit { 0%{opacity:1; transform:translate(-50%,0) scale(.6)} 22%{transform:translate(-50%,-6px) scale(1.28)}
+    100%{opacity:0; transform:translate(-50%,-46px) scale(1)} }
+  /* 감정 첫 도착 = 글자 조각 줍기 + 오독(pick) — 모달(정정) 전 작은 비트 */
+  .pickFrag { position:fixed; transform:translate(-50%,-50%); z-index:30; pointer-events:none; font-size:20px;
+    opacity:0; transition:opacity .3s ease, transform .7s cubic-bezier(.3,1,.4,1); }
+  .pickFrag.in { opacity:.95; transform:translate(-50%,-50%) translateY(-44px); }
+  .pickFrag.out { opacity:0; }
+  .pickCap { position:fixed; transform:translate(-50%,-50%); z-index:31; pointer-events:none; max-width:230px;
+    font-family:'Gaegu',cursive; font-size:18px; line-height:1.35; color:#6a5f52; text-align:center; white-space:pre-line;
+    background:rgba(255,253,247,.94); border:1px solid #e3d8c2; border-radius:13px; padding:8px 14px;
+    box-shadow:0 4px 13px rgba(80,72,60,.16);
+    opacity:0; transition:opacity .35s ease, transform .55s cubic-bezier(.3,1,.5,1); }
+  .pickCap.in { opacity:1; transform:translate(-50%,-50%) translateY(-12px); }
+  .pickCap.out { opacity:0; transform:translate(-50%,-50%) translateY(-36px); }
+  /* 연타 콤보 뱃지 */
+  #comboBadge { position:fixed; transform:translate(-50%,-100%); z-index:31; pointer-events:none;   /* left/top은 showCombo에서 로봇 바로 위로 설정 */
+    font-family:'Nanum Pen Script',cursive; color:#e0892a; font-size:20px; background:rgba(255,250,240,.84);
+    padding:3px 13px; border-radius:14px; box-shadow:0 2px 10px rgba(180,120,40,.18); white-space:nowrap;
+    opacity:0; transition:opacity .25s, transform .25s; }
+  #comboBadge.show { opacity:1; transform:translate(-50%,calc(-100% - 5px)); }
+  #comboBadge b { font-size:23px; } #comboBadge span { color:#b07b3a; font-size:15px; }
+
+  /* ---------- 온보딩 후 길 위 만남 장면: 로봇 ↔ 샘이 말풍선으로 대화 ---------- */
+  #samScene { position:absolute; inset:0; z-index:6; display:none; }
+  #samScene.show { display:block; }
+  #sam { position:absolute; left:73%; bottom:2%; width:116px; z-index:4;
+    opacity:0; transform:translateX(calc(-50% + 30px)); transition:opacity .6s ease, transform .6s ease; }
+  #sam.in  { opacity:1; transform:translateX(-50%); }
+  #sam.out { opacity:0; transform:translateX(calc(-50% + 30px)); }
+  #sam svg { width:100%; filter:drop-shadow(0 5px 6px rgba(70,66,60,.18)); animation:bob 4.4s ease-in-out infinite; }
+  /* 말풍선: 꼬리가 화자(로봇/샘) 머리 위 중앙을 가리키도록 left = 화자 중심, translateX(-50%) */
+  .scenebub { position:absolute; width:max-content; max-width:220px; word-break:keep-all;
+    padding:11px 15px; border-radius:16px; z-index:6; text-align:center;
+    font-family:'Gaegu',cursive; font-size:19px; line-height:1.5; color:#4d443a; white-space:pre-line;
+    background:rgba(252,249,242,.96); border:1px solid rgba(150,140,120,.42); box-shadow:0 4px 11px rgba(70,66,60,.13);
+    opacity:0; transform:translateY(8px) scale(.96); transition:opacity .35s ease, transform .35s ease; }
+  .scenebub.in  { opacity:1; transform:none; }
+  .scenebub.out { opacity:0; transform:translateY(-6px); }
+  /* 꼬리는 --tail 위치(화자 머리 위)를 가리킴. 말풍선 본체는 화면 안으로 클램프 */
+  .scenebub::after { content:''; position:absolute; bottom:-9px; left:var(--tail,50%); transform:translateX(-50%);
+    width:0; height:0; border:9px solid transparent; border-bottom:0; border-top-color:rgba(252,249,242,.96); }
+  /* left/--tail은 JS가 화자 위치+화면폭에 맞춰 인라인 지정; top만 클래스로 */
+  .scenebub.fromSam { top:20%; }
+  .scenebub.fromBot { top:30%; }
+  #sceneTapHint { position:absolute; left:0; right:0; bottom:4%; text-align:center; z-index:6; display:none;
+    font-family:'Nanum Pen Script',cursive; font-size:17px; color:#8a8071; animation:breathe 2.6s ease-in-out infinite; }
+  #sceneTapHint.show { display:block; }
+  /* 샘 장면(튜토리얼) 넘어가기 — #samScene 자식이라 장면 표시될 때만 보임 */
+  #samSkip { position:absolute; top:10px; right:12px; z-index:8;
+    padding:7px 13px; border:1px solid #cbbfae; border-radius:16px; background:rgba(251,248,243,.82);
+    font-family:'Nanum Myeongjo',serif; font-size:12px; color:#9a917f; cursor:pointer; }
+  #samSkip:active { background:#ece3d0; }
+
+  /* ---------- 엔딩 시네마틱 ---------- */
+  .endcine { position:absolute; inset:0; z-index:46; display:none; flex-direction:column; align-items:center; justify-content:center;
+    padding:36px; text-align:center; background:linear-gradient(160deg,#e8e9e5,#dcd9d1); transition:background 2.4s ease; cursor:pointer; }
+  .endcine.show { display:flex; animation:fade 1.3s ease; }
+  .endcine.warm { background:linear-gradient(160deg,#fbf3e6,#f3e2cd); }      /* 깨달음에서 따뜻해진다 */
+  .endcine .efigure { width:128px; margin-bottom:20px; opacity:0; transform:translateY(16px) scale(.9);
+    transition:opacity 1.4s ease, transform 1.4s ease; }
+  .endcine .efigure.in { opacity:1; transform:none; }
+  .endcine .efigure svg { width:100%; filter:url(#paintSoft) drop-shadow(0 5px 7px rgba(70,66,60,.16)); animation:bob 4s ease-in-out infinite; }
+  .endcine .eheart { transform-box:fill-box; transform-origin:center; animation:heartbeat 1.5s ease-in-out infinite; }
+  @keyframes heartbeat { 0%,100%{transform:scale(1)} 14%{transform:scale(1.18)} 28%{transform:scale(1)} 42%{transform:scale(1.1)} 56%{transform:scale(1)} }
+  .endcine .etext { font-family:'Gaegu',cursive; font-size:27px; line-height:1.75; color:#4d443a; white-space:pre-line;
+    max-width:340px; min-height:150px; display:flex; align-items:center; justify-content:center;
+    opacity:0; transform:translateY(12px); transition:opacity 1.1s ease, transform 1.1s ease; }
+  .endcine .etext.in { opacity:1; transform:none; }
+  .endcine .etext.climax { font-size:31px; color:#9a6a3a; font-weight:700; }
+  .endcine .ehint { position:absolute; bottom:6%; font-family:'Nanum Pen Script',cursive; font-size:16px; color:#9a8f7e;
+    opacity:0; transition:opacity .6s; }
+  .endcine .ehint.in { opacity:.65; animation:breathe 2.6s ease-in-out infinite; }
+  .endcine .ebtn { margin-top:30px; padding:13px 24px; border:1px solid #b9a98c; background:#ece3d0;
+    font-family:'Nanum Myeongjo',serif; font-weight:700; font-size:15px; color:#6f5d3c; letter-spacing:2px; border-radius:2px;
+    opacity:0; pointer-events:none; transition:opacity .9s; }
+  .endcine .ebtn.in { opacity:1; pointer-events:auto; cursor:pointer; }
+
+  /* ---------- 온보딩(튜토리얼 + 이름짓기) ---------- */
+  .intro { position:absolute; inset:0; z-index:40; display:none; flex-direction:column; align-items:center; justify-content:center;
+    padding:30px; background:linear-gradient(160deg,#eef0ea,#e6e1d4); }
+  .intro.show { display:flex; animation:fade .6s ease; }
+  .introcard { width:100%; max-width:320px; text-align:center; }
+  .introbadge { font-size:12px; color:#9a8a6a; letter-spacing:3px; margin-bottom:24px; }
+  .introtext { font-family:'Gaegu',cursive; font-size:24px; line-height:1.7; color:#4d443a; white-space:pre-line;
+    min-height:170px; display:flex; align-items:center; justify-content:center; transition:color .4s, font-family .1s; }
+  .introtext.cold { font-family:'Courier New',monospace; font-size:16px; letter-spacing:1px; color:#6f7d72; }  /* 차가운 기계 비트 */
+  .introname { display:flex; gap:8px; justify-content:center; align-items:center; margin:4px 0; }
+  .introname input { font-family:'Gaegu',cursive; font-size:23px; text-align:center; width:165px; padding:7px 10px;
+    border:none; border-bottom:2px solid #c9a86a; background:transparent; color:#6f5d3c; outline:none; }
+  .introname button { font-size:19px; background:rgba(247,243,234,.7); border:1px solid #c9c2b3; border-radius:50%;
+    width:42px; height:42px; cursor:pointer; }
+  .intro #introBtn { margin-top:26px; width:100%; max-width:280px; padding:13px; border:1px solid #b9a98c; background:#ece3d0;
+    font-family:'Nanum Myeongjo',serif; font-weight:700; font-size:15px; color:#6f5d3c; letter-spacing:2px; cursor:pointer; border-radius:2px; }
+  .intro #introBtn:active { background:#e0d4ba; }
+  .introskip { margin-top:15px; font-size:12px; color:#a59b8a; cursor:pointer; }
+
+  /* ---------- 탭으로 깨우기(온보딩 첫 비트) — 화면 중앙 프롬프트 ---------- */
+  #wakePrompt { position:absolute; left:50%; top:30%; transform:translate(-50%,-50%); z-index:6;
+    font-family:'Gaegu',cursive; font-size:22px; color:#5b5247; text-align:center; white-space:pre-line;
+    opacity:0; transition:opacity .5s; pointer-events:none; text-shadow:0 1px 3px rgba(255,255,255,.7); }
+  #wakePrompt.show { opacity:1; }
+  #wakePrompt.show:not(.deficit):not(.cold) { animation:wakePulse 1.5s ease-in-out infinite; }
+  #wakePrompt.deficit { font-size:20px; color:#7a6f63; }   /* 결핍 한 줄 — 조용히 */
+  #wakePrompt.cold { font-family:'Courier New',monospace; font-size:14px; letter-spacing:1px; color:#9a7676; }  /* [ERROR] 동기화 실패 */
+  @keyframes wakePulse { 0%,100%{opacity:.5} 50%{opacity:1} }
+
+  /* ---------- 회차 정산 (프레스티지) ---------- */
+  .prestige { position:absolute; inset:0; z-index:42; display:none; flex-direction:column; align-items:center; justify-content:center;
+    padding:30px; background:linear-gradient(160deg,#eaf0ee,#dfe6e2); }
+  .prestige.show { display:flex; animation:fade .7s ease; }
+  .prestige .pcard { width:100%; max-width:330px; text-align:center; }
+  .prestige .pbadge { font-size:12px; color:#7a9088; letter-spacing:3px; margin-bottom:18px; }
+  .prestige .pgain { font-family:'Gaegu',cursive; font-size:30px; color:#3f6b62; line-height:1.35; }
+  .prestige .pgain b { color:#2f8f7d; }
+  .prestige .pcycle { font-size:12px; color:#869a92; margin:6px 0 22px; }
+  .prestige .lookbox { border:1px solid #cdd8d2; background:rgba(247,250,248,.6); border-radius:4px; padding:15px 14px 16px; text-align:left; }
+  .prestige .lookttl { font-family:'Nanum Myeongjo',serif; font-weight:700; font-size:14px; color:#3f6b62; letter-spacing:1px; }
+  .prestige .lookdesc { font-size:12px; color:#7a857e; line-height:1.6; margin:6px 0 12px; word-break:keep-all; }
+  .prestige .lookprev { font-family:'Gaegu',cursive; font-size:16px; color:#9a6a3a; min-height:26px; margin-bottom:10px;
+    border-left:2px solid #cdb89a; padding-left:10px; }
+  .prestige .lookprev .s { display:block; font-family:'Courier New',monospace; font-size:11px; color:#a7a08f; text-decoration:line-through; }
+  .prestige .lookrow { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .prestige .lookcnt { font-size:12px; color:#5f7a72; }
+  .prestige .lookcnt b { color:#2f8f7d; font-size:15px; }
+  .prestige #lookBuy { padding:8px 12px; border:1px solid #aac0b6; background:#e3eee8; border-radius:3px;
+    font-family:'Nanum Myeongjo',serif; font-size:12px; color:#3f6b62; cursor:pointer; white-space:nowrap; }
+  .prestige #lookBuy:disabled { opacity:.4; cursor:default; }
+  .prestige #lookBuy:active:enabled { background:#d3e4db; }
+  .prestige #prestigeGo { margin-top:24px; width:100%; padding:14px; border:1px solid #9bb3a8; background:#dfeae4;
+    font-family:'Nanum Myeongjo',serif; font-weight:700; font-size:15px; color:#3f6b62; letter-spacing:2px; cursor:pointer; border-radius:2px; }
+  .prestige #prestigeGo:active { background:#cfe0d8; }
+  /* HUD 마음의 깊이 */
+  .stat.depth b { color:#2f8f7d; }
+
+  /* ---------- 시작 게이트 (로그인 권장) ---------- */
+  .gate { position:absolute; inset:0; z-index:44; display:none; flex-direction:column; align-items:center; justify-content:center;
+    padding:34px; background:linear-gradient(160deg,#eef0ea,#e6e1d4); }
+  .gate.show { display:flex; animation:fade .6s ease; }
+  .gate .gcard { width:100%; max-width:320px; text-align:center; }
+  .gate .glogo { font-size:27px; font-weight:700; color:#54514a; letter-spacing:2px; white-space:nowrap; }
+  .gate .gtag { font-family:'Gaegu',cursive; font-size:16px; color:#8a7f6a; margin:13px 0 36px; line-height:1.65; word-break:keep-all; }
+  .gate #gGoogle { width:100%; padding:14px; border:1px solid #b9a98c; background:#ece3d0;
+    font-family:'Nanum Myeongjo',serif; font-weight:700; font-size:15px; color:#6f5d3c; letter-spacing:1px; cursor:pointer; border-radius:3px; }
+  .gate #gGoogle:active { background:#e0d4ba; }
+  .gate #gBrowse { margin-top:16px; font-size:13px; color:#a59b8a; cursor:pointer; }
+  .gate .gnote { margin-top:28px; font-size:11px; color:#b0a892; line-height:1.6; }
+
+  /* ---------- 모달 (만남/재회) ---------- */
+  .modal { position:absolute; inset:0; z-index:20; display:none; align-items:center; justify-content:center; padding:26px;
+    background:rgba(40,40,36,.42); }
+  .modal.show { display:flex; animation:fade .5s ease; }
+  @keyframes fade { from{opacity:0} to{opacity:1} }
+  .card { width:100%; max-width:330px; max-height:92%; overflow-y:auto; background:#fcf9f5; border:1px solid #e3dcec; padding:26px 24px 22px;
+    text-align:center; position:relative; box-shadow:0 24px 60px rgba(0,0,0,.35); animation:risein .6s ease; }
+  @keyframes risein { from{transform:translateY(26px); opacity:0} to{transform:none; opacity:1} }
+  .card::after { content:""; position:absolute; inset:0; pointer-events:none; opacity:.18; mix-blend-mode:multiply;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.3'/></svg>"); }
+  .card .badge { font-size:11px; color:#9a8a6a; letter-spacing:3px; }
+  .card .emo { font-size:25px; font-weight:700; color:#7a6440; margin:6px 0 6px; }
+  .card .lvtag { font-size:11px; color:#9a7b4a; margin-bottom:12px; }
+  .card .situ { font-size:13px; color:#6a6358; line-height:1.6; margin-bottom:14px; border-left:2px solid #b9a98c; padding-left:11px; text-align:left; }
+  .card .situ b { color:#9a7b4a; }
+  .card .log { font-family:'Gaegu','Nanum Myeongjo',cursive; font-size:19px; line-height:1.65; color:#463f33;
+    text-align:left; white-space:pre-line; letter-spacing:.2px; border-top:1px solid #e2d9c6; padding-top:15px; word-break:keep-all; }
+  .card .reward { margin-top:14px; font-size:12px; color:#7a6a4a; line-height:1.7; }
+  .card .reward .r { display:block; }
+  .card button#mBtn { margin-top:18px; width:100%; padding:13px; border:1px solid #b9a98c; background:#ece3d0;
+    font-family:'Nanum Myeongjo',serif; font-weight:700; font-size:15px; color:#6f5d3c; letter-spacing:2px; cursor:pointer; transition:background .2s; }
+  .card button#mBtn:active { background:#e0d4ba; }
+  .card button.btn2 { margin-top:8px; width:100%; padding:9px; border:1px dashed #c4b79c; background:transparent;
+    font-family:'Nanum Myeongjo',serif; font-weight:400; font-size:12.5px; color:#9a7b4a; letter-spacing:1px; cursor:pointer; transition:background .2s; }
+  .card button.btn2:active { background:#f0e8d6; }
+  /* 재회 + 이전 대사 = 한 줄에 반반 */
+  .card .modal-actions { display:flex; gap:8px; margin-top:8px; }
+  .card .modal-actions .btn2 { flex:1 1 0; min-width:0; margin-top:0; padding:9px 6px; letter-spacing:0;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .card .modal-actions .btn2.prev { color:#6f5d3c; }
+  /* ---------- 안내(코치) 오버레이 ---------- */
+  .coach { position:absolute; inset:0; z-index:46; display:none; align-items:center; justify-content:center; padding:30px;
+    background:rgba(40,42,44,.5); }
+  .coach.show { display:flex; animation:fade .35s ease; }
+  .coach .ccard { width:100%; max-width:300px; text-align:center; background:#fcf9f5; border:1px solid #e3dcec;
+    border-radius:8px; padding:24px 22px 20px; box-shadow:0 18px 50px rgba(0,0,0,.3); }
+  .coach .ctitle { font-family:'Gaegu',cursive; font-weight:700; font-size:21px; color:#7a6440; margin-bottom:14px; }
+  .coach .cbody { font-size:14px; line-height:1.85; color:#5a5750; word-break:keep-all; }
+  .coach .cbody b { color:#9a7b4a; }
+  .coach #coachBtn { margin-top:20px; width:100%; padding:12px; border:1px solid #b9a98c; background:#ece3d0;
+    font-family:'Nanum Myeongjo',serif; font-weight:700; font-size:15px; color:#6f5d3c; letter-spacing:1px; cursor:pointer; border-radius:4px; }
+  .coach #coachBtn:active { background:#e0d4ba; }
+  /* ---------- '다시 만나기'(재회) 버튼 — 노드 위에 서 있을 때만 ---------- */
+  .reunionbtn { position:absolute; left:50%; bottom:18px; transform:translateX(-50%); z-index:8; display:none;
+    padding:11px 20px; border:1px solid #c9a86a; border-radius:24px; background:#fbf2dd;
+    font-family:'Gaegu',cursive; font-weight:700; font-size:15px; color:#7a5f33; cursor:pointer;
+    box-shadow:0 6px 18px rgba(120,95,40,.28); white-space:nowrap; max-width:72%; overflow:hidden; text-overflow:ellipsis; }
+  .reunionbtn.show { display:block; animation:fadein .3s ease; }
+  .reunionbtn.off { opacity:.45; cursor:default; box-shadow:0 3px 9px rgba(120,95,40,.16); filter:grayscale(.4); }
+  .reunionbtn:not(.off):active { background:#f1e4c2; }
+  .reunionbtn b { color:#9a6a3a; }
+  /* ---------- 자루(인벤토리) — 로봇 앞손에 쥐고, 터치하면 모은 감정 ---------- */
+  #walkRobot #sack { pointer-events:auto; cursor:pointer; }   /* 로봇 SVG 안 자루만 터치 가능(로봇 본체는 pointer-events:none) */
+  #walkRobot #sack:active { opacity:.85; }
+  /* ── 자루 내부: 기억 약장 ── */
+  .sackov { position:absolute; inset:0; z-index:30; display:none; align-items:center; justify-content:center; padding:24px; background:rgba(10,8,4,.55); }
+  .sackov.show { display:flex; animation:fade .3s ease; }
+  .sackcard { width:100%; max-width:340px; max-height:86%; overflow-y:auto; background:#3a2410;
+    border:2px solid #8a5c28; border-radius:6px; padding:18px 16px 14px;
+    box-shadow:0 0 0 5px #2c1a08, 0 0 0 7px #a07030, 0 28px 70px rgba(0,0,0,.7); animation:risein .4s ease; }
+  .sacktitle { font-family:'Gaegu',cursive; font-size:15px; color:#f0c870; text-align:center; letter-spacing:3px;
+    border:1px solid #7a4e1e; border-radius:3px; padding:5px 10px; margin-bottom:5px; background:#4e3018; }
+  .sackcount { font-size:10px; color:#b08040; text-align:center; margin:0 0 6px; font-family:monospace; letter-spacing:1px; }
+  .sackexchange { display:flex; flex-direction:column; align-items:center; gap:6px; margin:0 0 9px; font-size:11px; color:#9a6a2a; }
+  .sackexbal { font-size:12px; } .sackexbal b { color:#c98a2a; } .sackexdot { opacity:.4; margin:0 3px; }
+  .sackexrow { display:flex; align-items:center; gap:6px; flex-wrap:wrap; justify-content:center; }
+  .sackexarrow { opacity:.55; }
+  .sackexbtn { font-family:inherit; font-size:11px; border:1px solid #e0c48a; background:#fbf3e0; color:#9a6a2a; padding:3px 10px; border-radius:11px; cursor:pointer; }
+  .sackexbtn:disabled { opacity:.4; cursor:default; }
+  .sackexbtn:active:not(:disabled) { transform:scale(.96); }
+  .sackshelf { padding:10px 2px 14px; border-bottom:4px solid #6a3e18; box-shadow:0 4px 0 #4a2c10, 0 6px 12px rgba(0,0,0,.35); margin-bottom:2px; }
+  .sackshelf:last-child { border-bottom:none; box-shadow:none; padding-bottom:4px; }
+  .sackcat { font-size:9.5px; color:#c89048; letter-spacing:1.5px; margin:0 0 9px; font-family:monospace; text-transform:uppercase; }
+  .sackbottles { display:flex; flex-wrap:wrap; gap:7px; }
+  .btl { display:flex; flex-direction:column; align-items:center; width:26px; }
+  .btl-cork { width:10px; height:5px; background:#c8a050; border-radius:2px 2px 0 0; border:1px solid #8a6820; }
+  .btl-neck { width:9px; height:7px; border:1px solid rgba(255,255,255,.18); border-bottom:none; }
+  .btl-body { width:22px; height:38px; border-radius:3px 3px 8px 8px; border:1px solid rgba(255,255,255,.2); position:relative; overflow:hidden; }
+  .btl.filled .btl-body::before { content:''; position:absolute; left:3px; top:3px; width:3px; height:55%; background:rgba(255,255,255,.3); border-radius:2px; }
+  .btl.filled .btl-body::after { content:''; position:absolute; bottom:0; left:0; right:0; height:30%; background:rgba(0,0,0,.15); }
+  .btl.empty .btl-body { background:rgba(255,255,255,.05); border-color:rgba(255,255,255,.12); }
+  .btl.empty .btl-cork { background:#5a3c18; border-color:#3a2408; opacity:.5; }
+  .btl.empty .btl-neck { border-color:rgba(255,255,255,.08); }
+  .btl-lbl { font-size:6px; text-align:center; margin-top:3px; line-height:1.3; white-space:nowrap; font-family:monospace; color:#8a6030; }
+  .btl.filled .btl-lbl { color:#f0c870; }
+  .sackempty { text-align:center; color:#b08040; font-size:13px; line-height:1.9; padding:20px 0; font-family:'Gaegu',cursive; }
+  .sackcard #sackClose { margin-top:14px; width:100%; padding:10px; border:1px solid #7a4e1e; border-radius:4px;
+    background:#4e3018; font-family:'Gaegu',cursive; font-size:14px; color:#f0c870; cursor:pointer; letter-spacing:2px; }
+  .sackcard #sackClose:active { background:#5e3c20; }
+  /* ---------- 상황 figure (길 위, 그 노드의 장면 동물/사람) — 노드 바뀌면 스르륵 교체 ---------- */
+  #situFig { position:absolute; right:2%; bottom:4%; width:auto; z-index:4; pointer-events:none;
+    opacity:0; transform:translateY(8px) scale(.96); transition:opacity .5s ease, transform .5s ease; }
+  #situFig.show { opacity:1; transform:none; }
+  #situFig svg { width:100%; display:block; filter:url(#paintSoft) drop-shadow(0 4px 5px rgba(70,66,60,.18)); }
+  /* 감정 일러스트: 높이 기준으로 정규화해 모든 그림이 로봇과 비슷한 크기로 보이게(각 그림 비율은 제각각) */
+  #situFig img { height:160px; width:auto; display:block; filter:drop-shadow(0 4px 5px rgba(70,66,60,.18)); }
+  /* 무지개(아름다움)는 가로형(945×600)이라 height:160px면 폭이 ~251px로 뻗어 로봇(left:44%)을 덮음 → 폭으로 제한해 우하단 코너에만 머물게(2026-06-22) */
+  #situFig img.emoFig-beauty { height:auto; width:140px; }
+  #situFig .dogFig { width:33%; margin:0 auto; }
+  @keyframes dgBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+  @keyframes dgJump{0%,100%{transform:translateY(0)}38%{transform:translateY(-13px)}54%{transform:translateY(-13px)}}
+  @keyframes dgChase{0%,100%{transform:rotate(-7deg)}50%{transform:rotate(7deg)}}
+  @keyframes dgPant{0%,100%{transform:scaleY(.55)}50%{transform:scaleY(1.05)}}
+  @keyframes dgWag{0%,100%{transform:rotate(-16deg)}50%{transform:rotate(16deg)}}
+  @keyframes dgBlink{0%,90%,100%{transform:scaleY(1)}95%{transform:scaleY(.12)}}
+  #situFig .anim,#situFig .tongue,#situFig .tail,#situFig .eyes{transform-box:fill-box}
+  #situFig .a-bob{animation:dgBob 1.1s ease-in-out infinite;transform-origin:center bottom}
+  #situFig .a-jump{animation:dgJump 1s cubic-bezier(.3,.7,.5,1) infinite;transform-origin:center bottom}
+  #situFig .a-chase{animation:dgChase 1.1s ease-in-out infinite;transform-origin:center 70%}
+  #situFig .tongue{animation:dgPant .5s ease-in-out infinite;transform-origin:top center}
+  #situFig .tail{animation:dgWag .4s ease-in-out infinite;transform-origin:left center}
+  #situFig .eyes{animation:dgBlink 3.4s infinite;transform-origin:center}
+  /* ── 처녀귀신(불안·불편 갈래) ── */
+  #situFig .ghostFig { width:29%; margin:0 auto; }
+  @keyframes ghFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+  @keyframes ghShiver{0%,100%{transform:translateX(0)}25%{transform:translateX(-1.4px)}75%{transform:translateX(1.4px)}}
+  @keyframes ghHair{0%,100%{transform:skewX(0deg)}50%{transform:skewX(-2deg)}}
+  @keyframes ghHem{0%,100%{transform:translateY(0) scaleX(1)}50%{transform:translateY(1.5px) scaleX(1.03)}}
+  @keyframes ghTear{0%{transform:translateY(0);opacity:0}20%{opacity:.9}100%{transform:translateY(15px);opacity:0}}
+  #situFig .hair,#situFig .hem,#situFig .tear{transform-box:fill-box}
+  #situFig .gh-float{animation:ghFloat 2.8s ease-in-out infinite;transform-origin:center}
+  #situFig .gh-shiver{animation:ghShiver .18s steps(2) infinite;transform-origin:center}
+  #situFig .hair{animation:ghHair 3.4s ease-in-out infinite;transform-origin:center top}
+  #situFig .hem{animation:ghHem 2s ease-in-out infinite;transform-origin:center top}
+  #situFig .tear{animation:ghTear 2.4s ease-in infinite;transform-origin:center top}
+  /* ── 잔잔·시림(엄마 아크) ── */
+  #situFig .calmFig { width:45%; margin:0 auto; }
+  #situFig .calmObjFig { width:52%; margin:0 auto; }
+  #situFig .coatFig { width:38%; margin:0 auto; }
+  #situFig .calmChildFig { width:25%; margin:0 auto; }
+  @keyframes cmBreathe{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+  @keyframes cmCoat{0%,100%{transform:rotate(-.5deg)}50%{transform:rotate(.5deg)}}
+  #situFig .cm-breathe{animation:cmBreathe 2.8s ease-in-out infinite;transform-origin:center bottom}
+  #situFig .cm-coat{animation:cmCoat 5s ease-in-out infinite;transform-origin:top center}
+  #situFig .cm-blink{animation:dgBlink 4.2s infinite;transform-origin:center}
+
