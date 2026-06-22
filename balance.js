@@ -34,6 +34,12 @@ const TIER = {
   sorrow:"big", empathy:"mid", longing:"mid", compassion:"small", calm:"small",
 };
 const LOOKBACK_COST = 2;                            // 기억 한 조각 재해석 비용(마음의 깊이)
+// 🆕 몸 온기 상점 — 몸 11을 그래프에서 빼고 자루에서 ✨온기로 구매/단련(5단 이야기). (economy-redesign 후속)
+// ⚠️ §4 보장: 첫 구매 11개 합 ≤ 감정 27코인(무재회·무광고 최소 플레이어도 인간 달성). 합 = 25.
+const BODY_ORDER = ["skin","bone","muscle","nerve","endocrine","heart","lymph","lung","stomach","kidney","repro"];
+const BODY_BUY   = [1,1,2,2,2,2,3,3,3,3,3];   // 부위별 '첫 구매' 온기(BODY_ORDER 순서). 합 25.
+const BODY_TRAIN_BASE = 3;                    // '단련' 1회(Lv1→2) 기본 온기 — 깊은 이야기(2~5단)+탭 +1. 진짜 큰 소비처(선택).
+const BODY_TRAIN_GROW = 1.6;                  // 단련 레벨마다 ×(점증). Lv1→2=3·2→3=5·3→4=8·4→5=13…
 const OFFLINE_CAP_H = 4;            // 오프라인 적립 상한(시간)
 // 수집(감정+몸) 누적 개수가 at를 넘을 때마다 전역 걸음/초 ×mult 점프.
 // cells 근거: 제너레이터 '랭크 돌파마다 ×3' — 선형 덧셈이 아니라 '돌파=배율'로 자릿수 점프(gap-analysis Phase 3 ①).

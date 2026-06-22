@@ -124,9 +124,9 @@ function openSack(){
     if(!ns.length) return;
     html+=`<div class="sackshelf"><div class="sackcat">${cat.label}</div><div class="sackbottles">${ns.map(n=>btl(n,PEOPLE[n.key])).join("")}</div></div>`;
   });
-  if(bodyNodes.length)
-    html+=`<div class="sackshelf"><div class="sackcat">ERR-L5  /  신체류</div><div class="sackbottles">${bodyNodes.map(n=>btl(n,BODY[n.key])).join("")}</div></div>`;
+  html+=bodyShopHtml();   // 🆕 몸 = 그래프 대신 자루에서 온기로 구매/단련(5단 이야기)
   $("#sackBody").innerHTML=html||`<div class="sackempty">약장이 비어 있다.<br><span style="font-size:11px;opacity:.5">길에서 만나야 채워진다</span></div>`;
+  $("#sackBody").querySelectorAll("[data-body]").forEach(b=> b.onclick=()=>buyBody(b.dataset.body));   // 🆕 몸 구매/단련 버튼
   renderSackEx();                       // ✨온기 → 걸음 환전 바 갱신
   $("#sackModal").classList.add("show");
 }
@@ -400,6 +400,46 @@ function renderSackEx(){
   const b1=document.getElementById("sackEx1"), ba=document.getElementById("sackExAll");
   if(b1) b1.onclick=()=>convertCoins(1);
   if(ba) ba.onclick=()=>convertCoins(S.coins);
+}
+
+/* 🆕 몸 온기 상점 — 자루 안. 몸을 그래프에서 빼고 온기로 구매(첫) + 단련(반복, 깊은 이야기 2~5단). 인간 게이트=11개 '구매'. */
+function bodyBuyCost(key){ const i=BODY_ORDER.indexOf(key); return (i>=0 && BODY_BUY[i]!=null)?BODY_BUY[i]:3; }   // 첫 구매 온기
+function bodyTrainCost(lv){ return Math.max(1, Math.round(BODY_TRAIN_BASE*Math.pow(BODY_TRAIN_GROW, Math.max(0,lv-1)))); }  // 단련(Lv lv→lv+1) 온기
+function bodyShopHtml(){
+  const unlocked = learnedCount()>=FRAG_TOTAL;     // 몸은 감정 27 다 모은 뒤(맨 마지막)
+  const rows = BODY_ORDER.map(key=>{
+    const bd=BODY[key], node=NODES.find(n=>n.id===key), icon=node?node.icon:"🫀";
+    const lv=S.levels[key]||0, has=lv>0;
+    const cost=has?bodyTrainCost(lv):bodyBuyCost(key);
+    const can=unlocked && (S.coins||0)>=cost;
+    return `<div class="bshoprow${has?' has':''}">`
+      +`<span class="bshopname">${icon} ${bd.name}</span>`
+      +`<span class="bshoplv">${has?('Lv'+lv):'—'}</span>`
+      +`<button class="bshopbtn" data-body="${key}" ${can?'':'disabled'}>${has?'단련':'구매'} ✨${cost}</button>`
+      +`</div>`;
+  }).join("");
+  const lock = unlocked?'':`<div class="bshoplock">🔒 감정 27을 다 모은 뒤 열려요 (${learnedCount()}/${FRAG_TOTAL})</div>`;
+  return `<div class="sackshelf bshop"><div class="sackcat">🫀 몸 만들기 · ${bodyCount()}/${BODY_TOTAL}</div>${lock}${rows}</div>`;
+}
+function bodyStoryModal(key, lv){   // 구매/단련 직후 그 몸의 이야기 한 컷(자루 위 모달)
+  const bd=BODY[key]; const idx=Math.min(lv-1, bd.lines.length-1); const first=lv===1;
+  fillModal({
+    badge: first?"몸의 한 부분을 얻다":"몸이 더 단단해진다",
+    emo:`〔 ${bd.name} 〕`, lv: first?'⚡ 탭 +1':`Lv${lv} · ⚡ 탭 +1`,
+    situ: first?bd.situ:"", log: bd.lines[idx],
+    reward: first?[`🫀 몸조각 +1 (${bodyCount()}/${BODY_TOTAL})`,'⚡ 탭 +1']:[`📖 ${bd.name}이(가) 더 깊어진다`,'⚡ 탭 +1'],
+    closeText:"…", onPrev: (!first)?()=>showPrevLines({type:"body", key, id:key}):null
+  });
+}
+function buyBody(key){
+  if(learnedCount()<FRAG_TOTAL){ nudge("감정 27을 다 모은 뒤에 몸을 만들 수 있어"); return; }
+  const lv=S.levels[key]||0;
+  const cost=lv>0?bodyTrainCost(lv):bodyBuyCost(key);
+  if((S.coins||0)<cost){ nudge(`✨온기 ${fmt(cost-(S.coins||0))} 더 필요해`); return; }
+  S.coins-=cost; S.levels[key]=lv+1;
+  track("body_buy",{key, lv:lv+1, cost, total:bodyCount(), anon:_anon()});
+  saveState(); refreshHUD(); openSack();        // 자루 상점 행·온기 갱신
+  bodyStoryModal(key, lv+1);                     // 이야기 한 컷(자루 위에)
 }
 
 /* ---------- 모달 ---------- */

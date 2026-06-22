@@ -519,6 +519,17 @@
   .sackshelf:last-child { border-bottom:none; box-shadow:none; padding-bottom:4px; }
   .sackcat { font-size:9.5px; color:#c89048; letter-spacing:1.5px; margin:0 0 9px; font-family:monospace; text-transform:uppercase; }
   .sackbottles { display:flex; flex-wrap:wrap; gap:7px; }
+  /* 🆕 몸 온기 상점(자루 안) */
+  .sackshelf.bshop .sackcat { color:#d98c6a; }
+  .bshoplock { font-size:11px; color:#c08a5a; margin:0 0 8px; }
+  .bshoprow { display:flex; align-items:center; gap:8px; padding:5px 2px; border-bottom:1px solid rgba(200,144,72,.18); }
+  .bshoprow:last-child { border-bottom:none; }
+  .bshopname { flex:1; font-size:13px; color:#e8d8c0; }
+  .bshoprow.has .bshopname { color:#fff; }
+  .bshoplv { width:38px; text-align:right; font-size:11px; color:#c89048; font-family:monospace; }
+  .bshopbtn { font-family:inherit; font-size:11.5px; border:1px solid #e0a86a; background:#fbeede; color:#a85a2a; padding:4px 11px; border-radius:11px; cursor:pointer; white-space:nowrap; }
+  .bshopbtn:disabled { opacity:.35; cursor:default; }
+  .bshopbtn:active:not(:disabled) { transform:scale(.95); }
   .btl { display:flex; flex-direction:column; align-items:center; width:26px; }
   .btl-cork { width:10px; height:5px; background:#c8a050; border-radius:2px 2px 0 0; border:1px solid #8a6820; }
   .btl-neck { width:9px; height:7px; border:1px solid rgba(255,255,255,.18); border-bottom:none; }
