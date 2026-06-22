@@ -147,7 +147,7 @@ function adminRenderPage(){
         +'</section>'
         +'<section style="margin-bottom:22px">'
           +'<h3 style="margin:0 0 8px;font-size:15px">💰 경제 튜닝 (실시간 · 세이브 무관)</h3>'
-          +'<div style="font-size:12px;color:#9a7b4a;margin-bottom:8px">이 세션에서만 적용 · 새로고침 시 원복. balance.js 객체형 곡선만 노출(원시 상수는 let 리팩토링 필요).</div>'
+          +'<div style="font-size:12px;color:#9a7b4a;margin-bottom:8px">이 세션에서만 적용 · 새로고침 시 원복. (걷기=1걸음/초·탭 파워·콤보/크리는 구조상 고정 — balance.js에서만 조정)</div>'
           +'<div id="adminTuning"></div>'
         +'</section>'
         +'<section style="margin-bottom:22px">'
@@ -249,21 +249,20 @@ function adminWarp(id, withScene){
   showPage('walk');                       // renderSituFig가 previewNode 그림 표시
   if(withScene) setTimeout(()=>openNode(n,true), 80);   // 첫 만남 장면(상황+대사) 미리보기
 }
-// ── 경제 튜닝(실시간) — balance.js 객체형 곡선만(const 바인딩이라 원시값은 불가). 세이브 무관·새로고침 원복 ──
+// ── 경제 튜닝(실시간) — 현재 경제(걷기 1/초 고정·성장=탭)에 맞는 손잡이만. 세이브 무관·새로고침 원복 ──
+// 옛 손잡이(재회 초/걸음·마일스톤·발견곡선)는 경제 재설계로 무력화돼 제거. 지금 실제로 먹는 2개만 남김.
 let _balDefaults=null;
 function adminBuildTuning(){
   const box=document.getElementById('adminTuning'); if(!box) return;
-  if(!_balDefaults) _balDefaults={ up:UP_BASE.person, ms:MILESTONES.map(m=>m.mult), curve:TAP_CURVE.slice(), rsps:REUNION_START_SPS, rfac:REUNION_FACTOR };
-  const row=(label,id,val,step)=>'<label style="display:flex;align-items:center;gap:8px;margin:6px 0;font-size:13px">'
-    +`<span style="width:190px;color:#7a5f33">${label}</span>`
-    +`<input id="${id}" type="number" step="${step}" value="${val}" style="width:90px;padding:4px 6px;border:1px solid #d8cdb6;border-radius:6px">`
+  if(!_balDefaults) _balDefaults={ up:UP_BASE.person, dm:DISCOVER_MULT };
+  const row=(label,id,val,step,hint)=>'<label style="display:flex;align-items:center;gap:8px;margin:7px 0;font-size:13px">'
+    +`<span style="width:150px;color:#7a5f33">${label}</span>`
+    +`<input id="${id}" type="number" step="${step}" value="${val}" style="width:88px;padding:4px 6px;border:1px solid #d8cdb6;border-radius:6px">`
+    +`<span style="font-size:11px;color:#9a7b4a">${hint||''}</span>`
     +'</label>';
   const btn='border:1px solid #d8cdb6;border-radius:8px;padding:7px 12px;cursor:pointer;font:13px sans-serif';
-  box.innerHTML = row('재회 시작 초/걸음','tuneRsps',REUNION_START_SPS,0.01)
-    + row('재회당 배율 (×, <1=빨라짐)','tuneRfac',REUNION_FACTOR,0.05)
-    + row('재회 1레벨 비용 (UP_BASE)','tuneUp',UP_BASE.person,1)
-    + row('마일스톤 배율 ×스케일','tuneMs',1,0.1)
-    + row('발견곡선 ×스케일 (폴백 TAP_CURVE)','tuneCv',1,0.1)
+  box.innerHTML = row('🦶 발견 비용 ×배율','tuneDm',DISCOVER_MULT,0.1,'전체 진행 속도 · 1=기본, ↑느리게')
+    + row('🔁 재회 첫 비용(걸음)','tuneUp',UP_BASE.person,1,'재회 1레벨 비용 · 이후 레벨마다 ×1.15')
     + `<div style="display:flex;gap:8px;margin-top:8px"><button type="button" id="tuneApply" style="${btn};background:#ece3d0;color:#5a4d34">적용</button>`
     + `<button type="button" id="tuneReset" style="${btn};background:#fff;color:#9a7b4a">기본값</button></div>`
     + '<div id="tuneMsg" style="font-size:12px;color:#9a7b4a;margin-top:6px"></div>';
@@ -271,25 +270,18 @@ function adminBuildTuning(){
   box.querySelector('#tuneReset').onclick=adminResetTuning;
 }
 function adminApplyTuning(){
+  const dm=parseFloat(document.getElementById('tuneDm').value);
   const up=parseFloat(document.getElementById('tuneUp').value);
-  const ms=parseFloat(document.getElementById('tuneMs').value);
-  const cv=parseFloat(document.getElementById('tuneCv').value);
-  const rsps=parseFloat(document.getElementById('tuneRsps').value);
-  const rfac=parseFloat(document.getElementById('tuneRfac').value);
-  if(rsps>0) REUNION_START_SPS=rsps;
-  if(rfac>0) REUNION_FACTOR=rfac;
+  if(dm>0) DISCOVER_MULT=dm;
   if(up>0) UP_BASE.person=up;
-  if(ms>0) MILESTONES.forEach((m,i)=> m.mult=_balDefaults.ms[i]*ms);
-  if(cv>0) TAP_CURVE.forEach((_,i)=> TAP_CURVE[i]=Math.round(_balDefaults.curve[i]*cv));
   if(typeof refreshHUD==='function') refreshHUD();
+  if(typeof renderAll==='function' && typeof curPage!=='undefined' && curPage==='map') renderAll();  // 발견 비용 바뀌면 지도 도달표시 갱신
   const m=document.getElementById('tuneMsg'); if(m) m.textContent='적용됨 (이 세션만 · 새로고침 시 원복)';
 }
 function adminResetTuning(){
-  if(_balDefaults){ UP_BASE.person=_balDefaults.up;
-    MILESTONES.forEach((m,i)=> m.mult=_balDefaults.ms[i]);
-    TAP_CURVE.forEach((_,i)=> TAP_CURVE[i]=_balDefaults.curve[i]);
-    REUNION_START_SPS=_balDefaults.rsps; REUNION_FACTOR=_balDefaults.rfac; }
+  if(_balDefaults){ UP_BASE.person=_balDefaults.up; DISCOVER_MULT=_balDefaults.dm; }
   if(typeof refreshHUD==='function') refreshHUD();
+  if(typeof renderAll==='function' && typeof curPage!=='undefined' && curPage==='map') renderAll();
   adminBuildTuning();
   const m=document.getElementById('tuneMsg'); if(m) m.textContent='기본값 복원';
 }
