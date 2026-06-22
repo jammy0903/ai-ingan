@@ -2415,9 +2415,11 @@ async function adminLoadUsers(){
   const bs='border:1px solid #d8cdb6;border-radius:6px;background:#fff;padding:4px 8px;cursor:pointer;font:12px sans-serif;color:#5a4d34';
   box.innerHTML = (data.map(r=>{
     const w=(r.data&&r.data.walks!=null)?r.data.walks:'?', id=aesc(r.device_id);
+    const nm=(r.data&&r.data.robotName)?aesc(r.data.robotName):'(이름 없음)';   // 🆕 UUID 대신 유저명(로봇 이름) — uuid는 식별용으로 title(호버)에만
+    const cyc=(r.data&&r.data.cycle)?` · ${r.data.cycle}회차`:'';
     return '<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid #efeadd;font-size:12px">'
-      +`<span style="flex:1;font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${id}</span>`
-      +`<span style="width:80px;text-align:right">${typeof w==='number'?fmt(w):w}</span>`
+      +`<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${id}">${nm}<span style="color:#9a7b4a">${cyc}</span></span>`
+      +`<span style="width:130px;text-align:right;font-variant-numeric:tabular-nums">${typeof w==='number'?fmt(w):w}</span>`
       +`<button type="button" data-w0="${id}" style="${bs}">걸음0</button>`
       +`<button type="button" data-wipe="${id}" style="${bs};color:#b04a3a;border-color:#e0b4a8">초기화</button>`
       +'</div>';
