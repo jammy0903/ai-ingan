@@ -1855,6 +1855,41 @@ const Ads = {
 };
 window.Ads = Ads;   // 콘솔/네이티브 브릿지 접근용
 
+/* 🌐 웹 H5 Games Ads(AdSense) provider — 위 Ads 솔기의 window._adProvider를 채운다.
+   ⚠️ ADSENSE_CLIENT(ca-pub-…)를 넣어야 활성화. 비어 있으면 스크립트 미주입 → 완전 inert(현 상태).
+   사전조건(사용자 직접, 계정/발급은 내가 못 함): AdSense 가입 → aingan.click 승인 → H5 Games Ads 사용설정 → ca-pub-… 발급.
+   H5 rewarded = adBreak({type:'reward'}). 끝까지 보면 adViewed→보상, 중도닫음/미충전→보상X. §4 준수(보상형 부스트만, 스토리 비게이트). */
+const ADSENSE_CLIENT = "";   // 예: "ca-pub-1234567890123456" — 발급 후 여기만 채우면 켜짐
+(function initH5Ads(){
+  if(!ADSENSE_CLIENT) return;                                   // 미설정 → inert
+  window.adsbygoogle = window.adsbygoogle || [];
+  const adConfig = window.adConfig = window.adConfig || function(o){ adsbygoogle.push(o); };   // Google 표준 스니펫(스크립트 로드 전 호출은 큐잉)
+  const adBreak  = window.adBreak  = window.adBreak  || function(o){ adsbygoogle.push(o); };
+  const s=document.createElement("script");
+  s.async=true; s.crossOrigin="anonymous";
+  s.src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client="+encodeURIComponent(ADSENSE_CLIENT);
+  document.head.appendChild(s);
+  let _ready=false;
+  adConfig({ preloadAdBreaks:"on", sound:"on", onReady:()=>{ _ready=true; } });
+  window._adProvider = {
+    get rewardedReady(){ return _ready; },
+    showRewarded(placement){
+      return new Promise((resolve)=>{
+        let settled=false; const done=(ok)=>{ if(!settled){ settled=true; resolve({rewarded:!!ok}); } };
+        try{
+          adBreak({
+            type:"reward", name:String(placement||"reward"),
+            beforeReward:(showAdFn)=>{ showAdFn(); },                                   // 광고 있음 → 노출
+            adViewed:()=>done(true),                                                    // 끝까지 봄 → 보상
+            adDismissed:()=>done(false),                                                // 중도 닫음 → 보상X
+            adBreakDone:(info)=>{ if(!settled) done(info && info.breakStatus==="viewed"); }  // 미충전 등 → 보상X
+          });
+        }catch(_){ done(false); }
+      });
+    }
+  };
+})();
+
 function addWalk(x,y){
   if(intro.phase==="wake"){ wakeTap(x,y); return; }    // 깨우기: 탭=생명 불어넣기
   if(intro.phase==="wakedone") return;                 // 결핍 한 줄/동기화 실패 비트 — 잠깐 손맛 멈춤
