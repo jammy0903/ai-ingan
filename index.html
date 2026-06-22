@@ -1206,14 +1206,12 @@ function setZoom(z){
 }
 
 // 큰 수 표기 K/M/B/T… (미국 출시 대비 영문 단위). Dc 넘으면 지수표기로 폴백.
+// 🆕 상한 = JS가 정확히 셀 수 있는 최대 정수(Number.MAX_SAFE_INTEGER = 9,007,199,254,740,991). 이 위로는 부동소수 정밀도가 깨진다.
+const MAX_STEPS = Number.MAX_SAFE_INTEGER;
+// 🆕 K/M/B 축약 폐기(2026-06-22 요청) — 끝까지 다 적되 천단위 콤마, 상한에서 멈춘다.
 function fmt(n){
-  n=Math.floor(n);
-  if(n<1000) return ""+n;
-  const u=["","K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc"];
-  let i=0, v=n;
-  while(v>=1000 && i<u.length-1){ v/=1000; i++; }
-  if(v>=1000) return n.toExponential(2);
-  return v.toFixed(v>=100?0:(v>=10?1:2))+u[i];
+  n=Math.floor(n); if(!isFinite(n)||n>MAX_STEPS) n=MAX_STEPS; if(n<0) n=0;
+  return n.toLocaleString('en-US');
 }
 
 /* ---------- 도달 가능 판정 ---------- */
@@ -1822,7 +1820,7 @@ function stepOnce(){
   if(Math.random()<0.085) spawnGProp();                // 가끔 새 오브젝트 등장
 }
 // S.walks의 정수 자리가 늘 때마다 그만큼 보(步). 줄어들면(소비) 보 없이 동기화만.
-function syncSteps(){ const w=Math.floor(S.walks); if(w>wholeWalks) stepOnce(); wholeWalks=w; }
+function syncSteps(){ if(S.walks>MAX_STEPS) S.walks=MAX_STEPS; const w=Math.floor(S.walks); if(w>wholeWalks) stepOnce(); wholeWalks=w; }   // 🆕 걸음 상한 클램프(MAX_STEPS) — 정밀도/Infinity 방지
 
 /* ---------- 탭 = 걸음 ---------- */
 let sceneActive=false, sceneReady=false, sceneStep=0; // 샘 대화 장면 진행 중 상태
