@@ -170,14 +170,15 @@ function neighbors(id){
 function unlockedCount(){ let c=0; for(const n of NODES){ if(n.id!=="start" && S.levels[n.id]>0) c++; } return c; }
 // 다음 발견의 목표 탭수(=목표 초). 순번이 곡선 길이를 넘으면 끝값(평탄).
 function discoverTaps(){ const C=(typeof TAP_CURVE!=='undefined')?TAP_CURVE:[5,25,42,58,80]; return C[Math.min(unlockedCount(), C.length-1)]; }  // 가드: balance.js 버전 엇갈려 TAP_CURVE 없어도 throw 안 하고 폴백(지도 크래시 방지)
-function reachCost(id){ // 발견(이동) 비용 — 걸음수입(effTap) × 그 노드의 '목표 탭수'(data.js w)
+let DISCOVER_MULT = 1;   // 🆕 발견 비용 전체 배율(관리자 실시간 튜닝용 · 기본 1=무효). reachCost에 곱해 진행 속도 일괄 조절(세이브 무관·새로고침 원복).
+function reachCost(id){ // 발견(이동) 비용 = 그 노드의 w(걷는 초) × DISCOVER_MULT
   // 도달 가능?: 완료된 이웃이 하나라도 있어야 연다(그래프 토폴로지 게이트). 없으면 무한.
   let reachable=false;
   for(const [nb] of neighbors(id)){ if(S.levels[nb]>0){ reachable=true; break; } }
   if(!reachable) return Infinity;
   // 🆕 비용 = node.w 그대로(= 그 노드까지 걷는 초). effTap 추종·W_MULT 폐기(economy-redesign.md). w 없으면 옛 곡선 폴백.
   const node=NODES.find(x=>x.id===id);
-  return Math.round((node&&node.w!=null)?node.w:discoverTaps());
+  return Math.round(((node&&node.w!=null)?node.w:discoverTaps()) * DISCOVER_MULT);
 }
 // 갈래 안 대/중/소 티어 (대=대표 1 / 중=다음 / 소=깊은 마지막). 갈래 안에서 단계적으로 공개.
 // 한 갈래에서 '재회' 누적 횟수(레벨2 이상으로 다시 만난 만큼)
