@@ -640,7 +640,7 @@
     </div>
     <div class="stats">
       <div class="stat"><span>현재</span> <b id="walks">0</b><span class="unit">걸음</span></div>
-      <div class="stat"><span>1초당</span> <b id="rate" style="font-size:16px">0.5</b><span class="unit">걸음</span></div>
+      <div class="stat"><span>탭</span> <b id="rate" style="font-size:16px">1</b><span class="unit">걸음</span></div>
       <div class="stat depth" id="depthStat" style="display:none"><b id="mdepth">0</b> <span class="unit">🌊 마음의 깊이</span></div>
       <div class="stat frag" id="fragStat" style="margin-left:auto">🧩 <b id="fragEmo">0</b><span class="unit">/27</span> <span class="unit">·</span> 🫀 <b id="fragBody">0</b><span class="unit">/11</span></div>
       <div class="stat coin" id="coinStat">✨ <b id="coinN">0</b><span class="unit">온기</span></div>
@@ -1146,9 +1146,11 @@ let REUNION_FACTOR    = 0.88;  // 재회당 배율(<1, 작을수록 빨라짐) �
 function nodeSps(lv){ return REUNION_START_SPS * Math.pow(REUNION_FACTOR, Math.max(0,(lv||1)-1)); }   // lv의 초/걸음
 function fmtSps(lv){ const v=nodeSps(lv); return (v>=0.001 ? +v.toFixed(3) : v.toExponential(1)) + "초/걸음"; }
 function nodeOut(n, lv){ if(lv==null) lv=S.levels[n.id]; return (lv>0 && n.gen) ? 1/nodeSps(lv) : 0; }   // 걸음/초 = 1 / (초/걸음)
-function baseRate(){ let r=1; for(const n of NODES) r+=nodeOut(n); return r; }            // 1 = 기본 1걸음/초
-function effRate(){ return baseRate() * rateMult(); } // 실제 걸음/초 = base × 마일스톤 배율
-function effTap(){ return Math.max(TAP_GAIN, Math.round(effRate()*TAP_FRAC)); } // 탭 = max(1, 걸음/초 비례) — 후반에도 손맛 유지
+function baseRate(){ let r=1; for(const n of NODES) r+=nodeOut(n); return r; }   // (레거시) 옛 idle 곡선 — 미사용, 디버그/세이브 호환 보존
+// 🆕 경제 재설계(2026-06-22, economy-redesign.md): 걷기(idle)=1걸음/초 고정, 성장(number-go-up)은 '탭'으로 이동.
+function tapPower(){ let p=1; for(const n of NODES){ const lv=S.levels[n.id]||0; if(n.gen&&lv>0) p+=lv; } return p; }  // 탭 파워 = 1 + (모은 감정 수 + 재회 레벨 합). 감정 1줍기 +1, 재회 1레벨 +1.
+function effRate(){ return 1; }                              // 걷기(idle) = 끝까지 고정 1걸음/초 (마일스톤·재회 idle가속 폐기)
+function effTap(){ return Math.max(TAP_GAIN, tapPower()); }  // 탭 1번 기본 이득 = 탭 파워(콤보·크리는 addWalk에서 곱)
 
 
 /* ===================== DOM ===================== */
@@ -1229,14 +1231,9 @@ function reachCost(id){ // 발견(이동) 비용 — 걸음수입(effTap) × 그
   let reachable=false;
   for(const [nb] of neighbors(id)){ if(S.levels[nb]>0){ reachable=true; break; } }
   if(!reachable) return Infinity;
-  // 비용 = node.w(감정별 목표 걸음) × max(1, effTap/DISCOVER_BASE). w 없으면 옛 발견순서 곡선(discoverTaps) 폴백.
-  // effTap≤DISCOVER_BASE인 초반: 비용 = w 그대로(화면에 정확히 그 숫자, "재미=250"). effTap이 넘는 후반: income추종으로 커짐.
+  // 🆕 비용 = node.w 그대로(= 그 노드까지 걷는 초). effTap 추종·W_MULT 폐기(economy-redesign.md). w 없으면 옛 곡선 폴백.
   const node=NODES.find(x=>x.id===id);
-  const w=(node&&node.w!=null)?node.w:discoverTaps();
-  const wm=(typeof W_MULT!=='undefined')?W_MULT:1;                   // 진행속도 전역 손잡이(balance.js). 가드: 버전 엇갈려도 1로 폴백
-  const base=(typeof DISCOVER_BASE!=='undefined')?DISCOVER_BASE:6;   // 가드: 버전 엇갈려도 NaN 비용 방지
-  const scale=Math.max(1, effTap()/base);
-  return Math.round(w*wm*scale);
+  return Math.round((node&&node.w!=null)?node.w:discoverTaps());
 }
 // 갈래 안 대/중/소 티어 (대=대표 1 / 중=다음 / 소=깊은 마지막). 갈래 안에서 단계적으로 공개.
 // 한 갈래에서 '재회' 누적 횟수(레벨2 이상으로 다시 만난 만큼)
@@ -1446,7 +1443,7 @@ function renderSituFig(){
 
 function refreshHUD(){
   elWalks.textContent=fmt(S.walks);
-  const _r=effRate(); elRate.textContent = _r<1000 ? _r.toFixed(1) : fmt(_r);   // 초반엔 소수1자리, 커지면 K/M/B
+  elRate.textContent = fmt(effTap());   // 🆕 탭 파워(걷기는 1/초 고정 → 탭 힘을 노출). economy-redesign.md
   const rn=document.getElementById('robotName');
   if(rn) rn.textContent = (S.robotName?("· "+S.robotName):"") + (S.cycle>0?` · ${S.cycle}회차`:"") + (S.robotName?" ✎":"");
   const ds=document.getElementById('depthStat');
@@ -1463,15 +1460,8 @@ function refreshHUD(){
 function renderMind(){
   const emo=learnedCount(), bodyN=bodyCount();
   const emoDone=emo>=FRAG_TOTAL, bodyDone=bodyN>=BODY_TOTAL;
-  const mult=milestoneMult(), nm=nextMilestone();
-  const multTxt = mult>1 ? `⚡ 속도 ×${mult>=10?Math.round(mult):mult.toFixed(1)}` : '';
-  // '다음 속도업까지'는 지도 위 상단 중앙(#mapNextUp)으로 — 상단 바가 좁아 이리 옮김(요청)
-  const nus=$("#mapNextUp");
-  if(nus){
-    if(nm){ nus.style.display=''; nus.classList.remove("maxed"); nus.innerHTML=`🎯 다음 속도업까지 <b>${nm.need}</b>개`; }
-    else if(mult>1){ nus.style.display=''; nus.classList.add("maxed"); nus.innerHTML=`⚡ 속도 최대`; }
-    else { nus.style.display='none'; }
-  }
+  // 🆕 마일스톤(속도업) 폐기(economy-redesign.md) — idle 1/초 고정. '다음 속도업까지'는 숨김.
+  const nus=$("#mapNextUp"); if(nus) nus.style.display='none';
   // 조각 수(🧩/🫀)는 상단 바(#fragStat, 옛 마음온도 자리)로 이동 — 항상 보이게(요청)
   const fe=$("#fragEmo"), fb=$("#fragBody"), fs=$("#fragStat");
   if(fe) fe.textContent=emo;
@@ -1480,7 +1470,7 @@ function renderMind(){
   const cn=$("#coinN"); if(cn) cn.textContent=fmt(S.coins||0);                            // ✨ 온기 조각
   const ab=$("#adCoinBtn"); if(ab) ab.style.display=(Ads.ready()||window._adSim)?"":"none"; // 광고 연결 전엔 숨김
   // 하늘(mindsky)엔 현재 속도배율 뱃지만(카운터는 상단 바로, 다음 속도업까지도 상단 바로)
-  mindsky.innerHTML = multTxt?`<div class="fragline" style="opacity:.85">${multTxt}</div>`:'';
+  mindsky.innerHTML = '';   // 🆕 속도배율 뱃지 폐기(idle 1/초 고정)
 }
 function renderAll(){ sizeCanvas(); renderEdges(); renderNodes(); placeRobot(); refreshHUD(); }
 
@@ -1539,6 +1529,7 @@ function learnedCount(){ return NODES.filter(n=>n.type==="person" && S.levels[n.
 function bodyCount(){ return NODES.filter(n=>n.type==="body" && S.levels[n.id]>0).length; }
 const FRAG_TOTAL = 27;   // 인간 감정 27가지 (Cowen & Keltner, 2017)
 const BODY_TOTAL = 11;   // 인체 11 기관계
+const OFFLINE_CAP_STEPS = 10000;   // 🆕 오프라인 적립 누적 상한(걸음). idle 1/초 → 최대 ~2.8시간치. (추후 balance.js로 이동 예정 — Stage 2)
 
 // 목적격 조사 을/를 — 마지막 글자 받침 유무로 결정 ("애틋함을", "재미를")
 function objParticle(word){
@@ -1563,11 +1554,11 @@ function openNode(n, firstMeet){
   const maxed = !firstMeet && lv>=MAX_LV;        // 재회 상한 도달
   if(n.type==="body"){
     const bd=BODY[n.key]; const lineIdx=Math.min(lv-1, bd.lines.length-1);
-    const rw = firstMeet?[`🫀 몸조각 +1 (${bodyCount()}/${BODY_TOTAL})`,`📈 ${fmtSps(1)}`,`사람에 한 걸음 더`]
-             :(maxed?[`📖 ${bd.name} — 더없이 단단해졌다`,`📈 ${fmtSps(lv)} · 최대 Lv${MAX_LV}`]
-                    :[`📖 ${bd.name}이(가) 더 깊어진다`,`📈 ${fmtSps(lv)} → ${fmtSps(lv+1)}`]);
+    const rw = firstMeet?[`🫀 몸조각 +1 (${bodyCount()}/${BODY_TOTAL})`,`⚡ 탭 +1`,`사람에 한 걸음 더`]
+             :(maxed?[`📖 ${bd.name} — 더없이 단단해졌다`,`⚡ 탭 파워 최대 Lv${MAX_LV}`]
+                    :[`📖 ${bd.name}이(가) 더 깊어진다`,`⚡ 탭 +1`]);
     fillModal({ badge:firstMeet?"몸의 한 부분을 얻다":(maxed?"가장 단단해졌다":"몸이 더 단단해진다"),
-      emo:`〔 ${bd.name} 〕`, lv:firstMeet?`${fmtSps(1)}`:(maxed?`Lv${lv} · 더없이 단단하다 (최대)`:`Lv${lv} · ${fmtSps(lv)}`),
+      emo:`〔 ${bd.name} 〕`, lv:firstMeet?`⚡ 탭 +1`:(maxed?`Lv${lv} · 더없이 단단하다 (최대)`:`Lv${lv} · ⚡ 탭 +1`),
       situ: firstMeet?bd.situ:"", log: firstMeet?bd.lines[0]:bd.lines[lineIdx],
       reward: rw, closeText:"다음 길로",
       onPrev: firstMeet?null:()=>showPrevLines(n),
@@ -1581,7 +1572,7 @@ function openNode(n, firstMeet){
       afterClose = ()=>maybeTeachReunion(n);   // 첫 감정 닫은 뒤, 재회로만 다음이 열리는 상황이면 1회 안내
       // 1페이지: 상황 + 만남 장면 → 2페이지: "○○을 알게 됐다" 해금 + 그 감정 곱씹기(mem)
       fillModal({ badge:"하나의 감정을 만나다",
-        emo:`『 ${pp.name} 』`, lv:`${fmtSps(1)}`,
+        emo:`『 ${pp.name} 』`, lv:`⚡ 탭 +1`,
         situ: pp.situ, log: pp.lines[0], closeText:"…",
         next: ()=> fillModal({
           badge:"새로운 마음, 해금",
@@ -1592,10 +1583,10 @@ function openNode(n, firstMeet){
       });
       return;
     }
-    const rw = (maxed?[`📖 ${pp.name} — 마음 끝까지 닿았다`,`📈 ${fmtSps(lv)} · 최대 Lv${MAX_LV}`,`(이 인연은 더없이 깊어졌다)`]
-                    :[`📖 ${pp.name}의 더 깊은 이야기`,`📈 더 깊이 이해하면 ${fmtSps(lv)} → ${fmtSps(lv+1)}`,`(깊을수록 초/걸음 ↓ = 더 빨라진다)`]);
+    const rw = (maxed?[`📖 ${pp.name} — 마음 끝까지 닿았다`,`⚡ 탭 파워 최대 Lv${MAX_LV}`,`(이 인연은 더없이 깊어졌다)`]
+                    :[`📖 ${pp.name}의 더 깊은 이야기`,`⚡ 다시 만날수록 탭 +1`,`(재회 = 탭이 더 세진다)`]);
     fillModal({ badge:(maxed?"마음 끝까지 닿았다":"다시 만나, 더 깊이"),
-      emo:`『 ${pp.name} 』`, lv:(maxed?`재회 ${lv-1}회 · 마음 끝까지 (최대)`:`재회 ${lv-1}회 · ${fmtSps(lv)}`),
+      emo:`『 ${pp.name} 』`, lv:(maxed?`재회 ${lv-1}회 · 마음 끝까지 (최대)`:`재회 ${lv-1}회 · ⚡ 탭 +1`),
       situ:"", log: pp.lines[lineIdx],
       reward: rw,
       closeText:"다음 길로",
@@ -2121,7 +2112,7 @@ function popCloud(c){
   const cx=r.left+r.width/2, cy=r.top+r.height*0.62;                    // 구름 아래쪽에서 물 터짐
   rainBurst(cx, cy);
   c.classList.add("pop"); setTimeout(()=>c.remove(), 360);
-  const gift=Math.max(1, Math.round(effRate()*10));                    // 걸음/초 × 10 ≈ "10초치 걸음"(진행도 따라 같이 커짐)
+  const gift=Math.max(1, effTap()*10);                    // 🆕 탭 파워 × 10(진행도 따라 커짐). idle은 1/초 고정이라 탭 힘에 연동
   S.walks+=gift; syncSteps(); refreshHUD();
   const t=document.createElement("div"); t.className="tapfx gift"; t.textContent="🎁 +"+fmt(gift);
   t.style.left=cx+"px"; t.style.top=(cy-8)+"px"; document.body.appendChild(t); setTimeout(()=>t.remove(), 900);
@@ -2285,8 +2276,8 @@ function applyState(d){
   S.coins = d.coins || 0;            // ✨ 온기 조각(없는 옛 세이브=0)
   S.seenIntro = !!(d.seenIntro || d.named);   // 기존 이름지은 유저는 자동으로 '봤음' 처리(게이트 안 띄움)
   S.seenReunionHint = !!d.seenReunionHint;     // 재회 안내 1회 표시 플래그
-  // 오프라인 적립도 effRate(마일스톤 배율 포함)로 — idle/탭과 일관(여기선 S.rate·S.levels 복원 뒤라 배율 정확).
-  let off=0; if(d.t){ const sec=Math.max(0,(Date.now()-d.t)/1000); const er=effRate()*OFFLINE_RATE; off=Math.min(er*sec, er*3600*OFFLINE_CAP_H, 1280); S.walks+=off; }   // 오프라인 하드캡 1280걸음   // 오프라인 = effRate의 1/10(접속 유도). 캡도 같은 1/10 기준
+  // 🆕 오프라인 = 1걸음/초(온라인 idle과 동일), 누적 상한 OFFLINE_CAP_STEPS(=만 걸음). economy-redesign.md
+  let off=0; if(d.t){ const sec=Math.max(0,(Date.now()-d.t)/1000); off=Math.min(sec, OFFLINE_CAP_STEPS); S.walks+=off; }
   wholeWalks=Math.floor(S.walks);
   return off;
 }
@@ -2316,7 +2307,7 @@ function bootSave(){
   track("app_open",{seenIntro:!!S.seenIntro});         // 세션 시작(load당 1회). 로그인 판별은 별도 login 이벤트(여기선 auth 미해결)
   const off = applyState(loadLocal());                 // 직전 로그인 계정 미러가 있으면 즉시 반영(빠른 부팅)
   decideEntry();                                        // 게이트 / 온보딩 / 바로 게임 중 결정 (클라우드는 onAuthChanged가 처리)
-  if(S.seenIntro && off>=1){ const h=$("#hint"); h.textContent=`당신이 없는 동안 ${fmt(Math.floor(off))}걸음이나 걸었어요`;   // 오프라인=온라인 1/10로 적립(OFFLINE_RATE)
+  if(S.seenIntro && off>=1){ const h=$("#hint"); h.textContent=`당신이 없는 동안 ${fmt(Math.floor(off))}걸음이나 걸었어요`;   // 오프라인=1걸음/초·상한 만걸음(OFFLINE_CAP_STEPS, economy-redesign.md)
     setTimeout(()=>{ h.textContent="이 길을 두드릴수록 로봇이 더 빨리 걷는다"; }, 5500); }
 }
 setInterval(saveState, 10000);
