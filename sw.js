@@ -6,7 +6,8 @@ const CACHE = "aingan-1.0.34";
 const CORE = [
   "./", "./index.html", "./styles.css", "./manifest.json",
   "./data.js", "./balance.js",            // 전역 데이터·밸런스(인라인보다 먼저 로드) — 오프라인 프리캐시
-  // 🆕 구조 분리(2026-06-22): 인라인 JS를 전역 스크립트 여러 개로 추출(로드 순서 = 원본 순서). 파일은 단계마다 여기에 추가.
+  // 🆕 구조 분리(2026-06-22): 인라인 JS를 전역 스크립트 여러 개로 추출(로드 순서 = 원본 순서).
+  "./engine.js", "./view.js", "./save-auth.js", "./onboarding.js", "./main.js",
   "./vendor/supabase.js",
   "./icon-192.png", "./icon-512.png", "./icon.svg",
   // 감정27 일러스트(누끼 webp) — 오프라인 프리캐시
