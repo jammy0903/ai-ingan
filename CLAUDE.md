@@ -202,7 +202,7 @@ cells에서 이미 언락한 생성기(세포·세균…)로 **되돌아가 반�
 | 대상 | 경로 |
 |---|---|
 | 리포 루트 | `/home/jammy/projects/ingan` (로컬 폴더명은 `ingan`, 원격 리포명은 `ai-ingan`) (git, 원격: `https://github.com/jammy0903/ai-ingan.git`, branch `main`) |
-| 게임 본체 | `index.html` (단일 파일, CSS+JS 인라인 / 빌드·번들러 없음) |
+| 게임 본체 | **분리됨(2026-06-22)**: `index.html`(HTML+`<script src>` 나열) · `styles.css` · `data.js` · `balance.js` · `engine.js`(상태·산출/탭·도달판정) · `view.js`(렌더·모달·이동만남·탭·하늘·syslog) · `save-auth.js`(세이브·로그인·어드민) · `onboarding.js` · `main.js`(부팅). **전역 클래식 스크립트(모듈/빌드 없음), 로드 순서=의존 순서.** sw.js 네트워크우선 정규식·CORE에 전부 등재 |
 | 확정 아트톤 목업 | `mockup/tone-c-watercolor.html` |
 | 참고(탈락) 목업 | `mockup/tone-a-pixar.html` |
 
@@ -210,6 +210,15 @@ cells에서 이미 언락한 생성기(세포·세균…)로 **되돌아가 반�
 - **로컬 실행**: 정적 파일이라 빌드 없음. `python3 -m http.server 8000` 후 `localhost:8000` (구글로그인/클라우드세이브까지). 핫리로드 원하면 `npx live-server`. 직접 파일 열기도 됨(단 OAuth는 막힐 수 있음).
 - **⚠️ 핫리로드 없음** — 코드 고치면 브라우저 수동 새로고침(F5). 검증은 `node --check`로 인라인 스크립트 문법 → 브라우저로 동작 확인.
 - **⚠️ 버전 = semver `1.0.N`(2026-06-18 도입). `data.js`·`balance.js`·자산 수정 시 버전을 반드시 올리고 3곳 동기화: `sw.js` `CACHE="aingan-1.0.N"` · `manifest.json` `"version"` · `index.html` `#appVer` 표시** — SW가 스크립트를 '캐시 우선'으로 서빙해서, 안 올리면 고쳐도 옛 캐시가 나간다(stale). 콘텐츠·그래프 데이터는 `data.js`, idle 튜닝 상수는 `balance.js`로 분리됨(전역 classic 스크립트, 인라인보다 먼저 로드; 모듈 X·`file://` 유지). 둘 다 `sw.js` `CORE`에 등재. 상세·근거 = `plan.md`.
+- **🔥 최근 작업(2026-06-22 대규모 세션 — 경제 재설계 1단계 + 구조 분리 + 몸 상점, v1.0.20→1.0.38 라이브 배포)**: 한 세션에 12+ 커밋 main 직접 푸시(CF 자동, **현재 배포 = v1.0.38**). 위 '현 상태'의 옛 경제 설명(걸음/초 비례·마일스톤 폭발·K/M/B)은 아래로 **대체됨**. 핵심:
+  - **경제 재설계 1단계(`economy-redesign.md`, 커밋 f8593a5)**: idle 이중지수 폐기 → **걷기=1걸음/초 고정**(`effRate()=1`), 성장은 **탭 파워=`1+감정수+재회레벨합`**(`tapPower()`, 감정/재회마다 +1). **마일스톤 제거**(rateMult 미사용). **`reachCost=node.w` 평탄**(effTap추종·W_MULT 폐기). 오프라인=1걸음/초·상한 1만(`OFFLINE_CAP_STEPS`). 재회/몸 모달 '초/걸음'→'⚡탭+1'. 옛 idle곡선 함수(baseRate/nodeSps/fmtSps/MILESTONES 등)는 정의만 보존(디버그·세이브 호환).
+  - **걸음 풀숫자 표기(커밋 a953529)**: `fmt()` K/M/B 폐기 → 콤마 풀숫자(1,500,000), 상한=`MAX_STEPS`(Number.MAX_SAFE_INTEGER), `syncSteps` 클램프.
+  - **온보딩 버그픽스(커밋 906895c)**: 게이트 떠있는 동안 idle이 돌아 노드 자동발견→`hasProgress` 오판으로 온보딩 스킵되던 것. `showGate()`가 `intro.phase="gate"`로 게임 정지 + `hasProgress()`를 '실제 만남(레벨>0)+의도플래그'로 재정의(안갯속 발견·idle걸음 제외).
+  - **🏗 구조 분리(커밋 f3282f2·e9fe068)**: 인라인 단일파일(2791줄) → **CSS=`styles.css` + JS 5분할(engine/view/save-auth/onboarding/main)**. 전역 클래식 스크립트(모듈/빌드 없음, file:// 유지), 로드 순서=원본 순서라 동작 보존. index.html=486줄. (§8 경로표·아래 리팩토링 메모 갱신됨)
+  - **관리자 유저목록 유저명 표시(커밋 15b3a71·d147cf9)**: 행·확인창·상태메시지 전부 uuid→로봇이름(`_admNames` 맵, uuid는 호버 title).
+  - **경제 튜닝 패널 정리(커밋 4747daa)**: 재설계로 죽은 손잡이 4개(재회초/걸음·마일스톤·발견곡선) 제거 → 살아있는 2개만: **🦶발견 비용 ×배율**(`DISCOVER_MULT` engine.js, 기본1) · **🔁재회 첫 비용**(UP_BASE.person).
+  - **몸 온기 상점(커밋 93806e7·e94fe3c)**: 몸 11을 **그래프에서 제거**(NODES엔 유지=배치보존, 렌더/발견만 스킵) → **자루(기억 약장)에서 ✨온기로 구매/단련**. 첫구매(balance.js `BODY_BUY` 합25 ≤ 감정27코인 → §4 무광고 인간 달성 보장)→첫이야기 / 이후 '단련'(`BODY_TRAIN_BASE/GROW` 점증)→깊은 이야기 2~5단+탭+1(큰 소비처). 감정27 뒤 열림. 엔딩=감정27+몸11'구매'(bodyCount 그대로). `bodyShopHtml/buyBody/bodyStoryModal`(view.js).
+  - ⚠️ **펜딩/미검증**: ① **몸 상점 B2 브라우저 풀검증 미완**(로컬서버가 빈 응답 주는 글리치로 막힘 — node --check는 전부 통과·B1 그래프숨김은 검증됨). **배포본에서 감정27 도달 상태로 몸상점 스모크테스트 필요.** ② **경제 재설계 Stage 3 미적용**: `data.js`의 w값이 아직 옛날 값(joy=40) → "대분류당 하루" 스케일(`economy-redesign.md` §2 4대분류 표)을 data.js에 박아야 함(data.js 수정=버전범프). 현재는 진행이 빠름. ③ **Stage 2**(콤보/크리 완만화) 미착수.
 - **최근 작업(2026-06-19 후속 — 재회 모달 '이전 대사' + 발견비용 w 시스템 + 하늘 데코, 커밋 045ce8b·e82231d·4e15a91)**: main 직접 배포(CF 자동, 라이브 1.0.19 검증). 핵심:
   - **발견비용 income추종 'w' 시스템(v1.0.11~12 설계의 데이터화, 커밋 045ce8b)**: `data.js` 각 노드에 `w`(발견 목표 걸음) 부여 + `balance.js` `DISCOVER_BASE`. 실제 비용 = `w × max(1, effTap/DISCOVER_BASE)`(`reachCost`) — 초반엔 `w` 그대로 노출("재미=250걸음"), income 폭발 후반엔 추종해 커짐. `TAP_CURVE`는 `w` 없는 노드용 폴백으로 격하.
   - **재회 모달 '이전 대사' 버튼(v1.0.18, 커밋 e82231d)**: 모달의 '다시 만나 더 깊이'(`#mBtn2`)를 절반 폭 `🔁 재회`(몸=`🔨 단련`)로 줄이고, 빈 자리에 `📖 이전 대사`(`#mPrev`/`#mActions` flex 반반) 추가 — 지금까지 본 대사를 구분선으로 이어 다시 보기(읽기 전용, `next` 콜백으로 직전 재회 모달 매끄럽게 복귀; `showPrevLines`). 최대 레벨이면 이전 대사만 노출. **재회 즉시반응**: `upgrade`가 이미 노드 위인데도 걸리던 `travelTo` 1.1초 대기 제거.
