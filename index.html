@@ -561,6 +561,8 @@
   #situFig svg { width:100%; display:block; filter:url(#paintSoft) drop-shadow(0 4px 5px rgba(70,66,60,.18)); }
   /* 감정 일러스트: 높이 기준으로 정규화해 모든 그림이 로봇과 비슷한 크기로 보이게(각 그림 비율은 제각각) */
   #situFig img { height:160px; width:auto; display:block; filter:drop-shadow(0 4px 5px rgba(70,66,60,.18)); }
+  /* 무지개(아름다움)는 가로형(945×600)이라 height:160px면 폭이 ~251px로 뻗어 로봇(left:44%)을 덮음 → 폭으로 제한해 우하단 코너에만 머물게(2026-06-22) */
+  #situFig img.emoFig-beauty { height:auto; width:140px; }
   #situFig .dogFig { width:33%; margin:0 auto; }
   @keyframes dgBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
   @keyframes dgJump{0%,100%{transform:translateY(0)}38%{transform:translateY(-13px)}54%{transform:translateY(-13px)}}
@@ -1418,7 +1420,7 @@ $("#sackModal").addEventListener("click", e=>{ if(e.target.id==="sackModal") clo
 const FIGS = (function(){
   // 감정27 수채화 일러스트(art/emo/<id>.webp) — 노드 도착/재회 시 #situFig에 표시.
   // 각 값은 배열(레벨별 변형 슬롯 호환); 현재는 감정당 1장.
-  const im = id => [`<img src="art/emo/${id}.webp" alt="">`];
+  const im = id => [`<img class="emoFig-${id}" src="art/emo/${id}.webp" alt="">`];
   const KEYS = ["adore","beauty","admire","attract","joy","amuse","excite","flutter",
     "curious","awe","relief","crave","triumph","fear","anxiety","awkward","disgust",
     "horror","confuse","bored","sorrow","empathy","longing","compassion","calm","satisfy","trance"];
