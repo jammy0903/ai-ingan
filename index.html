@@ -1831,6 +1831,30 @@ function _endSession(){ if(_sessionEnded) return; _sessionEnded=true; track("ses
 document.addEventListener("visibilitychange",()=>{ if(document.hidden) _endSession(); else _sessionEnded=false; });
 window.addEventListener("pagehide", _endSession);
 
+/* 📺 광고 솔기(Phase A) — no-op. 실제 SDK 0. '한 곳'만 채우면 연결된다:
+   · 네이티브(AdMob): Capacitor AdMob 플러그인을 window._adProvider로 연결(JS 브릿지).
+   · 웹(H5 Games Ads / AdSense rewarded): rewarded 콜백을 window._adProvider로 연결.
+   provider 형태: { rewardedReady:boolean, showRewarded(placement):Promise<{rewarded:boolean}> }
+   🚫 설계 §4 금기: 스토리/다음 감정은 절대 광고 뒤에 안 가둠. 보상형 = 선택적 부스트만(×2 가속·오프라인 2배·천천히 보기). 첫 경험 광고 0.
+   배너(디스플레이)는 비행기 #planes(planeBannerText())가 슬롯 — provider 연결 시 거기서 광고 소스 주입.
+   사용 예(미연결): if(Ads.ready()){ const {rewarded}=await Ads.showRewarded("speed2x"); if(rewarded) applyBoost(); } */
+const Ads = {
+  ready(){ return !!(window._adProvider && window._adProvider.rewardedReady); },   // UI 버튼은 이걸로 게이트(미연결 시 버튼 숨김 → 깨진 버튼 0)
+  showRewarded(placement){                                                          // 단일 진입점 → Promise<{rewarded:boolean}>
+    track("ad_rewarded_req",{placement, anon:_anon()});
+    const p=window._adProvider;
+    if(p && typeof p.showRewarded==="function"){
+      return Promise.resolve(p.showRewarded(placement))
+        .then(r=>{ const ok=!!(r&&r.rewarded); track("ad_rewarded_done",{placement, rewarded:ok}); return {rewarded:ok}; })
+        .catch(()=>{ track("ad_rewarded_err",{placement}); return {rewarded:false}; });
+    }
+    if(window._adSim){ track("ad_rewarded_done",{placement, rewarded:true, sim:true}); return Promise.resolve({rewarded:true}); }  // DEV: window._adSim=true로 보상 흐름 테스트
+    track("ad_rewarded_noop",{placement});
+    return Promise.resolve({rewarded:false});                                        // provider 없으면 보상 없음(공짜 보상 방지)
+  },
+};
+window.Ads = Ads;   // 콘솔/네이티브 브릿지 접근용
+
 function addWalk(x,y){
   if(intro.phase==="wake"){ wakeTap(x,y); return; }    // 깨우기: 탭=생명 불어넣기
   if(intro.phase==="wakedone") return;                 // 결핍 한 줄/동기화 실패 비트 — 잠깐 손맛 멈춤
