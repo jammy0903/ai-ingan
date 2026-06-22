@@ -170,6 +170,8 @@ function adminRenderPage(){
 }
 // ── 유저 세이브 개별 초기화 (sb=유저 JWT, RLS의 is_admin() 정책 필요) ──
 function adminUsersMsg(t){ const m=document.getElementById('adminUsersMsg'); if(m) m.textContent=t; }
+let _admNames={};                                            // 🆕 device_id → 유저명(로봇 이름) 맵 — 행 목록 로드 시 채움
+function admName(id){ return _admNames[id] || '(이름 없음)'; }  // 🆕 확인창·상태메시지도 uuid 대신 유저명으로
 async function adminLoadUsers(){
   const box=document.getElementById('adminUsers');
   if(!sb||!authUser){ adminUsersMsg('로그인 필요'); return; }
@@ -177,6 +179,7 @@ async function adminLoadUsers(){
   const {data,error}=await sb.from('saves').select('device_id,data,updated_at').order('updated_at',{ascending:false}).limit(100);
   if(error){ adminUsersMsg('오류(RLS admin select 필요?): '+error.message); if(box)box.innerHTML=''; return; }
   adminUsersMsg(`${data.length}명`);
+  _admNames={}; data.forEach(r=>{ _admNames[r.device_id]=(r.data&&r.data.robotName)?r.data.robotName:'(이름 없음)'; });  // 🆕 id→이름
   const bs='border:1px solid #d8cdb6;border-radius:6px;background:#fff;padding:4px 8px;cursor:pointer;font:12px sans-serif;color:#5a4d34';
   box.innerHTML = (data.map(r=>{
     const w=(r.data&&r.data.walks!=null)?r.data.walks:'?', id=aesc(r.device_id);
@@ -198,12 +201,12 @@ async function adminResetWalks(id){   // 걸음만 0 (나머지 진행 보존)
   if(sel.error||!sel.data){ adminUsersMsg('조회 실패'); return; }
   const nd=Object.assign({}, sel.data.data, { walks:0, t:Date.now() });
   const r=await sb.from('saves').update({ data:nd, updated_at:new Date().toISOString() }).eq('device_id',id);
-  adminUsersMsg(r.error?('실패(RLS update?): '+r.error.message):('걸음 0 완료 · '+id)); if(!r.error) adminLoadUsers();
+  adminUsersMsg(r.error?('실패(RLS update?): '+r.error.message):('걸음 0 완료 · '+admName(id))); if(!r.error) adminLoadUsers();
 }
 async function adminWipeUser(id){     // 세이브 삭제 = 완전 초기화 (다음 접속 시 새 게임+온보딩)
-  if(!confirm('이 유저 세이브를 완전 초기화(삭제)할까요?\n'+id+'\n\n다음 접속 시 새 게임+온보딩으로 시작됩니다.')) return;
+  if(!confirm('이 유저 세이브를 완전 초기화(삭제)할까요?\n『'+admName(id)+'』\n\n다음 접속 시 새 게임+온보딩으로 시작됩니다.')) return;
   const r=await sb.from('saves').delete().eq('device_id',id);
-  adminUsersMsg(r.error?('실패(RLS delete?): '+r.error.message):('초기화 완료 · '+id)); if(!r.error) adminLoadUsers();
+  adminUsersMsg(r.error?('실패(RLS delete?): '+r.error.message):('초기화 완료 · '+admName(id))); if(!r.error) adminLoadUsers();
 }
 function adminReplayOnboarding(){   // 세이브/진행 안 건드리고 온보딩 재생(비파괴). forceOnboard로 샘 생략 가드 우회
   forceOnboard=true;
