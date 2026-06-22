@@ -204,13 +204,13 @@ function gateOk(n){                                 // 챕터 게이트
     if(tier==="small") return regionReunions(n.parent)>=2;   // 소: 재회 2회 이상
     return true;                                   // 대(대표 감정): 평소대로(허브 완료 + 걸음)
   }
-  if(n.type==="body") return learnedCount()>=FRAG_TOTAL;   // 신체는 맨 마지막 — 감정 27개 다 모은 뒤에 열린다(병렬 → 순차로 변경)
+  if(n.type==="body") return false;   // 🆕 몸은 그래프에서 제거 — 자루(기억 약장)에서 온기로 구매(graph 발견 대상 아님)
   return true;
 }
 let focusQueue=null;                               // 새로 열린(발견된) 노드 — 다음 맵 틱에서 그곳으로 카메라 포커스
 function updateDiscovered(){
   // 🔒 한 번에 하나씩: 아직 안 연(발견됐지만 미해제) 노드가 있으면 새로 더 열지 않는다.
-  for(const n of NODES){ if(n.id!=="start" && !(S.levels[n.id]>0) && S.discovered[n.id]) return null; }
+  for(const n of NODES){ if(n.type==="body") continue; if(n.id!=="start" && !(S.levels[n.id]>0) && S.discovered[n.id]) return null; }   // 🆕 몸은 그래프 발견 대상 아님(자루 구매)
   // 다음 1개만 연다 = 도달가능 & 게이트OK & 미발견 중 '비용 최소'(순서대로).
   // ⚠️ 걸음 충족(walks≥cost)은 보지 않는다 — '열림'은 걸음이 채워져서가 아니라 '앞 노드가 해제돼 도달가능해진' 순간에 결정.
   let best=null, bestC=Infinity;

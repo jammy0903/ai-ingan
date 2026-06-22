@@ -6,6 +6,7 @@ function renderEdges(){
   const W=canvas.clientWidth;
   EDGES.forEach(([a,b])=>{
     const na=NODES.find(n=>n.id===a), nb=NODES.find(n=>n.id===b);
+    if((na&&na.type==="body")||(nb&&nb.type==="body")) return;   // 🆕 몸 엣지 숨김(그래프에서 제거)
     const pa=px(na), pb=px(nb);
     if(!(isRevealed(a)&&isRevealed(b))) return;
     const live = S.levels[a]>0 && S.levels[b]>0;
@@ -33,6 +34,7 @@ function renderNodes(){
   //    발견은 idle 틱에서만(모달 닫은 뒤에). 안 그러면 해금 직후 renderAll에서 다음 노드가 미리 생겨버림.
   document.querySelectorAll(".node").forEach(e=>e.remove());
   NODES.forEach(n=>{
+    if(n.type==="body") return;   // 🆕 몸은 그래프에 안 그림(자루에서 온기로 구매)
     if(!isRevealed(n.id)) return;
     const p=px(n), lv=S.levels[n.id], done=lv>0;
     const el=document.createElement("div");
