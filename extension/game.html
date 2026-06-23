@@ -121,21 +121,6 @@
         0%, 100% { transform: translateY(0); }
         50% { transform: translateY(-5px); }
       }
-      /* 꾸미기는 강아지 박스에 겹쳐 각자 제 위치(눈/머리/목)에 절대배치 */
-      .worn {
-        position: absolute;
-        bottom: 0;
-        left: 50%;
-        transform: translateX(-50%);
-        pointer-events: none;
-        z-index: 2;
-      }
-      .worn span {
-        position: absolute;
-        transform: translate(-50%, -50%); /* 앵커 = 이모지 중심 */
-        line-height: 1;
-        filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25));
-      }
 
       .big {
         font-size: 38px;
@@ -200,7 +185,6 @@
     <div class="sub">타자 한 글자 = 한 걸음</div>
 
     <div class="stage">
-      <div class="worn" id="worn"></div>
       <img class="dog breath" id="dog" src="assets/dog-rest.webp" alt="강아지" draggable="false" />
     </div>
 
@@ -214,7 +198,7 @@
     <button class="exchange" id="exchange">걸음 → 🦴 환전</button>
 
     <div class="shop">
-      <h2>🛍 꾸미기 상점</h2>
+      <h2>🐕 강아지 상점</h2>
       <div id="items"></div>
     </div>
 
@@ -229,6 +213,13 @@
         <div class="seg">
           <button id="petOn">페이지에 풀어놓기</button>
           <button id="petOff">사이드패널만</button>
+        </div>
+      </div>
+      <div id="petSizeWrap" style="margin-top: 12px; display: none">
+        페이지 강아지 크기
+        <div style="margin-top: 6px">
+          <input type="range" id="petSize" min="40" max="200" step="4" style="width: 70%; vertical-align: middle" />
+          <span id="petSizeVal" style="font-size: 11px; color: #a99c8c"></span>
         </div>
       </div>
       <div id="bgPick" style="margin-top: 12px; display: none">
