@@ -149,19 +149,15 @@
 
   window.addEventListener("resize", place);
 
-  chrome.storage.local.get(["pet", "petSize", "g"], ({ pet, petSize: ps, g }) => {
-    petOn = pet !== false;
+  chrome.storage.local.get(["petSize", "g"], ({ petSize: ps, g }) => {
+    petOn = true;                       // 페이지펫 항상 켜짐(무조건 화면)
     if (ps) petSize = ps;
     if (g && g.selDog) setDogSprites(g.selDog);
-    if (petOn) makePet();
+    makePet();
   });
   chrome.storage.onChanged.addListener((c, area) => {
     if (area !== "local") return;
-    if (c.pet) {
-      petOn = c.pet.newValue !== false;
-      if (petOn) makePet();
-      else removePet();
-    }
+    // pet 토글 제거 — 페이지펫은 항상 켜둠
     if (c.petSize) setPetSize(c.petSize.newValue || 92);
     if (c.g && c.g.newValue && c.g.newValue.selDog !== selDog) {
       setDogSprites(c.g.newValue.selDog);

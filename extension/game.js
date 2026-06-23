@@ -113,18 +113,9 @@ chrome.runtime.onMessage.addListener((msg) => {
   }
 });
 
-// 표시 위치는 항상 '새 탭' — 토글/사이드패널 제거(newtab.html이 game.html로 교체).
-
-// ── 강아지가 걷는 곳: 페이지 풀어놓기(pet on) ↔ 사이드패널만(pet off) ──
-function paintPet(on) {
-  $("petOn").classList.toggle("on", on);
-  $("petOff").classList.toggle("on", !on);
-  $("bgPick").style.display = on ? "none" : "block";
-  $("petSizeWrap").style.display = on ? "block" : "none";
-}
-$("petOn").addEventListener("click", () => chrome.storage.local.set({ pet: true }));
-$("petOff").addEventListener("click", () => chrome.storage.local.set({ pet: false }));
-chrome.storage.local.get("pet", ({ pet }) => paintPet(pet !== false));
+// 게임 UI = 사이드패널(툴바 아이콘으로 열기). 새 탭 오버라이드는 쓰지 않음.
+// 페이지펫은 항상 켜짐(무조건 화면) — 토글 제거. pet=false 잔재가 있으면 강제로 켠다.
+chrome.storage.local.get("pet", ({ pet }) => { if (pet === false) chrome.storage.local.set({ pet: true }); });
 
 // 페이지 강아지 크기
 function paintPetSize(px) {
@@ -160,7 +151,6 @@ chrome.storage.local.get("bg", ({ bg }) => applyBg(bg || "flower"));
 
 chrome.storage.onChanged.addListener((c, area) => {
   if (area !== "local") return;
-  if (c.pet) paintPet(c.pet.newValue !== false);
   if (c.petSize) paintPetSize(c.petSize.newValue || 92);
   if (c.bg) applyBg(c.bg.newValue);
 });

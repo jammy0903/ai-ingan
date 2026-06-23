@@ -154,5 +154,4 @@ chrome.runtime.onInstalled.addListener(async () => {
 });
 chrome.runtime.onStartup?.addListener(reconcile);
 
-// 툴바 아이콘 클릭 = 새 탭에서 게임 열기 (사이드패널 제거)
-chrome.action?.onClicked.addListener(() => chrome.tabs.create({}));
+chrome.sidePanel?.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
