@@ -121,17 +121,20 @@
         0%, 100% { transform: translateY(0); }
         50% { transform: translateY(-5px); }
       }
+      /* 꾸미기는 강아지 박스에 겹쳐 각자 제 위치(눈/머리/목)에 절대배치 */
       .worn {
         position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        display: flex;
-        gap: 2px;
-        justify-content: center;
-        font-size: 22px;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
         pointer-events: none;
         z-index: 2;
+      }
+      .worn span {
+        position: absolute;
+        transform: translate(-50%, -50%); /* 앵커 = 이모지 중심 */
+        line-height: 1;
+        filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25));
       }
 
       .big {
