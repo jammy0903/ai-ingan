@@ -37,6 +37,7 @@
 
   function makePet() {
     if (!TOP || wrap || !document.body) return;
+    document.getElementById("__aingan_dog")?.remove(); // 옛/중복 인스턴스 잔재(확장 리로드 등) 제거 → 강아지 한 마리만
     wrap = document.createElement("div");
     wrap.id = "__aingan_dog";
     // 발(이미지 하단 중앙)이 (left,top)에 오도록 translate(-50%,-100%)
