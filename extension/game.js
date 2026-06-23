@@ -102,7 +102,6 @@ $("exchange").addEventListener("click", () => send({ type: "exchange" }));
 // storage 변화 → 갱신 (어느 탭에서 타이핑해도 공유)
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === "local" && changes.g) render(changes.g.newValue);
-  if (area === "local" && changes.surface) paintSurface(changes.surface.newValue);
 });
 
 // content.js가 키마다 보내는 신호 → 다리 한 번 + 걸음 즉시 +1 (1:1)
@@ -114,15 +113,7 @@ chrome.runtime.onMessage.addListener((msg) => {
   }
 });
 
-// ── 표시 위치 토글 (사이드패널 ↔ 새 탭) ──
-function paintSurface(surface) {
-  const tab = surface === "newtab";
-  $("sfTab").classList.toggle("on", tab);
-  $("sfSide").classList.toggle("on", !tab);
-}
-$("sfSide").addEventListener("click", () => chrome.storage.local.set({ surface: "sidepanel" }));
-$("sfTab").addEventListener("click", () => chrome.storage.local.set({ surface: "newtab" }));
-chrome.storage.local.get("surface", ({ surface }) => paintSurface(surface || "newtab"));
+// 표시 위치는 항상 '새 탭' — 토글/사이드패널 제거(newtab.html이 game.html로 교체).
 
 // ── 강아지가 걷는 곳: 페이지 풀어놓기(pet on) ↔ 사이드패널만(pet off) ──
 function paintPet(on) {

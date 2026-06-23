@@ -148,11 +148,11 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 });
 
 chrome.runtime.onInstalled.addListener(async () => {
-  const o = await chrome.storage.local.get([KEY, "surface"]);
+  const o = await chrome.storage.local.get([KEY]);
   if (!o[KEY]) await chrome.storage.local.set({ [KEY]: fresh() });
-  if (!o.surface) await chrome.storage.local.set({ surface: "newtab" });
   await reconcile();
 });
 chrome.runtime.onStartup?.addListener(reconcile);
 
-chrome.sidePanel?.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
+// 툴바 아이콘 클릭 = 새 탭에서 게임 열기 (사이드패널 제거)
+chrome.action?.onClicked.addListener(() => chrome.tabs.create({}));
