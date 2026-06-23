@@ -25,6 +25,48 @@ const SEQ = [0, 1, 2, 3, 2, 1]; // 핑퐁: 다리가 앞으로 갔다 돌아옴
   i.src = src; // 미리 로드(전환 깜빡임 방지)
 });
 
+// 꾸미기 앵커: 강아지 박스 기준 [좌%, 상%] (걷기/휴식 포즈별), 이모지 크기.
+// (강아지는 오른쪽 보는 옆모습 — 머리/눈/목 위치를 그리드로 읽어 맞춤)
+const ANCH = {
+  glasses: { walk: [78, 23], rest: [85, 27], size: 22 }, // 선글라스=눈
+  cap: { walk: [78, 6], rest: [85, 8], size: 24 }, // 모자=머리 위
+  crown: { walk: [78, 1], rest: [85, 2], size: 24 }, // 왕관=머리 맨 위
+  ribbon: { walk: [72, 5], rest: [80, 8], size: 20 }, // 리본=머리/귀 옆
+  scarf: { walk: [65, 42], rest: [76, 46], size: 24 }, // 목도리=목
+};
+
+// 착용 꾸미기를 강아지 박스에 겹쳐 제 위치에 놓는다.
+function layoutWorn() {
+  const d = $("dog"),
+    worn = $("worn");
+  if (!d || !worn) return;
+  if (d.offsetWidth) worn.style.width = d.offsetWidth + "px";
+  if (d.offsetHeight) worn.style.height = d.offsetHeight + "px";
+  const pose = d.classList.contains("walking") ? "walk" : "rest";
+  [...worn.children].forEach((sp) => {
+    const a = ANCH[sp.dataset.id];
+    if (!a) return;
+    sp.style.left = a[pose][0] + "%";
+    sp.style.top = a[pose][1] + "%";
+    sp.style.fontSize = (a.size || 20) + "px";
+  });
+}
+
+function buildWorn(s) {
+  const worn = $("worn");
+  if (!worn) return;
+  worn.innerHTML = "";
+  (s.equipped || []).forEach((id) => {
+    const it = SHOP.find((i) => i.id === id);
+    if (!it || !ANCH[id]) return;
+    const sp = document.createElement("span");
+    sp.dataset.id = id;
+    sp.textContent = it.emoji;
+    worn.appendChild(sp);
+  });
+  layoutWorn();
+}
+
 // 키 한 번 = 다음 프레임. 입력 멈추면 잠시 후 엎드려 쉼.
 function stepLeg() {
   const d = $("dog");
@@ -33,11 +75,13 @@ function stepLeg() {
   d.classList.add("walking");
   walkPhase = (walkPhase + 1) % SEQ.length;
   d.src = WALK[SEQ[walkPhase]];
+  layoutWorn(); // 걷기 포즈 앵커로
   clearTimeout(restTimer);
   restTimer = setTimeout(() => {
     d.classList.remove("walking");
     d.classList.add("breath");
     d.src = REST;
+    layoutWorn(); // 휴식 포즈 앵커로
   }, 600);
 }
 
@@ -60,11 +104,7 @@ function render(s) {
   $("taps").textContent = fmt(s.taps);
   $("exchange").disabled = !(s.steps > 0);
 
-  // 착용한 꾸미기 강아지 위에 표시
-  const worn = (s.equipped || [])
-    .map((id) => (SHOP.find((i) => i.id === id) || {}).emoji || "")
-    .join("");
-  $("worn").textContent = worn;
+  buildWorn(s); // 착용 꾸미기를 강아지 제 위치에
 
   renderShop(s);
 }
@@ -162,6 +202,10 @@ chrome.storage.onChanged.addListener((c, area) => {
   if (c.pet) paintPet(c.pet.newValue !== false);
   if (c.bg) applyBg(c.bg.newValue);
 });
+
+// 강아지 종횡비 변화(걷기↔휴식)·창 크기 변화 시 꾸미기 재배치
+$("dog")?.addEventListener("load", layoutWorn);
+window.addEventListener("resize", layoutWorn);
 
 // 시작: 상점 목록 먼저 받고(응답은 SHOP 배열) → 현재 상태 로드
 chrome.runtime.sendMessage({ type: "shop" }, (shop) => {
