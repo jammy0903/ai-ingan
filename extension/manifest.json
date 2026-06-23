@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "강아지 산책 — 타자로 걷기",
+  "version": "0.1.0",
+  "description": "키보드 한 글자가 강아지의 한 걸음. 걸음을 돈으로 환전해 강아지를 꾸민다.",
+  "permissions": ["storage", "sidePanel"],
+  "background": { "service_worker": "background.js" },
+  "action": { "default_title": "강아지 산책 (클릭=옆 패널 열기)" },
+  "side_panel": { "default_path": "game.html" },
+  "chrome_url_overrides": { "newtab": "newtab.html" },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ],
+  "icons": {
+    "192": "icons/icon-192.png",
+    "512": "icons/icon-512.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["assets/dog-rest.webp", "assets/dog-walk1.webp", "assets/dog-walk2.webp", "assets/dog-walk3.webp", "assets/dog-walk4.webp"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
