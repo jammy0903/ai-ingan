@@ -297,7 +297,7 @@ function openNode(n, firstMeet){
   }
   {
     const pp=PEOPLE[n.key];
-    bgmTo(EMO_BGM[n.key]||"main");   // 이 감정의 곡으로 전환(없으면 main) — 다음 감정 만날 때까지 걷는 배경으로 이어짐
+    if(typeof tutActive==='undefined' || !tutActive) bgmTo(EMO_BGM[n.key]||"main");   // 이 감정의 곡으로 전환(없으면 main) — 다음 감정 만날 때까지 이어짐. ⚠️ 튜토리얼 중엔 바탕음악(main) 고정(전환 안 함)
     const lineIdx=Math.min(lv-1, pp.lines.length-1);
     if(firstMeet){
       afterClose = ()=>maybeTeachReunion(n);   // 첫 감정 닫은 뒤, 재회로만 다음이 열리는 상황이면 1회 안내
