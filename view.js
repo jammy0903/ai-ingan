@@ -655,6 +655,11 @@ function bgmTo(which){ _bgmWhich=which; if(_muted) return;
   }catch(_){ if(!_muted) _armBgmStart(); }
   _bgmFade(cur, BGM_VOL[which]||0.45, 1500);
 }
+// 지금 로봇이 선 노드가 함의하는 BGM 트랙(감정 노드=그 곡, 아니면 main). option B: 감정을 만나면 그 곡으로,
+// 다음 감정까지 유지 — 그런데 앱을 켜서 세이브로 감정 노드에 복원될 땐 도착 이벤트가 없어 _bgmWhich가 main에
+// 머물렀다(버그: 그리움에 서 있어도 main이 나옴). 부팅/세이브 도착 때 이 함수로 위치와 BGM을 동기화한다.
+function bgmForCurrent(){ const n=NODES.find(x=>x.id===S.current); return (n && n.type==="person" && EMO_BGM[n.key]) || "main"; }
+function syncBgmToCurrent(){ bgmTo(bgmForCurrent()); }                           // _bgmWhich를 현재 위치 곡으로(음소거여도 트랙은 맞춰둠 → 해제 시 올바른 곡)
 _armBgmStart();                                                                 // 첫 제스처에 시작(autoplay 정책) — 실패 시 자동 재무장
 
 function toggleMute(){ _muted=!_muted; try{ localStorage.setItem("aingan_muted",_muted?"1":"0"); }catch(_){}

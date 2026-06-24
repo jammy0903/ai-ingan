@@ -83,6 +83,7 @@ function decideEntry(){
     closeGate(); closeIntro();
     if(!S.named) ensureRobotName();                     // 이름 없이 지나친 경우 자동 이름 부여
     refreshHUD();
+    if(typeof syncBgmToCurrent==="function") syncBgmToCurrent();   // 복원된 위치에 맞는 곡으로 BGM 동기화(부팅/세이브 도착)
     return;
   }
   if(typeof authUser!=="undefined" && authUser){ startIntro(); return; }  // 로그인 했으면 게이트 건너뛰고 온보딩
