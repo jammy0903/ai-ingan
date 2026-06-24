@@ -329,19 +329,29 @@
   #sam.out { opacity:0; transform:translateX(calc(-50% + 30px)); }
   #sam svg { width:100%; filter:drop-shadow(0 5px 6px rgba(70,66,60,.18)); animation:bob 4.4s ease-in-out infinite; }
   /* 말풍선: 꼬리가 화자(로봇/샘) 머리 위 중앙을 가리키도록 left = 화자 중심, translateX(-50%) */
-  .scenebub { position:absolute; width:max-content; max-width:220px; word-break:keep-all;
-    padding:11px 15px; border-radius:16px; z-index:6; text-align:center;
-    font-family:'Gaegu',cursive; font-size:19px; line-height:1.5; color:#4d443a; white-space:pre-line;
-    background:rgba(252,249,242,.96); border:1px solid rgba(150,140,120,.42); box-shadow:0 4px 11px rgba(70,66,60,.13);
-    opacity:0; transform:translateY(8px) scale(.96); transition:opacity .35s ease, transform .35s ease; }
-  .scenebub.in  { opacity:1; transform:none; }
-  .scenebub.out { opacity:0; transform:translateY(-6px); }
-  /* 꼬리는 --tail 위치(화자 머리 위)를 가리킴. 말풍선 본체는 화면 안으로 클램프 */
-  .scenebub::after { content:''; position:absolute; bottom:-9px; left:var(--tail,50%); transform:translateX(-50%);
-    width:0; height:0; border:9px solid transparent; border-bottom:0; border-top-color:rgba(252,249,242,.96); }
+  /* 🎈 만화책 말풍선: 통통한 풍선형 + 잉크 아웃라인 + 통! 튀는 팝 + 살랑 떠다님 */
+  .scenebub { position:absolute; width:max-content; max-width:236px; word-break:keep-all;
+    padding:14px 21px; border-radius:34px; z-index:6; text-align:center;
+    font-family:'Gaegu',cursive; font-size:20px; font-weight:700; line-height:1.42; color:#3f372e; white-space:pre-line;
+    background:#fffdf6; border:2.5px solid #4a4038;
+    box-shadow:0 4px 0 rgba(74,64,56,.15), 0 10px 20px rgba(70,66,60,.22);
+    opacity:0; transform-origin:center bottom; }
+  .scenebub.in  { animation: bubpop .52s cubic-bezier(.34,1.72,.5,1) forwards, bubfloat 3.2s ease-in-out .55s infinite; }
+  .scenebub.out { animation:none; opacity:0; transform:scale(.7) translateY(-8px); transition:opacity .3s ease, transform .3s ease; }
+  @keyframes bubpop {
+    0%   { opacity:0; transform:translateY(14px) scale(.4) rotate(-5deg); }
+    55%  { opacity:1; transform:translateY(-4px) scale(1.09) rotate(2.5deg); }
+    74%  { transform:translateY(1px) scale(.96) rotate(-1.5deg); }
+    100% { opacity:1; transform:translateY(0) scale(1) rotate(0); } }
+  @keyframes bubfloat { 0%,100%{ transform:translateY(0) rotate(-1.3deg);} 50%{ transform:translateY(-4px) rotate(1.3deg);} }
+  /* 만화책 꼬리: 잉크 아웃라인(::before 진한 삼각) + 크림 채움(::after) 두 겹. --tail=화자 위치 */
+  .scenebub::before { content:''; position:absolute; bottom:-17px; left:var(--tail,50%); transform:translateX(-50%);
+    width:0; height:0; border:12px solid transparent; border-bottom:0; border-top-color:#4a4038; }
+  .scenebub::after { content:''; position:absolute; bottom:-11px; left:var(--tail,50%); transform:translateX(-50%);
+    width:0; height:0; border:8.5px solid transparent; border-bottom:0; border-top-color:#fffdf6; }
   /* left/--tail은 JS가 화자 위치+화면폭에 맞춰 인라인 지정; top만 클래스로 */
-  .scenebub.fromSam { top:20%; }
-  .scenebub.fromBot { top:30%; }
+  .scenebub.fromSam { top:19%; }
+  .scenebub.fromBot { top:29%; }
   #sceneTapHint { position:absolute; left:0; right:0; bottom:4%; text-align:center; z-index:6; display:none;
     font-family:'Nanum Pen Script',cursive; font-size:17px; color:#8a8071; animation:breathe 2.6s ease-in-out infinite; }
   #sceneTapHint.show { display:block; }
@@ -360,10 +370,13 @@
   .tutring.flash { animation:tutflash .4s ease; }
   @keyframes tutpulse { 0%,100%{ box-shadow:0 0 0 3px rgba(255,224,138,.8),0 0 16px 4px rgba(255,224,138,.5);} 50%{ box-shadow:0 0 0 5px rgba(255,224,138,.96),0 0 30px 9px rgba(255,224,138,.78);} }
   @keyframes tutflash { 0%,100%{ box-shadow:0 0 0 3px rgba(255,224,138,.85),0 0 18px 5px rgba(255,224,138,.5);} 50%{ box-shadow:0 0 0 7px rgba(255,170,90,1),0 0 32px 12px rgba(255,170,90,.85);} }
-  .tutcap { position:fixed; z-index:62; max-width:270px; display:none; pointer-events:none; text-align:center;
-    font-family:'Gaegu',cursive; font-size:18px; line-height:1.5; color:#3f372e; white-space:pre-line;
-    background:rgba(252,249,242,.98); border:1px solid rgba(150,140,120,.5); border-radius:16px; padding:11px 15px;
-    box-shadow:0 6px 18px rgba(40,40,50,.32); }
+  .tutcap { position:fixed; z-index:62; max-width:276px; display:none; pointer-events:none; text-align:center;
+    font-family:'Gaegu',cursive; font-size:18px; font-weight:700; line-height:1.46; color:#3f372e; white-space:pre-line;
+    background:#fffdf6; border:2.5px solid #4a4038; border-radius:26px; padding:13px 18px;
+    box-shadow:0 4px 0 rgba(74,64,56,.15), 0 9px 18px rgba(40,40,50,.3);
+    transform-origin:center top; animation: tutcappop .44s cubic-bezier(.34,1.72,.5,1), tutcapfloat 3s ease-in-out .44s infinite; }
+  @keyframes tutcappop { 0%{ opacity:0; transform:scale(.5) translateY(10px);} 60%{ opacity:1; transform:scale(1.08) translateY(-3px);} 100%{ opacity:1; transform:scale(1) translateY(0);} }
+  @keyframes tutcapfloat { 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(-3.5px);} }
   .tutcap .tuttap { display:block; margin-top:6px; font-size:13px; color:#b08400; font-family:'Nanum Pen Script',cursive; }
   #tutSkip { position:fixed; top:10px; right:12px; z-index:63; display:none;
     padding:7px 13px; border:1px solid #cbbfae; border-radius:16px; background:rgba(251,248,243,.9);
