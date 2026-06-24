@@ -132,7 +132,8 @@ const SAM_SCRIPT=[
   {who:'bot', t:"…근데\n어떻게 모으지?"},
   {who:'bot', t:"아~\n길에서 사람을 만나면\n마음도 몸도 한 조각씩!"},
   {who:'bot', t:"가만히 둬도 걸어.\n근데 네가 화면을 톡톡!\n그럼 내가 더 빨리 걸어."},
-  {who:'bot', t:"그러니까…\n같이 걸어줘."} ];
+  {who:'bot', t:"그러니까…\n같이 걸어줘."},
+  {cloud:true} ];                                      // ← 걷기 직전: 구름 튜토리얼(구름이 말풍선으로 직접 설명 → 터치=선물, 누를수록 ↑)
 let samVisible=false, forceOnboard=false;   // forceOnboard = 관리자 '온보딩 다시보기'(진행 있어도 샘 생략 가드 우회, 비파괴)
 function startSamScene(){
   if(!forceOnboard && (S.cycle>0 || S.depth>0 || (S.discovered && Object.keys(S.discovered).length>0))){ beginAdventure(); return; }  // 이미 진행한 유저 — 샘 대화 생략
@@ -156,6 +157,7 @@ function renderSceneBubble(){
     openNamingModal(()=>{ sceneStep++; $("#sceneTapHint").classList.add("show"); renderSceneBubble(); });
     return;
   }
+  if(cur.cloud){ spawnTutorialCloud(); return; }        // 🆕 구름 튜토리얼: 구름이 말풍선으로 직접 설명 → 터치해야 다음(걷기)
   const b=document.createElement("div");
   b.className="scenebub "+(cur.who==="sam"?"fromSam":"fromBot");
   b.textContent=cur.t;
@@ -172,6 +174,31 @@ function placeBubble(b, pct){
   b.style.left = left+"px";
   b.style.setProperty("--tail", Math.max(16, Math.min(bw-16, speakerX-left))+"px");
 }
+/* 🆕 온보딩 마지막: 구름이 말풍선으로 "날 누르면 걸음 선물! 누를수록 더!" → 터치하면 선물+걷기 시작.
+   구름은 #samScene(z6) 안에 둬야 위에서 탭을 받는다(#clouds는 z2라 씬에 가려져 못 받음). */
+function spawnTutorialCloud(){
+  $("#sceneTapHint").classList.remove("show");          // '화면 톡 - 다음' 숨김 — 구름 터치로만 진행
+  sceneReady=false;                                     // 빈 곳 탭으론 안 넘어감(구름만)
+  const sc=$("#samScene");
+  const c=document.createElement("div");
+  c.className="cloud tutCloud"; c.innerHTML=CLOUD_SVG();
+  c.style.cssText="left:50%; top:38%; transform:translateX(-50%); animation:none;";   // 안 떠다니고 가운데 정지
+  c.addEventListener("pointerdown", e=>{ e.stopPropagation(); popTutorialCloud(c); }); // 스톱: 씬 advance(addWalk)로 안 새게
+  sc.appendChild(c);
+  const b=document.createElement("div");
+  b.className="scenebub fromBot tutCloudBub";
+  b.textContent="안녕! 날 톡 누르면\n걸음을 선물로 줄게.\n누를수록 더 많이!";
+  sc.appendChild(b);
+  b.style.top="18%";                                    // 구름(38%) 위 — 꼬리가 아래 구름을 가리킴
+  placeBubble(b, 0.5);
+  requestAnimationFrame(()=>b.classList.add("in"));
+}
+function popTutorialCloud(c){
+  if(c._popped) return; c._popped=true;
+  cloudGiftFx(c);                                       // 뿅 + 물비 + 누적 선물(view.js 공통, 첫 100·둘째 200…)
+  $("#samScene").querySelectorAll(".tutCloudBub").forEach(b=>{ b.classList.add("out"); setTimeout(()=>b.remove(),360); });
+  setTimeout(()=>{ sceneStep++; renderSceneBubble(); }, 750);   // → 다음 스텝=끝 → endSamScene → 걷기 시작
+}
 function advanceScene(){ if(!sceneActive || !sceneReady) return; sceneStep++; renderSceneBubble(); }
 function endSamScene(){
   track("quest_received",{});                          // 온보딩 2단(샘 퀘스트) 통과 → 모험 시작
@@ -180,7 +207,7 @@ function endSamScene(){
   $("#sceneTapHint").classList.remove("show");
   walkRobot.style.left="";                             // 평소 위치(44%)로 복귀
   sc.classList.remove("show");
-  sc.querySelectorAll(".scenebub").forEach(x=>x.remove());
+  sc.querySelectorAll(".scenebub, .tutCloud").forEach(x=>x.remove());   // 🆕 튜토리얼 구름 잔여물도 정리
   $("#sam").classList.remove("in","out"); samVisible=false;
   forceOnboard=false;                                  // 재생 종료
   beginAdventure();

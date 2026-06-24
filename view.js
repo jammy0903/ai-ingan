@@ -896,8 +896,9 @@ function spawnCloud(){
 // 구름 터치 → 뿅 터지고 물방울이 비처럼 쏟아진다 + 현재 걸음/초 × 10 선물
 let _cloudGiftN = 0;                  // 구름 '터치' 누적 횟수(안 누른 구름은 카운트 안 됨). 새로고침 시 0으로 리셋.
 const CLOUD_GIFT_STEP = 100;          // 터치 1회당 선물 증가분(첫터치 100·둘째 200·셋째 300…)
-function popCloud(c){
-  if(c._popped) return; c._popped=true;
+function popCloud(c){ if(c._popped) return; c._popped=true; cloudGiftFx(c); }
+// 구름 터치 연출+누적 선물(공통) — 평소 떠다니는 구름과 온보딩 튜토리얼 구름이 공유.
+function cloudGiftFx(c){
   const r=c.getBoundingClientRect();
   const cx=r.left+r.width/2, cy=r.top+r.height*0.62;                    // 구름 아래쪽에서 물 터짐
   rainBurst(cx, cy);
