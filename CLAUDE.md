@@ -18,6 +18,7 @@
 4. **Map the blast radius first, then report.** Before editing a shared/common function or anything referenced elsewhere, tell the user "this also affects A and B — proceed?" and wait. Never edit shared code blind.
 5. **Keep changes splittable into small git commits.** Don't overturn dozens of files at once. Deliver incrementally — "Stage 1: extracted fn X", "Stage 2: added feature interface Y" — so the user can review and commit each separately.
 6. **Stay in this project's style.** No forced latest-trend or heavyweight design patterns. Match the existing conventions, naming, and architecture grain. **No over-engineering.**
+7. **Fix the root cause, not the local symptom (구조 전체와 맞물려 보라).** When a bug surfaces, don't patch only the one line where it shows. Trace how it interlocks with the whole structure — every call site / entry point, the invariants each function assumes, where state can desync — and fix the underlying cause so it can't resurface elsewhere. A local patch that leaves the broken invariant intact in other paths is not a fix. (User directive, 2026-06-24. Example: the "완료 노드 클릭 시 로봇 미이동" bug — root cause was *no single "approach node then meet" entry point*; the real fix was unifying all reunion/meeting clicks through `meetNode`, which enforces `openNode`'s "robot is at the node" invariant — not just patching the one onclick.)
 
 ### 0.2 Commit & push rules
 - **Read `git-rule.md`** before any git operation (commit / branch / staging). It is the source of truth for commit conventions.
