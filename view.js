@@ -52,11 +52,25 @@ function renderNodes(){
     el.innerHTML =
       `<div class="ring"><span class="ic">${n.type==="teaser"?"?":n.icon}</span>${done&&n.gen?`<span class="lv">Lv${lv}</span>`:""}</div>`+
       `<div class="label">${n.type==="teaser"?"안갯속 무언가":name}</div>`+
-      (reach?`<div class="cost">${fmt(cost)} 걸음</div>`:
-        (done&&n.gen?`<div class="cost rate">+${(n.gen*lv).toFixed(1)}/초</div>`:""));
+      (reach?`<div class="cost">${fmt(cost)} 걸음</div>`
+       : (done && isReunionable(n)?`<div class="cost reune" data-reune="${n.id}">🔁 ${fmt(upCost(n,lv+1))}</div>`   // 🆕 꽁지: 재회까지 몇 걸음(아래서 실시간 카운트다운)
+       : (done && n.gen?`<div class="cost reune done">🔁 최대</div>`:"")));
     if(reach) el.onclick = ()=>tryUnlock(n);
     else if(done && n.gen) el.onclick = ()=>meetNode(n,false);   // 완료 노드 = 재회(meetNode가 이동 보장)
     world.appendChild(el);
+  });
+  updateMapCounters();   // 방금 그린 꽁지를 현재 걸음 기준 '남은 걸음'으로 즉시 갱신(렌더 직후 깜빡임 방지)
+}
+// 🆕 재회 꽁지 실시간 카운트다운: 노드 옆 '🔁 N 더'가 걸음 쌓일수록 줄어들고, 충분하면 '🔁 지금!'.
+//   idle 틱에서 호출 — 전체 재렌더 없이 라벨만 갱신(가볍게).
+function updateMapCounters(){
+  if(curPage!=="map") return;
+  const w=Math.floor(S.walks);
+  document.querySelectorAll('.node .cost.reune[data-reune]').forEach(el=>{
+    const id=el.dataset.reune, n=NODES.find(x=>x.id===id); if(!n) return;
+    const cost=upCost(n,(S.levels[id]||0)+1), need=cost-w;
+    el.textContent = need>0 ? `🔁 ${fmt(need)} 더` : `🔁 지금!`;
+    el.classList.toggle('ready', need<=0);
   });
 }
 function safeCurrentId(){   // 좌초 복구용: 가장 깊이 진행한(레벨 높은) '보이는' 노드, 없으면 start
@@ -79,7 +93,10 @@ function updateReunionBtn(){
     const nm = n.type==="person"?PEOPLE[n.key].name : (n.type==="body"?BODY[n.key].name : "");
     $("#reunionName").textContent=nm;
     btn.classList.add("show");
-    const can = S.walks >= upCost(n, S.levels[n.id]+1);   // 걸음수가 재회 비용만큼 차야 활성화
+    const cost = upCost(n, S.levels[n.id]+1);
+    const can = S.walks >= cost;                          // 걸음수가 재회 비용만큼 차야 활성화
+    const need = $("#reunionNeed");
+    if(need) need.textContent = can ? "" : ` · ${fmt(cost-Math.floor(S.walks))}걸음 더!`;  // 🆕 비활성 이유 = 부족 걸음 실시간 표시(카운트다운)
     btn.classList.toggle("off", !can);
     btn.disabled = !can;
   } else { btn.classList.remove("show"); btn.disabled=false; }

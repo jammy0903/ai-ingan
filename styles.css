@@ -103,6 +103,12 @@
   .node .label { font-size:12px; color:#6a6358; letter-spacing:.3px; white-space:nowrap; opacity:.9; }
   .node .cost { font-size:11px; color:#9a86b8; font-family:'Gaegu',cursive; }
   .node .cost.rate { color:#6f9a72; font-weight:700; }
+  /* 🆕 재회 꽁지: 노드 옆 작은 핀 — '🔁 N 더'(부족, 카운트다운) → '🔁 지금!'(충분) */
+  .node .cost.reune { display:inline-block; font-weight:700; color:#b07a3a; white-space:nowrap;
+    background:rgba(255,244,224,.94); border:1px solid #e3c79a; border-radius:9px; padding:0 6px; line-height:1.55; }
+  .node .cost.reune.ready { color:#3f8a4a; background:rgba(226,247,227,.96); border-color:#a7d9ab; }
+  .node .cost.reune.done  { color:#a89f93; background:rgba(241,237,231,.9); border-color:#ddd4c8; }
+  .reunionbtn .rbneed { color:#b0632f; font-weight:700; }
 
   /* 빈 원 (예고) */
   .node.empty .ring { background:transparent; border:2px dashed #ccbce2; opacity:.55; }
