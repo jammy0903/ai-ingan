@@ -4,6 +4,7 @@
 setInterval(()=>{ if(sceneActive||coachActive||intro.phase!=="play") return;   // 샘 대화/안내(코치)/깨우기 중엔 걷지 않음(걸음 정지)
   S.walks += effRate()*0.1; elWalks.textContent=fmt(S.walks); syncSteps();
   updateReunionBtn();   // 걸음 쌓일수록 재회 버튼 활성/비활성 실시간 갱신
+  updateMapCounters();  // 🆕 노드 옆 '재회까지 N걸음' 꽁지 실시간 카운트다운
   // ⚠️ 만남/재회 모달(글 읽는 중)·코치 등 오버레이가 떠 있으면 '발견'도 '포커스'도 둘 다 보류 → 다 읽고 닫은 뒤에 비로소 다음 노드가 생긴다.
   const _ov = ['modal','coach','sackModal','prestige','endcine'].some(id=>{const e=document.getElementById(id); return e&&e.classList.contains('show');});
   if(_ov || busyMeet) return;     // 만남 진행 중(이동~모달)·오버레이 떠 있으면 다음 노드 발견·포커스 보류
