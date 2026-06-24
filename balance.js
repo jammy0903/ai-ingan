@@ -11,8 +11,16 @@ const COMBO_STEP   = 0.15;       // 콤보 1당 탭 배율 증가분 (배율 = 1
 const COMBO_MAX    = 40;         // 콤보 상한 → 최대 탭 배율 1 + 0.15×40 = ×7
 const CRIT_CHANCE  = 0.12;       // 탭 크리티컬 확률
 const CRIT_MULT    = 6;          // 크리 시 탭 ×
-const UP_BASE = { person: 30 };   // 재회 업그레이드 1레벨 비용 기준
-const upCost = (node, lv) => Math.round(UP_BASE.person * Math.pow(1.15, lv-1));  // 재회 비용 곡선(1.15 = 5레벨당 ×2.0, 달성보너스 ×2와 균형 → '국소 벽' 제거. 재회 = 막힘없는 잔잔한 잼)
+const UP_BASE = { person: 30 };   // (레거시) 옛 재회 고정 기준 — 아래 upCost는 '발견 비용 추종'으로 교체됨(세이브/디버그 호환 위해 상수만 보존)
+// 🆕 재회 비용 = '그 시점 발견 비용' 추종 + 프리미엄 (2026-06-24, 유저 지시: 재회는 감정노드 첫 발견보다 비싸야 함).
+//   upCost(lv) = discoverCostRaw() × REUNION_PREMIUM × REUNION_GROWTH^(lv-1).
+//   REUNION_PREMIUM>1 이라 가장 싼 첫 재회(lv2)도 발견 비용보다 비쌈 → '재회 > 발견' 항상 보장.
+const REUNION_PREMIUM = 1.5;      // 재회 기본 프리미엄(발견 비용 대비 배수)
+const REUNION_GROWTH  = 1.15;     // 재회 레벨마다 ×(점증) — 5레벨당 ≈×2
+const upCost = (node, lv) => {
+  const disc = (typeof discoverCostRaw==='function') ? discoverCostRaw() : DISCOVER_COST_BASE;  // 로드순서 가드(평소엔 engine.js 정의)
+  return Math.round(disc * REUNION_PREMIUM * Math.pow(REUNION_GROWTH, Math.max(0, lv-1)));
+};
 const MAX_LV = 50;                // 재회 심화 상한 — 끝없는 sink(거지 알바식). 5레벨마다 ×2 달성보너스(achieveMult)
 // 발견(이동) 비용 = '내 걸음 속도 추종' + '순번별 목표 탭수 곡선'.
 // 비용 = effRate(걸음/초) × TAP_CURVE[순번]. TAP_FRAC=1.0라 "목표 탭수 = 목표 초"(가만 두면 그 초만큼 idle로도 도달).

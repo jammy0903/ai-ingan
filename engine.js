@@ -189,15 +189,16 @@ function unlockedCount(){ let c=0; for(const n of NODES){ if(n.id!=="start" && S
 // 다음 발견의 목표 탭수(=목표 초). 순번이 곡선 길이를 넘으면 끝값(평탄).
 function discoverTaps(){ const C=(typeof TAP_CURVE!=='undefined')?TAP_CURVE:[5,25,42,58,80]; return C[Math.min(unlockedCount(), C.length-1)]; }  // 가드: balance.js 버전 엇갈려 TAP_CURVE 없어도 throw 안 하고 폴백(지도 크래시 방지)
 let DISCOVER_MULT = 1;   // 🆕 발견 비용 전체 배율(관리자 실시간 튜닝용 · 기본 1=무효). reachCost에 곱해 진행 속도 일괄 조절(세이브 무관·새로고침 원복).
-function reachCost(id){ // 🆕 발견(이동) 비용 = 지수곡선 DISCOVER_COST_BASE × DISCOVER_COST_GROWTH^n (2026-06-24)
+// 🆕 발견 비용 '날값'(반올림·도달성 판정 전) = DISCOVER_COST_BASE × DISCOVER_COST_GROWTH^costN × DISCOVER_MULT.
+//   재회 비용(balance.js upCost)도 이걸 기준으로 잡아 '재회 ≥ 발견'을 보장한다.
+function discoverCostRaw(){ return DISCOVER_COST_BASE * Math.pow(DISCOVER_COST_GROWTH, costN()) * DISCOVER_MULT; }
+function reachCost(id){ // 🆕 발견(이동) 비용 = 지수곡선(2026-06-24)
   // 도달 가능?: 완료된 이웃이 하나라도 있어야 연다(그래프 토폴로지 게이트). 없으면 무한.
   let reachable=false;
   for(const [nb] of neighbors(id)){ if(S.levels[nb]>0){ reachable=true; break; } }
   if(!reachable) return Infinity;
-  // costN()(비용 지수, 상한 40 — 탭 파워와 별개). 노드별 w·effTap추종·TAP_CURVE 폐기 — 진행도 단일 지수로 통일.
-  // ※ 모든 후보 노드가 같은 costN을 쓰므로 비용이 동일 → updateDiscovered의 '최소비용 우선'은 NODES 배열 순서로 결정.
-  //   NODES는 갈래 내부가 의도 순서(대표→얕은→깊은)로 적혀 있어 발견 순서는 보존된다.
-  return Math.round(DISCOVER_COST_BASE * Math.pow(DISCOVER_COST_GROWTH, costN()) * DISCOVER_MULT);
+  // costN()(비용 지수, 상한 40 — 탭 파워와 별개). 모든 후보가 같은 costN → 비용 동일 → updateDiscovered '최소비용'은 NODES 순서.
+  return Math.round(discoverCostRaw());
 }
 // 갈래 안 대/중/소 티어 (대=대표 1 / 중=다음 / 소=깊은 마지막). 갈래 안에서 단계적으로 공개.
 // 한 갈래에서 '재회' 누적 횟수(레벨2 이상으로 다시 만난 만큼)

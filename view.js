@@ -259,7 +259,7 @@ function learnedCount(){ return NODES.filter(n=>n.type==="person" && S.levels[n.
 function bodyCount(){ return NODES.filter(n=>n.type==="body" && S.levels[n.id]>0).length; }
 const FRAG_TOTAL = 27;   // 인간 감정 27가지 (Cowen & Keltner, 2017)
 const BODY_TOTAL = 11;   // 인체 11 기관계
-const OFFLINE_CAP_STEPS = 10000;   // 🆕 오프라인 적립 누적 상한(걸음). idle 1/초 → 최대 ~2.8시간치. (추후 balance.js로 이동 예정 — Stage 2)
+const OFFLINE_CAP_STEPS = 1000;    // 🆕 오프라인 적립 누적 상한(걸음). idle 1/초 → 최대 ~16.7분치 (2026-06-24 1만→1천, 접속 유도 강화). (추후 balance.js로 이동 예정 — Stage 2)
 
 // 목적격 조사 을/를 — 마지막 글자 받침 유무로 결정 ("애틋함을", "재미를")
 function objParticle(word){
