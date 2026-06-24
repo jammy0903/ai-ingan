@@ -212,6 +212,7 @@ function endSamScene(){
   forceOnboard=false;                                  // 재생 종료
   beginAdventure();
   setTimeout(emitSys, 900);
+  setTimeout(()=>{ try{ startMapTut(); }catch(_){} }, 1300);   // 🆕 걷기 시작 직후 지도 스포트라이트 튜토리얼(1회)
 }
 $("#rerollBtn").addEventListener("click",()=>{ S.robotName=""; ensureRobotName(); $("#nameInput").value=S.robotName; });
 // 샘 장면(튜토리얼) 넘어가기 → 바로 게임 시작
@@ -239,3 +240,103 @@ $("#renameOk")?.addEventListener("click", applyRename);
 $("#renameCancel")?.addEventListener("click", closeRename);
 renameOv?.addEventListener("click", e=>{ if(e.target===renameOv) closeRename(); });
 $("#renameInput")?.addEventListener("keydown", e=>{ if(e.key==="Enter") applyRename(); else if(e.key==="Escape") closeRename(); });
+
+/* ===== 🆕 스포트라이트 튜토리얼 — 지도→긍정→기쁨→재회→다음노드→가방 (+목표카운터·빈원·색번짐·오프라인) =====
+   '정해진 곳만 빛나고 거기를 눌러야 다음' 표준 코치마크. 상태 기반(이벤트 훅 최소) 폴링 rAF로 구동.
+   4장 패널이 타깃만 빼고 화면을 가려 '구멍'을 만든다 → 그 타깃만 탭 통과. 모달 떠 있으면 잠깐 숨김. */
+let tutActive=false, tutStep=0, tutRaf=0, _tutShownStep=-1, _tutEls=null;
+const TUT_GRANT_STEPS = 1500;   // 튜토리얼 시작 시 걸음 선물 — 노드·재회 비용에 막히지 않게(유저 결정: 넉넉히 지급)
+function tutDom(){
+  if(_tutEls) return _tutEls;
+  const mk=cls=>{ const d=document.createElement("div"); d.className=cls; document.body.appendChild(d); return d; };
+  const panels=[mk("tutpanel"),mk("tutpanel"),mk("tutpanel"),mk("tutpanel")];
+  const ring=mk("tutring");
+  const cap=mk("tutcap");
+  const skip=document.createElement("button"); skip.id="tutSkip"; skip.type="button"; skip.textContent="튜토리얼 건너뛰기 ›";
+  skip.addEventListener("click", e=>{ e.stopPropagation(); tutEnd(); }); document.body.appendChild(skip);
+  return (_tutEls={panels, ring, cap, skip});
+}
+function tutModalOpen(){   // 메인 모달/자루/리네임 등 떠 있으면 스포트라이트 숨김(겹침 방지)
+  return ["modal","sackModal","renameOv","gate","endcine"].some(id=>{ const e=document.getElementById(id); return e && e.classList.contains("show"); });
+}
+function firstCatPosNext(){   // 재회 후 안갯속에서 열린 다음 긍정 감정(기쁨 외, 빈 원)
+  return NODES.find(n=>n.type==="person" && n.parent==="cat_pos" && n.id!=="joy" && isRevealed(n.id) && !(S.levels[n.id]>0));
+}
+const MAP_TUT=[
+  { tap:true, find:()=>document.querySelector('.tab[data-page="map"]'),
+    cap:"먼저 지도를 보자.\n「🗺 지도」를 톡!",
+    done:()=>curPage==="map" },
+  { tap:true, find:()=>document.querySelector('.node[data-id="cat_pos"]'), onShow:()=>panTo("cat_pos"),
+    cap:"여긴 「긍정·흥미」 갈래.\n톡 눌러 걸음으로 가보자.",
+    done:()=>S.levels["cat_pos"]>0 },
+  { tap:true, find:()=>document.querySelector('.node[data-id="joy"]'), onShow:()=>panTo("joy"),
+    cap:"첫 감정, 「기쁨」!\n다가가 만나보자.",
+    done:()=>S.levels["joy"]>0 },
+  { info:true, find:()=>document.getElementById("fragStat"),
+    cap:"🧩 1/27! 회색 세계에 색이 번졌지?\n마음 27 · 몸 11을 다 모으면\n샘이 진짜 사람으로 만들어줘.",
+    done:s=>s._adv },
+  { tap:true, find:()=>{ const b=document.getElementById("reunionBtn"); return (b&&b.classList.contains("show"))?b:null; },
+    cap:"이제 재회! 「다시 만나기」를 눌러.\n재회하면 더 깊어지고 ✨온기를 얻어 —\n그리고 재회해야 다음 감정이 열려!",
+    done:()=>S.levels["joy"]>=2 },
+  { info:true, find:()=>{ const n=firstCatPosNext(); return n?document.querySelector(`.node[data-id="${n.id}"]`):null; },
+    onShow:()=>{ const n=firstCatPosNext(); if(n) panTo(n.id); },
+    cap:"봐, 다음 감정이 안갯속에서 열렸어!\n흐릿한 빈 원 = 다음 예고야.",
+    done:s=>s._adv },
+  { tap:true, find:()=>document.querySelector('.tab[data-page="walk"]'),
+    cap:"가방을 보러 「🚶 길」로 돌아가자.",
+    done:()=>curPage==="walk" },
+  { tap:true, find:()=>document.getElementById("sack"),
+    cap:"등의 가방을 톡!\n여기서 ✨온기로 「몸(신체)」을 사 모아.\n사람이 되려면 몸 11도 필요해\n(감정 27을 다 모으면 열려).",
+    done:()=>{ const e=document.getElementById("sackModal"); return e&&e.classList.contains("show"); } },
+  { info:true, find:()=>document.getElementById("fragStat"),
+    cap:"끝! 꺼도 로봇은 계속 걸어둬 🌙\n돌아오면 걸음이 쌓여 있어.\n자, 같이 사람이 되자.",
+    done:s=>s._adv },
+];
+function startMapTut(){
+  if(tutActive || S.seenMapTut) return;
+  if(S.cycle>0 || S.depth>0){ S.seenMapTut=true; return; }   // 이미 진행한 유저면 표시만 하고 생략
+  tutActive=true; tutStep=0; _tutShownStep=-1;
+  MAP_TUT.forEach(s=>s._adv=false);
+  S.walks += TUT_GRANT_STEPS; syncSteps(); refreshHUD();      // 걸음 선물(막힘 방지)
+  tutDom().skip.style.display="block";
+  tutLoop();
+}
+function tutLoop(){
+  if(!tutActive) return;
+  tutRaf=requestAnimationFrame(tutLoop);
+  const els=tutDom(), cur=MAP_TUT[tutStep];
+  if(!cur){ tutEnd(); return; }
+  if(cur.done(cur)){ _tutShownStep=-1; tutStep++; return; }   // 완료 → 다음 스텝
+  const el = tutModalOpen() ? null : cur.find();
+  if(!el){ tutHideSpot(els); return; }                        // 타깃 아직 없음/모달 중 → 잠깐 숨김
+  if(_tutShownStep!==tutStep){ _tutShownStep=tutStep; if(cur.onShow) try{ cur.onShow(); }catch(_){} }
+  tutPlaceSpot(els, el, cur);
+}
+function tutHideSpot(els){ els.panels.forEach(p=>p.style.display="none"); els.ring.style.display="none"; els.cap.style.display="none"; }
+function tutShake(els){ els.ring.classList.remove("flash"); void els.ring.offsetWidth; els.ring.classList.add("flash"); }
+function tutPlaceSpot(els, el, cur){
+  const r=el.getBoundingClientRect(), W=innerWidth, H=innerHeight, pad=6;
+  const x=Math.max(0,r.left-pad), y=Math.max(0,r.top-pad), w=r.width+pad*2, h=r.height+pad*2;
+  const [pt,pb,pl,pr]=els.panels;
+  const onClick = cur.info ? (()=>{ cur._adv=true; }) : (()=>tutShake(els));
+  const set=(p,l,t,ww,hh)=>{ p.style.display="block"; p.style.left=l+"px"; p.style.top=t+"px";
+    p.style.width=Math.max(0,ww)+"px"; p.style.height=Math.max(0,hh)+"px";
+    p.className="tutpanel"+(cur.info?" info":""); p.onclick=onClick; };
+  set(pt, 0, 0, W, y);                       // 위
+  set(pb, 0, y+h, W, H-(y+h));               // 아래
+  set(pl, 0, y, x, h);                       // 왼
+  set(pr, x+w, y, W-(x+w), h);               // 오른
+  els.ring.style.display="block"; els.ring.style.left=x+"px"; els.ring.style.top=y+"px";
+  els.ring.style.width=w+"px"; els.ring.style.height=h+"px";
+  els.cap.style.display="block";
+  els.cap.innerHTML = cur.cap.replace(/\n/g,"<br>") + (cur.tap?'<span class="tuttap">👆 여기를 톡</span>':(cur.info?'<span class="tuttap">탭하면 다음 ›</span>':''));
+  const capW=els.cap.offsetWidth, capH=els.cap.offsetHeight, cx=x+w/2;
+  let top = y+h+12; if(top+capH > H-8) top = Math.max(8, y-capH-12);   // 아래 우선, 없으면 위
+  els.cap.style.left = Math.max(8, Math.min(cx-capW/2, W-capW-8))+"px";
+  els.cap.style.top  = top+"px";
+}
+function tutEnd(){
+  tutActive=false; if(tutRaf){ cancelAnimationFrame(tutRaf); tutRaf=0; }
+  if(_tutEls){ tutHideSpot(_tutEls); _tutEls.skip.style.display="none"; _tutEls.panels.forEach(p=>p.onclick=null); }
+  S.seenMapTut=true; saveState();
+}

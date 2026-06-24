@@ -67,6 +67,7 @@ const S = {
   lookback: 0,           // '기억 재해석'으로 되돌아본 기억 수 (마음의 깊이로 구매, §3)
   seenIntro: false,      // 시작 게이트/온보딩을 한 번이라도 지났는가 (이후 강제 재노출 안 함)
   seenReunionHint: false, // 재회(다음 티어 해금) 안내를 한 번이라도 봤는가
+  seenMapTut: false,      // 🆕 지도 스포트라이트 튜토리얼(긍정→기쁨→재회→가방)을 한 번이라도 봤는가
 };
 NODES.forEach(n => S.levels[n.id] = n.completed ? 1 : 0);
 

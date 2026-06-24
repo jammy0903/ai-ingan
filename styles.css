@@ -351,6 +351,25 @@
     font-family:'Nanum Myeongjo',serif; font-size:12px; color:#9a917f; cursor:pointer; }
   #samSkip:active { background:#ece3d0; }
 
+  /* ---------- 🆕 스포트라이트 튜토리얼(지도→긍정→기쁨→재회→가방 코치마크) ---------- */
+  /* 4장 패널이 타깃 사각형만 빼고 화면을 가림(=구멍). 구멍 안 타깃만 탭 통과. */
+  .tutpanel { position:fixed; background:rgba(16,20,27,.6); z-index:60; display:none; }
+  .tutpanel.info { cursor:pointer; }
+  .tutring { position:fixed; z-index:61; display:none; border-radius:14px; pointer-events:none;
+    box-shadow:0 0 0 3px rgba(255,224,138,.85), 0 0 18px 5px rgba(255,224,138,.5); animation:tutpulse 1.25s ease-in-out infinite; }
+  .tutring.flash { animation:tutflash .4s ease; }
+  @keyframes tutpulse { 0%,100%{ box-shadow:0 0 0 3px rgba(255,224,138,.8),0 0 16px 4px rgba(255,224,138,.5);} 50%{ box-shadow:0 0 0 5px rgba(255,224,138,.96),0 0 30px 9px rgba(255,224,138,.78);} }
+  @keyframes tutflash { 0%,100%{ box-shadow:0 0 0 3px rgba(255,224,138,.85),0 0 18px 5px rgba(255,224,138,.5);} 50%{ box-shadow:0 0 0 7px rgba(255,170,90,1),0 0 32px 12px rgba(255,170,90,.85);} }
+  .tutcap { position:fixed; z-index:62; max-width:270px; display:none; pointer-events:none; text-align:center;
+    font-family:'Gaegu',cursive; font-size:18px; line-height:1.5; color:#3f372e; white-space:pre-line;
+    background:rgba(252,249,242,.98); border:1px solid rgba(150,140,120,.5); border-radius:16px; padding:11px 15px;
+    box-shadow:0 6px 18px rgba(40,40,50,.32); }
+  .tutcap .tuttap { display:block; margin-top:6px; font-size:13px; color:#b08400; font-family:'Nanum Pen Script',cursive; }
+  #tutSkip { position:fixed; top:10px; right:12px; z-index:63; display:none;
+    padding:7px 13px; border:1px solid #cbbfae; border-radius:16px; background:rgba(251,248,243,.9);
+    font-family:'Nanum Myeongjo',serif; font-size:12px; color:#9a917f; cursor:pointer; }
+  #tutSkip:active { background:#ece3d0; }
+
   /* ---------- 엔딩 시네마틱 ---------- */
   .endcine { position:absolute; inset:0; z-index:46; display:none; flex-direction:column; align-items:center; justify-content:center;
     padding:36px; text-align:center; background:linear-gradient(160deg,#e8e9e5,#dcd9d1); transition:background 2.4s ease; cursor:pointer; }
