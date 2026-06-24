@@ -55,7 +55,7 @@ function renderNodes(){
       (reach?`<div class="cost">${fmt(cost)} 걸음</div>`:
         (done&&n.gen?`<div class="cost rate">+${(n.gen*lv).toFixed(1)}/초</div>`:""));
     if(reach) el.onclick = ()=>tryUnlock(n);
-    else if(done && n.gen) el.onclick = ()=>openNode(n,false);
+    else if(done && n.gen) el.onclick = ()=>meetNode(n,false);   // 완료 노드 = 재회(meetNode가 이동 보장)
     world.appendChild(el);
   });
 }
@@ -84,7 +84,7 @@ function updateReunionBtn(){
     btn.disabled = !can;
   } else { btn.classList.remove("show"); btn.disabled=false; }
 }
-$("#reunionBtn").onclick=()=>{ const n=NODES.find(x=>x.id===S.current); if(isReunionable(n) && S.walks>=upCost(n,S.levels[n.id]+1)) openNode(n,false); };
+$("#reunionBtn").onclick=()=>{ const n=NODES.find(x=>x.id===S.current); if(isReunionable(n) && S.walks>=upCost(n,S.levels[n.id]+1)) meetNode(n,false); };  // 로봇이 선 노드 = 즉시(meetNode 일관)
 
 /* ---------- 자루(인벤토리) — 기억 약장: 감정=유리병, 로봇 오류코드 라벨 ---------- */
 function openSack(){
@@ -205,6 +205,13 @@ function travelTo(n, cb){
   S.current=n.id; placeRobot(true);
   centerOn(n.id, true);
   setTimeout(cb, 1100);
+}
+// 노드와의 만남/재회 단일 진입점 — openNode의 암묵 계약(로봇이 그 노드에 도착해 있음)을 강제한다.
+// 멀리 있으면 걸어가서(travelTo) 열고, 이미 그 노드 위면 즉시(v1.0.18 재회 즉시반응) 연다.
+// ⚠️ openNode를 노드 클릭으로 직접 부르지 말 것 — 로봇 위치와 모달이 어긋난다. 반드시 이 함수를 거쳐라.
+function meetNode(n, firstMeet){
+  if(S.current===n.id) openNode(n, firstMeet);
+  else travelTo(n, ()=>openNode(n, firstMeet));
 }
 function tryUnlock(n){
   const cost=reachCost(n.id);
