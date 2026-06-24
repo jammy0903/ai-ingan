@@ -298,6 +298,7 @@ function startMapTut(){
   tutActive=true; tutStep=0; _tutShownStep=-1;
   MAP_TUT.forEach(s=>s._adv=false);
   S.walks += TUT_GRANT_STEPS; syncSteps(); refreshHUD();      // 걸음 선물(막힘 방지)
+  try{ bgmTo("main"); }catch(_){}                              // 🆕 튜토리얼 동안은 처음 바탕음악(main) 고정(첫 탭 제스처에 시동)
   tutDom().skip.style.display="block";
   tutLoop();
 }
@@ -339,4 +340,5 @@ function tutEnd(){
   tutActive=false; if(tutRaf){ cancelAnimationFrame(tutRaf); tutRaf=0; }
   if(_tutEls){ tutHideSpot(_tutEls); _tutEls.skip.style.display="none"; _tutEls.panels.forEach(p=>p.onclick=null); }
   S.seenMapTut=true; saveState();
+  try{ syncBgmToCurrent(); }catch(_){}                         // 🆕 튜토리얼 끝 → 현재 노드 곡으로 복귀(기쁨 등). 이후 평소대로 전환
 }
