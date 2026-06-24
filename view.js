@@ -660,6 +660,9 @@ function bgmTo(which){ _bgmWhich=which; if(_muted) return;
 // 머물렀다(버그: 그리움에 서 있어도 main이 나옴). 부팅/세이브 도착 때 이 함수로 위치와 BGM을 동기화한다.
 function bgmForCurrent(){ const n=NODES.find(x=>x.id===S.current); return (n && n.type==="person" && EMO_BGM[n.key]) || "main"; }
 function syncBgmToCurrent(){ bgmTo(bgmForCurrent()); }                           // _bgmWhich를 현재 위치 곡으로(음소거여도 트랙은 맞춰둠 → 해제 시 올바른 곡)
+// 걷기 탭에서 직접 BGM 시동 — 제스처 핸들러 '내부'라 모바일 autoplay에 가장 안전(전역 document 리스너보다 확실).
+// 아직 아무 트랙도 안 울리면 현재 곡을 시동하고, 차단되면 다음 탭에서 자동 재시도(no-op 가드로 중복 없음).
+function ensureBgmStarted(){ if(_muted) return; for(const k in _bgm){ if(!_bgm[k].paused) return; } bgmTo(_bgmWhich); }
 _armBgmStart();                                                                 // 첫 제스처에 시작(autoplay 정책) — 실패 시 자동 재무장
 
 function toggleMute(){ _muted=!_muted; try{ localStorage.setItem("aingan_muted",_muted?"1":"0"); }catch(_){}
@@ -745,6 +748,7 @@ function addWalk(x,y){
   if(intro.phase==="wakedone") return;                 // 결핍 한 줄/동기화 실패 비트 — 잠깐 손맛 멈춤
   if(coachActive) return;                              // 안내(코치) 표시 중엔 탭 무시(화면 멈춤)
   if(sceneActive){ advanceScene(); return; }           // 대화 중엔 탭=다음 대사
+  ensureBgmStarted();                                  // 걷기 첫 탭 = 음악 시동(autoplay 잠금해제, 켜질 때까지 매 탭 재시도)
   const now=Date.now();
   comboCount = (now-lastTapAt<=COMBO_WINDOW) ? comboCount+1 : 0;       // 연타 창 안이면 누적, 끊기면 리셋
   lastTapAt=now;
