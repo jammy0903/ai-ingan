@@ -639,8 +639,11 @@ function _bgmFade(a,to,ms){ if(!a) return; const from=a.volume, t0=Date.now(), d
   clearInterval(a._fi); a._fi=setInterval(()=>{ const k=Math.min(1,(Date.now()-t0)/d);
     a.volume=Math.max(0,Math.min(1, from+(to-from)*k));
     if(k>=1){ clearInterval(a._fi); if(to<=0){ try{ a.pause(); }catch(_){} } } }, 40); }
-const _BGM_GEST=["pointerdown","click","keydown","touchend"];
-function _armBgmStart(){                                                         // 자동재생 차단 대비: 여러 제스처로 듣고, 거부되면 다음 제스처에 재시도
+// ⚠️ 탭 '완료' 제스처만 쓴다(pointerdown 제외): 모바일 브라우저/웹뷰는 보통 touchend/click/pointerup 같은
+//    탭 완료에만 미디어 autoplay 권한을 준다. pointerdown(탭 시작)에 play()하면 거부 → 재무장이 같은 탭의
+//    touchend와 레이스 → 메인 BGM이 영영 안 나오던 버그(앱 콜드 실행). 완료 제스처로 첫 시도부터 통과.
+const _BGM_GEST=["pointerup","touchend","click","keydown"];
+function _armBgmStart(){                                                         // 자동재생 차단 대비: 완료 제스처로 듣고, 거부되면 다음 제스처에 재시도
   const h=()=>{ _BGM_GEST.forEach(t=>document.removeEventListener(t,h)); bgmTo(_bgmWhich); };
   _BGM_GEST.forEach(t=>document.addEventListener(t,h,{once:true,passive:true}));
 }
