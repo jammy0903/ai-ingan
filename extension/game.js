@@ -78,7 +78,7 @@ function renderShop(s) {
     const sel = s.selDog === d.id;
     const row = document.createElement("div");
     row.className = "item";
-    const nm = (LANG === "en" && d.nameEn) ? d.nameEn : d.name;
+    const nm = (LANG === "en") ? (d.nameEn || NAME_EN[d.id] || d.name) : d.name;
     row.innerHTML =
       `<img class="ico" src="assets/${dogPrefix(d.id)}-rest.webp" alt="" style="height:28px;width:auto;vertical-align:middle" />` +
       `<span class="nm">${nm}</span>` +
@@ -159,6 +159,12 @@ chrome.storage.onChanged.addListener((c, area) => {
 
 // ── 언어(i18n): 한/영 토글. storage.local.lang에 저장, 모든 탭/패널 공유 ──
 let LANG = "ko";
+// 품종 영어명 폴백(id 기준) — background SW가 옛 코드(nameEn 없는 DOGS)를 줘도 영어 표시 보장
+const NAME_EN = {
+  cheese:"Cheese Shiba", cream:"Cream Shiba", sesame:"Sesame Shiba", corgi:"Welsh Corgi",
+  chihuahua:"Chihuahua", poodle:"Toy Poodle", bulldog:"French Bulldog", border:"Border Collie",
+  chow:"Chow Chow", ig:"Italian Greyhound", golden:"Golden Retriever",
+};
 const I18N = {
   ko: { title:"강아지 산책", sub:"타자 한 글자·마우스 클릭 = 한 걸음", steps:"걸음", keys:"글자",
     exchange:"걸음 → 🦴 환전", shop:"🐕 강아지 상점", petSize:"페이지 강아지 크기",
