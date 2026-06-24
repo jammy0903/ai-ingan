@@ -26,6 +26,18 @@ const W_MULT = 5;                 // 발견(이동) 비용 전역 배율 — 진
 // effTap이 이 기준을 넘는 '후반'(마일스톤으로 income 폭발)부턴 income추종으로 커짐(후반 공짜/벽 방지).
 // 6 = 자연경로상 긍정 갈래(호기심까지, effTap≤6)가 전부 정확값으로 뜨는 경계.
 const DISCOVER_BASE = 6;
+// 🆕 발견(걸음) 비용 = 지수곡선 (2026-06-24). 비용 = DISCOVER_COST_BASE × DISCOVER_COST_GROWTH^costN.
+//   costN = 비용 '지수'(engine.js costN()). 4대분류 마스터 기반·상한 N_MAX. 노드별 w·W_MULT·TAP_CURVE는 비용에서 폐기.
+//   ⚠️ costN은 '탭 파워(1+감정+재회)'와 별개 — 통일하면 행동당 +1 도파민이 상한에 뭉개지므로 분리(engine.js 주석 참고).
+//   곡선 의도: 진행(costN) 0→40을 따라 비용이 매끄럽게 지수 상승. costN이 40에서 상한이라 비용도 천장(10×1.25^40≈75k)에서 멈춤 → 후반 무한폭발 방지(탭 파워는 계속 커져 이 천장을 순삭).
+const DISCOVER_COST_BASE   = 10;    // n=0일 때 발견 비용(첫 노드)
+const DISCOVER_COST_GROWTH = 1.25;  // n이 1 오를 때마다 비용 ×이 비율 (재회식 base×r^n과 동형)
+// 🆕 n(탭당 걸음수 = 비용 지수) 곡선 — 4대분류 마스터 기반·상한.
+//   4대분류(긍정→강한자극→불안불편→잔잔시림)를 각각 '완전 마스터'할 때마다 n += N_PER_CAT, 상한 N_MAX.
+//   갈래당 +10 = 감정수집 5(그 갈래 감정 전부 수집) + 재회깊이 5(감정당 RN_FULL_LV 레벨에서 saturate). 50:50.
+const N_MAX      = 40;   // n 상한 = 4대분류 × N_PER_CAT
+const N_PER_CAT  = 10;   // 대분류 하나 완전 마스터 시 n 기여
+const RN_FULL_LV = 5;    // 재회 깊이 만점 레벨 — 감정당 이 레벨에서 재회 기여가 꽉 참(MAX_LV=50은 그대로, n은 5에서 saturate)
 const OFFLINE_RATE = 0.1;         // 앱 끈 동안 걸음 적립 배율(1/10). base 1걸음/초 → 오프라인 0.1걸음/초 = 1분에 6걸음. 켜고 놀 유인(접속 유도).
 const TIER = {
   joy:"big", adore:"mid", amuse:"mid", flutter:"mid", curious:"small", beauty:"small", admire:"small", awe:"small", trance:"small", satisfy:"small",
