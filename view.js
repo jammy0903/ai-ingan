@@ -290,6 +290,7 @@ function openNode(n, firstMeet){
   }
   {
     const pp=PEOPLE[n.key];
+    bgmTo(EMO_BGM[n.key]||"main");   // 이 감정의 곡으로 전환(없으면 main) — 다음 감정 만날 때까지 걷는 배경으로 이어짐
     const lineIdx=Math.min(lv-1, pp.lines.length-1);
     if(firstMeet){
       afterClose = ()=>maybeTeachReunion(n);   // 첫 감정 닫은 뒤, 재회로만 다음이 열리는 상황이면 1회 안내
@@ -619,6 +620,11 @@ function sfxMeet(){ tone(523,0.16,"sine",0.06); setTimeout(()=>tone(784,0.32,"si
    파일 없음/자동재생 차단이어도 catch로 조용히 무시(게임 무중단). */
 const BGM_SRC={ main:"./audio/bgm-main.mp3", end:"./audio/bgm-ending.mp3" };
 const BGM_VOL={ main:0.45, end:0.6 };
+// 특정 감정을 만나면 그 곡으로 전환 → 다음 감정 노드를 만날 때까지 걷는 배경으로 유지(다른 감정=곡 교체).
+// key = data.js PEOPLE 키. 감정 27개 전부 전용 곡(leberch, 각 30초): 파일명 emo-<감정key>.mp3.
+const EMO_BGM={};
+"adore beauty admire attract joy amuse excite flutter sorrow longing crave empathy compassion fear anxiety awkward disgust horror curious awe trance calm confuse bored relief satisfy triumph"
+  .split(" ").forEach(k=>{ BGM_SRC[k]="./audio/emo-"+k+".mp3"; BGM_VOL[k]=0.5; EMO_BGM[k]=k; });
 let _bgm={}, _bgmWhich="main";
 function _bgmEl(which){ if(_bgm[which]) return _bgm[which];
   try{ const a=new Audio(BGM_SRC[which]); a.loop=true; a.preload="auto"; a.volume=0; return _bgm[which]=a; }catch(_){ return null; } }
