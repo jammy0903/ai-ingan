@@ -94,7 +94,25 @@ function fmtSps(lv){ const v=nodeSps(lv); return (v>=0.001 ? +v.toFixed(3) : v.t
 function nodeOut(n, lv){ if(lv==null) lv=S.levels[n.id]; return (lv>0 && n.gen) ? 1/nodeSps(lv) : 0; }   // 걸음/초 = 1 / (초/걸음)
 function baseRate(){ let r=1; for(const n of NODES) r+=nodeOut(n); return r; }   // (레거시) 옛 idle 곡선 — 미사용, 디버그/세이브 호환 보존
 // 🆕 경제 재설계(2026-06-22, economy-redesign.md): 걷기(idle)=1걸음/초 고정, 성장(number-go-up)은 '탭'으로 이동.
-function tapPower(){ let p=1; for(const n of NODES){ const lv=S.levels[n.id]||0; if(n.gen&&lv>0) p+=lv; } return p; }  // 탭 파워 = 1 + (모은 감정 수 + 재회 레벨 합). 감정 1줍기 +1, 재회 1레벨 +1.
+// 🆕 costN = 발견(걸음) 비용 지수 (2026-06-24). 4대분류 각 완전 마스터마다 +N_PER_CAT(상한 N_MAX).
+//   갈래당 +10 = 감정수집 5(그 갈래 감정 전부 수집) + 재회깊이 5(감정당 RN_FULL_LV 레벨에서 saturate). 50:50.
+//   ⚠️ 탭 파워와는 '별개의 값' — 통일하면 행동당 +1 도파민이 40상한에 뭉개져 재회 '탭 +1' 약속이 거짓이 됨. 그래서 분리.
+//   ※ CAT_ORDER는 파일 후반에 정의 — costN은 런타임에만 호출되므로 그때 이미 초기화돼 있어 안전.
+function costN(){
+  let n=0;
+  for(const cat of CAT_ORDER){
+    const ps=NODES.filter(x=>x.type==="person" && x.parent===cat);
+    if(!ps.length) continue;
+    let collected=0, reuFull=0;
+    for(const p of ps){
+      const lv=S.levels[p.id]||0;
+      if(lv>=1){ collected++; reuFull += Math.min(Math.max(lv-1,0), RN_FULL_LV-1)/(RN_FULL_LV-1); }  // 재회 충만도: 수집(lv1)=0 … lv=RN_FULL_LV → 1
+    }
+    n += (N_PER_CAT/2)*(collected/ps.length) + (N_PER_CAT/2)*(reuFull/ps.length);  // 감정수집 절반 + 재회깊이 절반
+  }
+  return Math.min(n, N_MAX);
+}
+function tapPower(){ let p=1; for(const n of NODES){ const lv=S.levels[n.id]||0; if(n.gen&&lv>0) p+=lv; } return p; }  // 탭 파워 = 1 + (모은 감정 수 + 재회 레벨 합). 감정 1줍기 +1, 재회 1레벨 +1. (무상한 — 행동당 +1 도파민·재회 무한 sink·모달 약속 유지)
 function effRate(){ return 1; }                              // 걷기(idle) = 끝까지 고정 1걸음/초 (마일스톤·재회 idle가속 폐기)
 function effTap(){ return Math.max(TAP_GAIN, tapPower()); }  // 탭 1번 기본 이득 = 탭 파워(콤보·크리는 addWalk에서 곱)
 
@@ -171,14 +189,15 @@ function unlockedCount(){ let c=0; for(const n of NODES){ if(n.id!=="start" && S
 // 다음 발견의 목표 탭수(=목표 초). 순번이 곡선 길이를 넘으면 끝값(평탄).
 function discoverTaps(){ const C=(typeof TAP_CURVE!=='undefined')?TAP_CURVE:[5,25,42,58,80]; return C[Math.min(unlockedCount(), C.length-1)]; }  // 가드: balance.js 버전 엇갈려 TAP_CURVE 없어도 throw 안 하고 폴백(지도 크래시 방지)
 let DISCOVER_MULT = 1;   // 🆕 발견 비용 전체 배율(관리자 실시간 튜닝용 · 기본 1=무효). reachCost에 곱해 진행 속도 일괄 조절(세이브 무관·새로고침 원복).
-function reachCost(id){ // 발견(이동) 비용 = 그 노드의 w(걷는 초) × DISCOVER_MULT
+function reachCost(id){ // 🆕 발견(이동) 비용 = 지수곡선 DISCOVER_COST_BASE × DISCOVER_COST_GROWTH^n (2026-06-24)
   // 도달 가능?: 완료된 이웃이 하나라도 있어야 연다(그래프 토폴로지 게이트). 없으면 무한.
   let reachable=false;
   for(const [nb] of neighbors(id)){ if(S.levels[nb]>0){ reachable=true; break; } }
   if(!reachable) return Infinity;
-  // 🆕 비용 = node.w 그대로(= 그 노드까지 걷는 초). effTap 추종·W_MULT 폐기(economy-redesign.md). w 없으면 옛 곡선 폴백.
-  const node=NODES.find(x=>x.id===id);
-  return Math.round(((node&&node.w!=null)?node.w:discoverTaps()) * DISCOVER_MULT);
+  // costN()(비용 지수, 상한 40 — 탭 파워와 별개). 노드별 w·effTap추종·TAP_CURVE 폐기 — 진행도 단일 지수로 통일.
+  // ※ 모든 후보 노드가 같은 costN을 쓰므로 비용이 동일 → updateDiscovered의 '최소비용 우선'은 NODES 배열 순서로 결정.
+  //   NODES는 갈래 내부가 의도 순서(대표→얕은→깊은)로 적혀 있어 발견 순서는 보존된다.
+  return Math.round(DISCOVER_COST_BASE * Math.pow(DISCOVER_COST_GROWTH, costN()) * DISCOVER_MULT);
 }
 // 갈래 안 대/중/소 티어 (대=대표 1 / 중=다음 / 소=깊은 마지막). 갈래 안에서 단계적으로 공개.
 // 한 갈래에서 '재회' 누적 횟수(레벨2 이상으로 다시 만난 만큼)
