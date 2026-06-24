@@ -1,0 +1,8 @@
+# Cloudflare Pages 응답 헤더 규칙.
+# ⚠️ 기본값으로 CF Pages가 .js 정적자산에 max-age=14400(4시간)을 붙여, 배포해도 최대 4시간 옛 코드가
+#    캐시로 나갔다(SW network-first도 fetch가 HTTP 캐시를 타서 무력화). 코드 파일은 항상 재검증시켜 즉시 반영.
+#    (index.html·manifest.json은 CF가 이미 max-age=0이라 별도 지정 불필요. 오디오/webp는 그대로 길게 캐시.)
+/sw.js
+  Cache-Control: no-cache
+/*.js
+  Cache-Control: no-cache
