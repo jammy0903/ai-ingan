@@ -49,7 +49,10 @@
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap; transition:background .15s; }
   .authbtn:active { background:#ece3d0; }
   .authbtn.on { color:#5a7a4a; border-color:#b6c9a8; background:rgba(220,232,200,.4); }
-  .stats { display:flex; gap:13px; margin-top:3px; align-items:baseline; font-family:'Gaegu',cursive; }  /* 둥근 글씨(개구체) — 상단 바 전체(특히 다음속도업) */
+  .stats { display:flex; flex-wrap:wrap; column-gap:13px; row-gap:2px; margin-top:3px; align-items:baseline; font-family:'Gaegu',cursive; }  /* 🆕 2행 고정(걸음수 늘어도 안 밀리게) */
+  .stats > .stat { white-space:nowrap; }              /* 항목 안 글자 줄바꿈 방지(넉넉히) */
+  .stats > .stat.grow { flex:1 1 auto; min-width:0; } /* 늘어나는 숫자 항목이 남은 공간을 흡수 → 옆 항목 안 밀림 */
+  .statbreak { flex-basis:100%; width:100%; height:0; }  /* 강제 줄바꿈 = 2행 */
   .stat b { font-size:18px; font-weight:700; color:#7a6440; }
   .stat span { font-size:10px; color:#8a857a; letter-spacing:.5px; }
   .stat .unit { font-size:11px; color:#9a7b4a; }
