@@ -2,7 +2,7 @@
 // ⚠️ 버전 = 앱 버전(semver). data.js·balance.js·index.html 등 '캐시 자산'을 고치면 반드시 올려라(1.0.6→1.0.7…).
 // SW가 스크립트를 '캐시 우선'으로 서빙하므로, 안 올리면 고쳐도 옛 캐시가 나간다(stale). plan.md ④
 // 🔢 버전 올릴 때 3곳 동기화: 이 CACHE · manifest.json "version" · index.html #appVer 표시.
-const CACHE = "aingan-1.1.0";
+const CACHE = "aingan-1.1.1";
 const CORE = [
   "./", "./index.html", "./styles.css", "./manifest.json",
   "./data.js", "./balance.js",            // 전역 데이터·밸런스(인라인보다 먼저 로드) — 오프라인 프리캐시
@@ -43,8 +43,11 @@ self.addEventListener("fetch", e => {
                  (url.origin === location.origin && /\/(index\.html|styles\.css|data\.js|balance\.js|engine\.js|view\.js|save-auth\.js|onboarding\.js|main\.js)$/.test(url.pathname));
   if (isCode) {
     const key = req.mode === "navigate" ? "./index.html" : req;
+    // ⚠️ {cache:"reload"} = HTTP 캐시를 우회해 항상 네트워크에서 받는다. 이게 없으면 'network-first'라도
+    //    fetch(req)가 브라우저 HTTP 캐시(CF가 .js에 max-age=14400=4시간 부여)를 그대로 타서, 배포해도
+    //    최대 4시간 옛 코드가 나갔다(고쳐도 반영 안 되던 진짜 원인). _headers로도 막지만 여기서 확실히 우회.
     e.respondWith(
-      fetch(req).then(res => {
+      fetch(req, { cache: "reload" }).then(res => {
         const copy = res.clone();
         caches.open(CACHE).then(c => c.put(key, copy));
         return res;
