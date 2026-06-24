@@ -894,13 +894,15 @@ function spawnCloud(){
   cloudsEl.appendChild(c); setTimeout(()=>c.remove(), dur*1000+500);
 }
 // 구름 터치 → 뿅 터지고 물방울이 비처럼 쏟아진다 + 현재 걸음/초 × 10 선물
+let _cloudGiftN = 0;                  // 구름 '터치' 누적 횟수(안 누른 구름은 카운트 안 됨). 새로고침 시 0으로 리셋.
+const CLOUD_GIFT_STEP = 100;          // 터치 1회당 선물 증가분(첫터치 100·둘째 200·셋째 300…)
 function popCloud(c){
   if(c._popped) return; c._popped=true;
   const r=c.getBoundingClientRect();
   const cx=r.left+r.width/2, cy=r.top+r.height*0.62;                    // 구름 아래쪽에서 물 터짐
   rainBurst(cx, cy);
   c.classList.add("pop"); setTimeout(()=>c.remove(), 360);
-  const gift=Math.max(1, effTap()*10);                    // 🆕 탭 파워 × 10(진행도 따라 커짐). idle은 1/초 고정이라 탭 힘에 연동
+  const gift=(++_cloudGiftN)*CLOUD_GIFT_STEP;             // 🆕 터치마다 +100 누적(1→100·2→200·3→300…). 진행도 무관, 순수 터치 횟수 기준
   S.walks+=gift; syncSteps(); refreshHUD();
   const t=document.createElement("div"); t.className="tapfx gift"; t.textContent="🎁 +"+fmt(gift);
   t.style.left=cx+"px"; t.style.top=(cy-8)+"px"; document.body.appendChild(t); setTimeout(()=>t.remove(), 900);
