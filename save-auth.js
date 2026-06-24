@@ -13,7 +13,7 @@ function saveKey(){ return authUser ? ("u_"+authUser.id) : null; }
 const ROBOT_NAMES=["삐삐","또르","깡통이","녹슬이","별이","콩이","또롱","삐릭","깡총","또또","모리","단추","나사","볼트","깜빡이","또각","삐약","동그리","네모","철이","구리","뚜뚜","링링","찌릿","오백","뽀삐","고철이","반짝","덜컹","깡깡"];
 function ensureRobotName(){ if(!S.robotName) S.robotName = ROBOT_NAMES[Math.floor(Math.random()*ROBOT_NAMES.length)]; }
 
-function snapshot(){ return { v:SAVE_VERSION, walks:S.walks, rate:S.rate, current:S.current, levels:S.levels, discovered:S.discovered, robotName:S.robotName, named:S.named, depth:S.depth, coins:S.coins, cycle:S.cycle, lookback:S.lookback, seenIntro:S.seenIntro, seenReunionHint:S.seenReunionHint, t:Date.now() }; }
+function snapshot(){ return { v:SAVE_VERSION, walks:S.walks, rate:S.rate, current:S.current, levels:S.levels, discovered:S.discovered, robotName:S.robotName, named:S.named, depth:S.depth, coins:S.coins, cycle:S.cycle, lookback:S.lookback, seenIntro:S.seenIntro, seenReunionHint:S.seenReunionHint, seenMapTut:S.seenMapTut, t:Date.now() }; }
 function loadLocal(){ try{ const r=localStorage.getItem(SAVE_KEY); return r?JSON.parse(r):null; }catch(e){ return null; } }
 // 옛 세이브를 현재 스키마로 끌어올린다. v 필드 없으면 버전 도입 이전(레거시) = v1로 간주.
 // 스키마 바꿀 때: SAVE_VERSION +1 하고 아래 체인에 `if(v<N){ /* 변환 */ v=N; }` 한 칸 추가(순서대로 누적 적용).
@@ -39,6 +39,7 @@ function applyState(d){
   S.coins = d.coins || 0;            // ✨ 온기 조각(없는 옛 세이브=0)
   S.seenIntro = !!(d.seenIntro || d.named);   // 기존 이름지은 유저는 자동으로 '봤음' 처리(게이트 안 띄움)
   S.seenReunionHint = !!d.seenReunionHint;     // 재회 안내 1회 표시 플래그
+  S.seenMapTut = !!d.seenMapTut;               // 🆕 지도 튜토리얼 1회 표시 플래그
   // 🆕 오프라인 = 1걸음/초(온라인 idle과 동일), 누적 상한 OFFLINE_CAP_STEPS(=1000걸음, 2026-06-24). economy-redesign.md
   let off=0; if(d.t){ const sec=Math.max(0,(Date.now()-d.t)/1000); off=Math.min(sec, OFFLINE_CAP_STEPS); S.walks+=off; }
   wholeWalks=Math.floor(S.walks);
@@ -63,7 +64,7 @@ async function supaLoad(){ if(!authUser || !SUPA.url || !SUPA.anon) return null;
 function resetState(){                                   // 메모리 상태를 새 게임으로 초기화
   S.walks=0; S.rate=1.0; S.current="start"; S.discovered={};
   NODES.forEach(n=>S.levels[n.id]= n.completed?1:0);
-  S.robotName=""; S.named=false; S.depth=0; S.cycle=0; S.lookback=0; S.seenIntro=false; S.seenReunionHint=false;
+  S.robotName=""; S.named=false; S.depth=0; S.cycle=0; S.lookback=0; S.seenIntro=false; S.seenReunionHint=false; S.seenMapTut=false;
   wholeWalks=0; worldX=0;
 }
 function bootSave(){
