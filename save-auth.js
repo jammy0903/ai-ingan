@@ -39,7 +39,7 @@ function applyState(d){
   S.coins = d.coins || 0;            // ✨ 온기 조각(없는 옛 세이브=0)
   S.seenIntro = !!(d.seenIntro || d.named);   // 기존 이름지은 유저는 자동으로 '봤음' 처리(게이트 안 띄움)
   S.seenReunionHint = !!d.seenReunionHint;     // 재회 안내 1회 표시 플래그
-  // 🆕 오프라인 = 1걸음/초(온라인 idle과 동일), 누적 상한 OFFLINE_CAP_STEPS(=만 걸음). economy-redesign.md
+  // 🆕 오프라인 = 1걸음/초(온라인 idle과 동일), 누적 상한 OFFLINE_CAP_STEPS(=1000걸음, 2026-06-24). economy-redesign.md
   let off=0; if(d.t){ const sec=Math.max(0,(Date.now()-d.t)/1000); off=Math.min(sec, OFFLINE_CAP_STEPS); S.walks+=off; }
   wholeWalks=Math.floor(S.walks);
   return off;
@@ -70,7 +70,7 @@ function bootSave(){
   track("app_open",{seenIntro:!!S.seenIntro});         // 세션 시작(load당 1회). 로그인 판별은 별도 login 이벤트(여기선 auth 미해결)
   const off = applyState(loadLocal());                 // 직전 로그인 계정 미러가 있으면 즉시 반영(빠른 부팅)
   decideEntry();                                        // 게이트 / 온보딩 / 바로 게임 중 결정 (클라우드는 onAuthChanged가 처리)
-  if(S.seenIntro && off>=1){ const h=$("#hint"); h.textContent=`당신이 없는 동안 ${fmt(Math.floor(off))}걸음이나 걸었어요`;   // 오프라인=1걸음/초·상한 만걸음(OFFLINE_CAP_STEPS, economy-redesign.md)
+  if(S.seenIntro && off>=1){ const h=$("#hint"); h.textContent=`당신이 없는 동안 ${fmt(Math.floor(off))}걸음이나 걸었어요`;   // 오프라인=1걸음/초·상한 1000걸음(OFFLINE_CAP_STEPS, 2026-06-24, economy-redesign.md)
     setTimeout(()=>{ h.textContent="이 길을 두드릴수록 로봇이 더 빨리 걷는다"; }, 5500); }
 }
 setInterval(saveState, 10000);
