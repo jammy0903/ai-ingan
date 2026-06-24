@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>강아지 산책 — 타자로 걷기</title>
+    <title>강아지 산책 — 타자로 걷기 · Dog Walk</title>
     <style>
       :root {
         --ink: #4a4036;
@@ -21,6 +21,7 @@
         padding: 24px 16px 36px;
         user-select: none;
         min-height: 100vh;
+        position: relative;
       }
       h1 { font-size: 16px; margin: 0 0 4px; letter-spacing: 1px; }
       .sub { font-size: 11px; color: #a99c8c; margin-bottom: 18px; }
@@ -91,6 +92,7 @@
       .stage.bg-chrome {
         background: #f1f3f4;
       }
+      body[data-lang="en"] .stage.bg-chrome::before { content: "🔍  Search or enter URL"; }
       .stage.bg-chrome::before {
         content: "🔍  검색어 또는 URL 입력";
         position: absolute;
@@ -178,48 +180,54 @@
       .settings .seg button { border: 0; padding: 6px 14px; }
       .settings .seg button.on { background: var(--brown); color: #fff; }
       .cloud { margin-top: 12px; font-size: 11px; color: var(--brown); }
+      /* 언어 토글 (우상단) */
+      #langToggle { position: absolute; top: 10px; right: 12px; z-index: 5;
+        border: 1px solid #d8cdb6; background: #fff; color: var(--brown);
+        font-size: 11px; font-weight: 700; padding: 4px 9px; border-radius: 12px; cursor: pointer; }
+      #langToggle:active { background: #efe7d6; }
     </style>
   </head>
   <body>
-    <h1>강아지 산책</h1>
-    <div class="sub">타자 한 글자·마우스 클릭 = 한 걸음</div>
+    <button id="langToggle" type="button" title="Language">EN</button>
+    <h1 data-i18n="title">강아지 산책</h1>
+    <div class="sub" data-i18n="sub">타자 한 글자·마우스 클릭 = 한 걸음</div>
 
     <div class="stage">
-      <img class="dog breath" id="dog" src="assets/dog-rest.webp" alt="강아지" draggable="false" />
+      <img class="dog breath" id="dog" src="assets/dog-rest.webp" alt="dog" draggable="false" />
     </div>
 
     <div class="big" id="steps">0</div>
-    <div class="label">걸음</div>
+    <div class="label" data-i18n="steps">걸음</div>
 
     <div class="wallet">
       <span class="coin">🦴 <span id="coins">0</span></span>
-      <span class="keys">⌨ <span id="taps">0</span> 글자</span>
+      <span class="keys">⌨ <span id="taps">0</span> <span data-i18n="keys">글자</span></span>
     </div>
-    <button class="exchange" id="exchange">걸음 → 🦴 환전</button>
+    <button class="exchange" id="exchange" data-i18n="exchange">걸음 → 🦴 환전</button>
 
     <div class="shop">
-      <h2>🐕 강아지 상점</h2>
+      <h2 data-i18n="shop">🐕 강아지 상점</h2>
       <div id="items"></div>
     </div>
 
     <div class="settings">
       <div id="petSizeWrap">
-        페이지 강아지 크기
+        <span data-i18n="petSize">페이지 강아지 크기</span>
         <div style="margin-top: 6px">
           <input type="range" id="petSize" min="40" max="200" step="4" style="width: 70%; vertical-align: middle" />
           <span id="petSizeVal" style="font-size: 11px; color: #a99c8c"></span>
         </div>
       </div>
       <div id="bgPick" style="margin-top: 12px; display: none">
-        배경
+        <span data-i18n="bg">배경</span>
         <div class="seg" id="bgSeg">
-          <button data-bg="flower">꽃밭</button>
-          <button data-bg="road">도로</button>
-          <button data-bg="excel">엑셀</button>
-          <button data-bg="chrome">크롬</button>
+          <button data-bg="flower" data-i18n="bgFlower">꽃밭</button>
+          <button data-bg="road" data-i18n="bgRoad">도로</button>
+          <button data-bg="excel" data-i18n="bgExcel">엑셀</button>
+          <button data-bg="chrome" data-i18n="bgChrome">크롬</button>
         </div>
       </div>
-      <div class="cloud">☁ 구글 계정에 자동 저장 (기기끼리 동기화)</div>
+      <div class="cloud" data-i18n="cloud">☁ 구글 계정에 자동 저장 (기기끼리 동기화)</div>
     </div>
 
     <script src="game.js"></script>

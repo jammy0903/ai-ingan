@@ -78,13 +78,14 @@ function renderShop(s) {
     const sel = s.selDog === d.id;
     const row = document.createElement("div");
     row.className = "item";
+    const nm = (LANG === "en" && d.nameEn) ? d.nameEn : d.name;
     row.innerHTML =
       `<img class="ico" src="assets/${dogPrefix(d.id)}-rest.webp" alt="" style="height:28px;width:auto;vertical-align:middle" />` +
-      `<span class="nm">${d.name}</span>` +
+      `<span class="nm">${nm}</span>` +
       (owned
-        ? `<button class="act ${sel ? "eq" : ""}" data-sel="${d.id}" ${sel ? "disabled" : ""}>${sel ? "산책 중" : "선택"}</button>`
+        ? `<button class="act ${sel ? "eq" : ""}" data-sel="${d.id}" ${sel ? "disabled" : ""}>${sel ? t("walking") : t("select")}</button>`
         : `<span class="pr">🦴 ${d.price}</span>` +
-          `<button class="act" data-buy="${d.id}" ${s.coins >= d.price ? "" : "disabled"}>입양</button>`);
+          `<button class="act" data-buy="${d.id}" ${s.coins >= d.price ? "" : "disabled"}>${t("adopt")}</button>`);
     items.appendChild(row);
   }
 }
@@ -153,7 +154,35 @@ chrome.storage.onChanged.addListener((c, area) => {
   if (area !== "local") return;
   if (c.petSize) paintPetSize(c.petSize.newValue || 92);
   if (c.bg) applyBg(c.bg.newValue);
+  if (c.lang) applyLang(c.lang.newValue || "ko");
 });
+
+// ── 언어(i18n): 한/영 토글. storage.local.lang에 저장, 모든 탭/패널 공유 ──
+let LANG = "ko";
+const I18N = {
+  ko: { title:"강아지 산책", sub:"타자 한 글자·마우스 클릭 = 한 걸음", steps:"걸음", keys:"글자",
+    exchange:"걸음 → 🦴 환전", shop:"🐕 강아지 상점", petSize:"페이지 강아지 크기",
+    bg:"배경", bgFlower:"꽃밭", bgRoad:"도로", bgExcel:"엑셀", bgChrome:"크롬",
+    cloud:"☁ 구글 계정에 자동 저장 (기기끼리 동기화)",
+    walking:"산책 중", select:"선택", adopt:"입양" },
+  en: { title:"Dog Walk", sub:"One key or click = one step", steps:"steps", keys:"keys",
+    exchange:"Steps → 🦴 Exchange", shop:"🐕 Dog Shop", petSize:"On-page dog size",
+    bg:"Background", bgFlower:"Flowers", bgRoad:"Road", bgExcel:"Excel", bgChrome:"Chrome",
+    cloud:"☁ Auto-saved to your Google account (synced across devices)",
+    walking:"Walking", select:"Select", adopt:"Adopt" },
+};
+function t(key) { return (I18N[LANG] && I18N[LANG][key]) || (I18N.ko[key] || key); }
+function applyLang(lang) {
+  LANG = lang === "en" ? "en" : "ko";
+  document.documentElement.lang = LANG;
+  document.body.setAttribute("data-lang", LANG);
+  document.querySelectorAll("[data-i18n]").forEach((el) => { el.textContent = t(el.dataset.i18n); });
+  const lt = $("langToggle"); if (lt) lt.textContent = LANG === "ko" ? "EN" : "한";
+  if (last) renderShop(last);   // 상점 품종명·버튼 재렌더
+}
+$("langToggle").addEventListener("click", () =>
+  chrome.storage.local.set({ lang: LANG === "ko" ? "en" : "ko" }));
+chrome.storage.local.get("lang", ({ lang }) => applyLang(lang || "ko"));
 
 // 시작: 상점(강아지) 목록 받고 → 현재 상태 로드
 chrome.runtime.sendMessage({ type: "shop" }, (dogs) => {

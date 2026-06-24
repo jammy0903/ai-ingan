@@ -7,17 +7,17 @@ const KEY = "g";
 
 // 강아지 상점(권위 = 여기). game.js는 "shop" 메시지로 받는다.
 const DOGS = [
-  { id: "cheese", name: "치즈 시바", price: 0 },
-  { id: "cream", name: "크림 시바", price: 300 },
-  { id: "sesame", name: "참깨 시바", price: 700 },
-  { id: "corgi", name: "웰시코기", price: 1500 },
-  { id: "chihuahua", name: "치와와", price: 2500 },
-  { id: "poodle", name: "토이푸들", price: 4000 },
-  { id: "bulldog", name: "프렌치불독", price: 6000 },
-  { id: "border", name: "보더콜리", price: 9000 },
-  { id: "chow", name: "차우차우", price: 13000 },
-  { id: "ig", name: "이탈리안 그레이하운드", price: 18000 },
-  { id: "golden", name: "골든리트리버", price: 25000 },
+  { id: "cheese", name: "치즈 시바", nameEn: "Cheese Shiba", price: 0 },
+  { id: "cream", name: "크림 시바", nameEn: "Cream Shiba", price: 300 },
+  { id: "sesame", name: "참깨 시바", nameEn: "Sesame Shiba", price: 700 },
+  { id: "corgi", name: "웰시코기", nameEn: "Welsh Corgi", price: 1500 },
+  { id: "chihuahua", name: "치와와", nameEn: "Chihuahua", price: 2500 },
+  { id: "poodle", name: "토이푸들", nameEn: "Toy Poodle", price: 4000 },
+  { id: "bulldog", name: "프렌치불독", nameEn: "French Bulldog", price: 6000 },
+  { id: "border", name: "보더콜리", nameEn: "Border Collie", price: 9000 },
+  { id: "chow", name: "차우차우", nameEn: "Chow Chow", price: 13000 },
+  { id: "ig", name: "이탈리안 그레이하운드", nameEn: "Italian Greyhound", price: 18000 },
+  { id: "golden", name: "골든리트리버", nameEn: "Golden Retriever", price: 25000 },
 ];
 const DOGIDS = DOGS.map((d) => d.id);
 const priceOf = (id) => (DOGS.find((d) => d.id === id) || {}).price;
