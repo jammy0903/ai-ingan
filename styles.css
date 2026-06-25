@@ -20,7 +20,7 @@
   svg.defs { position:absolute; width:0; height:0; }
 
   /* ---------- HUD ---------- */
-  .hud { position:relative; z-index:6; padding:7px 16px 6px; flex:0 0 auto;
+  .hud { position:relative; z-index:6; padding:calc(7px + env(safe-area-inset-top)) 16px 6px; flex:0 0 auto;   /* 상단 안전영역(카메라 펀치홀·상태바) 회피 — 노치 없으면 env()=0이라 무해 */
     background:linear-gradient(#f7f2fa, #fbf8f3); border-bottom:1px solid rgba(150,130,170,.18); }
   .titlebar { display:flex; justify-content:space-between; align-items:baseline; }
   .title { font-weight:700; font-size:14px; color:#54514a; letter-spacing:0; white-space:nowrap; }
@@ -201,7 +201,7 @@
   .pages { position:relative; z-index:2; flex:1 1 auto; overflow:hidden; }
   .page { position:absolute; inset:0; display:none; }
   .page.active { display:block; }
-  .tabbar { position:relative; z-index:7; flex:0 0 auto; display:flex;
+  .tabbar { position:relative; z-index:7; flex:0 0 auto; display:flex; padding-bottom:env(safe-area-inset-bottom);   /* 하단 안전영역(제스처바·네비게이션바) 회피 */
     background:linear-gradient(#fbf8f3,#f2ecf6); border-top:1px solid rgba(150,130,170,.22); }
   .tab { flex:1; padding:12px 0 13px; background:transparent; border:none; cursor:pointer;
     font-family:'Nanum Myeongjo',serif; font-size:14px; color:#9a917f; letter-spacing:1px; }
@@ -375,7 +375,7 @@
     background:rgba(252,249,242,.98); border:1px solid rgba(150,140,120,.5); border-radius:22px; padding:12px 16px;
     box-shadow:0 6px 18px rgba(40,40,50,.3); }
   .tutcap .tuttap { display:block; margin-top:6px; font-size:13px; color:#b08400; font-family:'Nanum Pen Script',cursive; }
-  #tutSkip { position:fixed; top:10px; right:12px; z-index:63; display:none;
+  #tutSkip { position:fixed; top:calc(10px + env(safe-area-inset-top)); right:calc(12px + env(safe-area-inset-right)); z-index:63; display:none;   /* 상단 안전영역 회피 — 안 그러면 카메라 펀치홀 밑에 깔려 안 눌림 */
     padding:7px 13px; border:1px solid #cbbfae; border-radius:16px; background:rgba(251,248,243,.9);
     font-family:'Nanum Myeongjo',serif; font-size:12px; color:#9a917f; cursor:pointer; }
   #tutSkip:active { background:#ece3d0; }
