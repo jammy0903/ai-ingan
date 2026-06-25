@@ -31,9 +31,58 @@
     restTimer = null,
     petOn = true,
     petSize = 92,
-    walking = false;
+    walking = false,
+    vidHide = false; // 동영상/전체화면 중엔 강아지 숨김(가림 방지)
 
   const NEXT = { bottom: "right", right: "top", top: "left", left: "bottom" };
+
+  // 전체화면이거나 '충분히 큰' 동영상이 재생 중이면 강아지를 가린다.
+  // (배경 자동재생 같은 작은 데코 영상은 무시 — 가로≥320·세로≥240만 '시청'으로 본다.)
+  function fsActive() {
+    return !!(document.fullscreenElement || document.webkitFullscreenElement);
+  }
+  function bigVideoPlaying() {
+    for (const v of document.querySelectorAll("video")) {
+      if (v.paused || v.ended || v.readyState < 2) continue;
+      const r = v.getBoundingClientRect();
+      if (r.width >= 320 && r.height >= 240) return true;
+    }
+    return false;
+  }
+  function applyVisibility() {
+    // 강아지 표시 = 토글 ON 그리고 동영상/전체화면 아님. (OFF여도 걸음 집계는 계속됨)
+    if (wrap) wrap.style.display = petOn && !vidHide ? "" : "none";
+  }
+  function localActive() {
+    return fsActive() || bigVideoPlaying(); // '이' 프레임 자체의 재생/전체화면
+  }
+
+  // 임베드 대응: 강아지는 TOP에만 있으므로, 자식 프레임(iframe)은 자기 영상 상태를
+  // window.top으로 보고하고 TOP이 자기 것 + 모든 자식 보고를 합산해 숨긴다.
+  const FRAME_TOKEN = TOP ? "top" : Math.random().toString(36).slice(2);
+  const childPlaying = new Map(); // TOP만 사용: frameToken -> bool
+  let lastReported = null; // 자식 보고 디듀프
+  function anyChildPlaying() {
+    for (const v of childPlaying.values()) if (v) return true;
+    return false;
+  }
+  function recalcHide() {
+    const local = localActive();
+    if (TOP) {
+      const next = local || anyChildPlaying();
+      if (next === vidHide) return;
+      vidHide = next;
+      applyVisibility(); // 숨김/등장(걸음·위치 상태는 그대로 보존)
+    } else if (local !== lastReported) {
+      lastReported = local; // 내 영상 상태가 바뀔 때만 최상위로 보고
+      try {
+        window.top.postMessage(
+          { __ainganVid: true, id: FRAME_TOKEN, playing: local },
+          "*"
+        );
+      } catch (_) {}
+    }
+  }
 
   function makePet() {
     if (!TOP || wrap || !document.body) return;
@@ -53,6 +102,7 @@
     wrap.appendChild(img);
     document.body.appendChild(wrap);
     place();
+    recalcHide(); // 만들 때 이미 동영상/전체화면이면 곧바로 숨김
   }
 
   function removePet() {
@@ -150,15 +200,49 @@
 
   window.addEventListener("resize", place);
 
-  chrome.storage.local.get(["petSize", "g"], ({ petSize: ps, g }) => {
-    petOn = true;                       // 페이지펫 항상 켜짐(무조건 화면)
+  // 동영상 재생/전체화면 진입·이탈을 감지해 숨김 상태 재계산.
+  // play/pause는 버블 안 하지만 capture 단계 document 리스너는 자식 video의 이벤트도 받는다.
+  ["fullscreenchange", "webkitfullscreenchange"].forEach((ev) =>
+    document.addEventListener(ev, recalcHide, true)
+  );
+  ["play", "playing", "pause", "ended", "emptied"].forEach((ev) =>
+    document.addEventListener(ev, recalcHide, true)
+  );
+
+  if (TOP) {
+    // 자식 프레임(iframe) 영상 보고 수신 → 합산 후 숨김 재계산
+    window.addEventListener("message", (e) => {
+      const d = e.data;
+      if (!d || d.__ainganVid !== true || typeof d.id !== "string") return;
+      childPlaying.set(d.id, !!d.playing);
+      recalcHide();
+    });
+  } else {
+    // 자식이 떠나면(닫힘/이동) '재생 중' 보고가 영영 남아 강아지가 계속 숨지 않도록 false 통지
+    window.addEventListener("pagehide", () => {
+      try {
+        window.top.postMessage(
+          { __ainganVid: true, id: FRAME_TOKEN, playing: false },
+          "*"
+        );
+      } catch (_) {}
+    });
+  }
+
+  recalcHide(); // 스크립트 주입 시 이미 재생 중이면 즉시 반영(이벤트가 안 와도)
+
+  chrome.storage.local.get(["petSize", "g", "petOn"], ({ petSize: ps, g, petOn: po }) => {
+    petOn = po !== false; // 기본 ON(미설정=true). 팝업 토글이 false로 끄면 강아지만 숨김
     if (ps) petSize = ps;
     if (g && g.selDog) setDogSprites(g.selDog);
-    makePet();
+    makePet(); // 만들되 applyVisibility가 petOn에 따라 표시 결정
   });
   chrome.storage.onChanged.addListener((c, area) => {
     if (area !== "local") return;
-    // pet 토글 제거 — 페이지펫은 항상 켜둠
+    if (c.petOn) {
+      petOn = c.petOn.newValue !== false; // 팝업에서 ON/OFF 바뀌면 즉시 반영
+      applyVisibility();
+    }
     if (c.petSize) setPetSize(c.petSize.newValue || 92);
     if (c.g && c.g.newValue && c.g.newValue.selDog !== selDog) {
       setDogSprites(c.g.newValue.selDog);
