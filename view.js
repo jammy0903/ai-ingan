@@ -760,6 +760,40 @@ const ADSENSE_CLIENT = "";   // 예: "ca-pub-1234567890123456" — 발급 후 �
   };
 })();
 
+/* 📱 네이티브 AdMob provider — Capacitor 앱(webview)에서만 window._adProvider를 채운다.
+   비-네이티브(웹 PWA)·플러그인 미탑재면 즉시 return = 완전 inert(웹 불변, §0.1).
+   현재 REWARD_AD_ID = 구글 공식 '테스트' 리워드 단위(승인 불필요). 실제 단위 발급 후 이 한 줄만 교체.
+   §4 준수: 보상형 부스트(✨온기 등)만 — 스토리/감정은 광고 뒤에 안 가둠. */
+const ADMOB_REWARD_TEST_ANDROID = "ca-app-pub-3940256099942544/5224354917";   // Google 공식 테스트 리워드(Android)
+const REWARD_AD_ID = ADMOB_REWARD_TEST_ANDROID;                               // TODO: 실제 AdMob 리워드 단위ID로 교체
+(function initNativeAdMob(){
+  const C = window.Capacitor;
+  if(!C || typeof C.isNativePlatform!=="function" || !C.isNativePlatform()) return;  // 네이티브 아니면 inert
+  const AdMob = C.Plugins && C.Plugins.AdMob;
+  if(!AdMob) return;                                                                  // 플러그인 미탑재 → Ads.ready()=false(버튼 숨김)
+  let _ready=false, _loading=false, _resolve=null, _settled=false;
+  const settle=(ok)=>{ if(_resolve && !_settled){ _settled=true; const r=_resolve; _resolve=null; r({rewarded:!!ok}); } };
+  const preload=()=>{ if(_loading||_ready) return; _loading=true;
+    AdMob.prepareRewardVideoAd({ adId: REWARD_AD_ID, isTesting:true }).catch(()=>{ _loading=false; }); };
+  // 이벤트(브릿지 문자열명 — @capacitor-community/admob 8)
+  AdMob.addListener("onRewardedVideoAdLoaded",      ()=>{ _ready=true; _loading=false; if(typeof refreshHUD==="function") refreshHUD(); });
+  AdMob.addListener("onRewardedVideoAdFailedToLoad",()=>{ _ready=false; _loading=false; });
+  AdMob.addListener("onRewardedVideoAdReward",      ()=>{ settle(true); });            // 끝까지 봄 → 보상
+  AdMob.addListener("onRewardedVideoAdDismissed",   ()=>{ settle(false); _ready=false; preload(); });   // 닫음 → 다음 광고 미리 로드
+  AdMob.addListener("onRewardedVideoAdFailedToShow",()=>{ settle(false); _ready=false; preload(); });
+  AdMob.initialize({ initializeForTesting:true }).then(preload).catch(()=>{});
+  window._adProvider = {
+    get rewardedReady(){ return _ready; },
+    showRewarded(placement){
+      return new Promise((resolve)=>{
+        if(!_ready){ resolve({rewarded:false}); preload(); return; }                  // 아직 미로드 → 보상X(공짜 방지) + 로드 시작
+        _settled=false; _resolve=resolve; _ready=false;                               // 광고 1회 소모
+        AdMob.showRewardVideoAd().catch(()=>settle(false));
+      });
+    }
+  };
+})();
+
 function addWalk(x,y){
   if(intro.phase==="wake"){ wakeTap(x,y); return; }    // 깨우기: 탭=생명 불어넣기
   if(intro.phase==="wakedone") return;                 // 결핍 한 줄/동기화 실패 비트 — 잠깐 손맛 멈춤
