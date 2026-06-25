@@ -201,7 +201,7 @@
   .pages { position:relative; z-index:2; flex:1 1 auto; overflow:hidden; }
   .page { position:absolute; inset:0; display:none; }
   .page.active { display:block; }
-  .tabbar { position:relative; z-index:7; flex:0 0 auto; display:flex; padding-bottom:env(safe-area-inset-bottom);   /* 하단 안전영역(제스처바·네비게이션바) 회피 */
+  .tabbar { position:relative; z-index:7; flex:0 0 auto; display:flex; padding-bottom:calc(env(safe-area-inset-bottom) + 12px);   /* 하단 안전영역(제스처바·네비게이션바) 회피 + 여유 12px */
     background:linear-gradient(#fbf8f3,#f2ecf6); border-top:1px solid rgba(150,130,170,.22); }
   .tab { flex:1; padding:12px 0 13px; background:transparent; border:none; cursor:pointer;
     font-family:'Nanum Myeongjo',serif; font-size:14px; color:#9a917f; letter-spacing:1px; }
