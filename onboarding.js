@@ -77,6 +77,12 @@ function closeGate(){ document.getElementById('gate')?.classList.remove('show');
 function hasAuthSession(){
   try{ return Object.keys(localStorage).some(k=>k.startsWith('sb-') && k.includes('auth-token')); }catch(e){ return false; }
 }
+// OAuth 리다이렉트 직후(=방금 로그인) — URL에 code/token이 있으면 교환이 비동기로 진행 중.
+// 이땐 아직 localStorage 토큰이 없어 hasAuthSession()이 false라, 게이트가 잠깐 뜨는 레이스 차단.
+// (앱 webview는 code 교환이 네트워크라 더 느려 이 창이 길다 — 모바일에서 "로그인했는데 다시 로그인화면" 버그의 원인)
+function authRedirectPending(){
+  try{ return /[?&]code=/.test(location.search) || /[#&](access_token|code)=/.test(location.hash); }catch(e){ return false; }
+}
 // 들어올 때 무엇을 보여줄지: 이미 지났으면 바로 게임 / 로그인 상태면 온보딩 / 아니면 게이트
 function decideEntry(){
   if(S.seenIntro){
@@ -87,8 +93,9 @@ function decideEntry(){
     return;
   }
   if(typeof authUser!=="undefined" && authUser){ startIntro(); return; }  // 로그인 했으면 게이트 건너뛰고 온보딩
-  // 아직 authUser 미해소지만 세션 토큰이 있으면 = 복귀 유저 → 게이트 깜빡임 방지, onAuthChanged가 곧 처리
-  if(hasAuthSession()) return;
+  // 아직 authUser 미해소지만 (세션 토큰이 있거나 || 방금 OAuth 리다이렉트로 교환 중)이면 = 로그인 유저
+  // → 게이트 깜빡임 방지, onAuthChanged가 곧 처리. (authRedirectPending이 앱 첫 로그인 후 게이트 재노출 버그 차단)
+  if(hasAuthSession() || authRedirectPending()) return;
   showGate();
 }
 $("#gGoogle")?.addEventListener("click", ()=>{ if(typeof googleLogin==="function") googleLogin(); });
