@@ -207,8 +207,8 @@ function popTutorialCloud(c){
   setTimeout(()=>{ sceneStep++; renderSceneBubble(); }, 750);   // → 다음 스텝=끝 → endSamScene → 걷기 시작
 }
 function advanceScene(){ if(!sceneActive || !sceneReady) return; sceneStep++; renderSceneBubble(); }
-function endSamScene(){
-  track("quest_received",{});                          // 온보딩 2단(샘 퀘스트) 통과 → 모험 시작
+function endSamScene(skipped){
+  track("quest_received",{skipped:!!skipped});         // 온보딩 2단(샘 퀘스트) 통과 → 모험 시작
   sceneActive=false;                                   // ← 이제부터 걷기 시작(idle 걸음 재개)
   const sc=$("#samScene");
   $("#sceneTapHint").classList.remove("show");
@@ -219,12 +219,15 @@ function endSamScene(){
   forceOnboard=false;                                  // 재생 종료
   beginAdventure();
   setTimeout(emitSys, 900);
-  setTimeout(()=>{ try{ startMapTut(); }catch(_){} }, 1300);   // 🆕 걷기 시작 직후 지도 스포트라이트 튜토리얼(1회)
+  // 근본원인 픽스: '튜토리얼 넘어가기'(samSkip)로 스킵한 사람은 지도 스포트라이트 튜토리얼도 생략.
+  // (두 튜토리얼이 분리돼 있어 스킵 의도가 전파 안 되던 것 — 스킵=모든 튜토리얼 off로 통일)
+  if(skipped){ S.seenMapTut=true; }
+  setTimeout(()=>{ try{ startMapTut(); }catch(_){} }, 1300);   // 🆕 걷기 직후 지도 스포트라이트 튜토리얼(1회, skipped면 seenMapTut로 자동 생략)
 }
 $("#rerollBtn").addEventListener("click",()=>{ S.robotName=""; ensureRobotName(); $("#nameInput").value=S.robotName; });
 // 샘 장면(튜토리얼) 넘어가기 → 바로 게임 시작
 $("#samSkip").addEventListener("pointerdown", e=>e.stopPropagation());            // 버튼 탭이 대사진행(addWalk)으로 새지 않게
-$("#samSkip").addEventListener("click", e=>{ e.stopPropagation(); if(sceneActive) endSamScene(); });
+$("#samSkip").addEventListener("click", e=>{ e.stopPropagation(); if(sceneActive) endSamScene(true); });   // 스킵 = 온보딩+지도 튜토리얼 전부 off
 
 /* ---------- 닉네임 변경 (헤더 이름 ✎ 클릭) — 저장 시 saveState로 로컬+Supabase 반영 ---------- */
 const renameOv=$("#renameOv");
