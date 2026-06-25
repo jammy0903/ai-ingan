@@ -80,24 +80,54 @@ async function reconcile() {
 // per-key 걸음: 모았다가 throttle(800ms) 저장
 let pending = 0;
 let flushTimer = null;
-async function flush() {
-  if (flushTimer) { clearTimeout(flushTimer); flushTimer = null; }
-  if (pending <= 0) return;
-  if (!reconciled) await reconcile();
-  const s = await load();
+
+// 모든 상태 변이를 한 줄로 직렬화 = buy/exchange 이중지불·flush 경합 차단.
+// load→검사→save 사이에 다른 변이가 끼어들지 못하게 단일 프라미스 체인으로 순서화한다.
+let opChain = Promise.resolve();
+function enqueue(fn) {
+  const run = opChain.then(fn, fn); // 앞 작업이 끝난 뒤에만 실행(성공/실패 무관)
+  opChain = run.catch(() => {});    // 한 작업이 실패해도 체인은 이어감
+  return run;
+}
+// 모아둔 걸음(pending)을 상태에 반영. 변경되면 true.
+function applyPending(s) {
+  if (pending <= 0) return false;
   const n = pending;
   pending = 0;
   s.steps += n * s.stepPerKey;
   s.taps += n;
-  await save(s);
+  return true;
 }
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   const t = msg && msg.type;
 
+  if (t === "vid") {
+    // 자식 프레임의 영상 재생 보고 → 같은 탭의 TOP 프레임(frameId 0)에만 중계.
+    // 웹페이지는 chrome.runtime을 못 써서 이 채널 자체가 위·변조 불가.
+    const tabId = _sender.tab && _sender.tab.id;
+    if (tabId != null) {
+      chrome.tabs.sendMessage(
+        tabId,
+        { type: "vidFrame", frameId: _sender.frameId, playing: !!msg.playing },
+        { frameId: 0 },
+        () => void chrome.runtime.lastError // 수신자(TOP content script) 없을 때 에러 무시
+      );
+    }
+    return;
+  }
   if (t === "key" || t === "taps") {
     pending += t === "taps" ? Math.max(0, msg.n | 0) : 1;
-    if (!flushTimer) flushTimer = setTimeout(flush, 800);
+    if (!flushTimer) {
+      flushTimer = setTimeout(() => {
+        flushTimer = null;
+        enqueue(async () => {
+          if (!reconciled) await reconcile();
+          const s = await load();
+          if (applyPending(s)) await save(s);
+        });
+      }, 800);
+    }
     return;
   }
   if (t === "shop") {
@@ -105,11 +135,10 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     return;
   }
 
-  (async () => {
+  enqueue(async () => {
     if (!reconciled) await reconcile();
-    if (pending > 0) await flush();
     const s = await load();
-    let dirty = false;
+    let dirty = applyPending(s); // 모인 걸음 먼저 반영
 
     switch (t) {
       case "exchange": {
@@ -143,7 +172,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 
     if (dirty) await save(s);
     sendResponse(s);
-  })();
+  });
   return true;
 });
 
