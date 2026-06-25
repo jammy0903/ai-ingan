@@ -154,4 +154,16 @@ chrome.runtime.onInstalled.addListener(async () => {
 });
 chrome.runtime.onStartup?.addListener(reconcile);
 
-chrome.sidePanel?.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
+// 아이콘 클릭은 이제 팝업(popup.html)을 연다(강아지 ON/OFF + 게임 열기).
+// 게임 사이드패널은 팝업의 '게임 열기' 버튼에서 sidePanel.open()으로 연다 → 자동열기 끔.
+chrome.sidePanel?.setPanelBehavior({ openPanelOnActionClick: false }).catch(() => {});
+
+// 강아지 OFF면 아이콘에 'OFF' 뱃지 — 한눈에 상태 보이게.
+function updateBadge(on) {
+  chrome.action.setBadgeText({ text: on ? "" : "OFF" });
+  chrome.action.setBadgeBackgroundColor({ color: "#9aa0a6" });
+}
+chrome.storage.local.get("petOn").then((o) => updateBadge(o.petOn !== false)).catch(() => {});
+chrome.storage.onChanged.addListener((c, area) => {
+  if (area === "local" && c.petOn) updateBadge(c.petOn.newValue !== false);
+});
