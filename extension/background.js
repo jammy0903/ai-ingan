@@ -33,15 +33,38 @@ function fresh() {
   };
 }
 
+// 안전 정수 상한(이상은 정밀도 손실/Infinity 위험) — 숫자 필드를 여기로 클램프.
+const MAX_NUM = Number.MAX_SAFE_INTEGER;
+function num(v, def, min, max) {
+  v = typeof v === "number" ? v : Number(v); // 문자열 등은 강제 변환
+  if (!Number.isFinite(v)) v = def; // NaN·Infinity·"abc" → 기본값
+  v = Math.floor(v);
+  return v < min ? min : v > max ? max : v;
+}
+
+// 저장 스키마를 '알려진 모양'으로 정규화 = 타입/범위 강제 + 미지 필드 제거.
+// ⚠️ 서버리스라 소유자 본인 치트는 못 막는다. 목적은 손상·버전스큐·오염된 sync로부터
+//    게임이 깨지지 않게 하는 견고성(NaN 전염·배율 폭주·병합 동결·쿼터 오염 차단).
+function normalize(raw) {
+  const r = raw && typeof raw === "object" ? raw : {};
+  let owned = Array.isArray(r.owned) ? r.owned.filter((x) => DOGIDS.includes(x)) : [];
+  if (!owned.includes("cheese")) owned.unshift("cheese");
+  owned = [...new Set(owned)]; // 중복 제거
+  let selDog = DOGIDS.includes(r.selDog) ? r.selDog : "cheese";
+  if (!owned.includes(selDog)) selDog = "cheese";
+  return {
+    steps: num(r.steps, 0, 0, MAX_NUM),
+    taps: num(r.taps, 0, 0, MAX_NUM),
+    coins: num(r.coins, 0, 0, MAX_NUM),
+    stepPerKey: num(r.stepPerKey, 1, 1, 1000), // 항상 1이지만 손상 대비 1~1000 클램프
+    owned,
+    selDog,
+  };
+}
+
 async function load() {
   const o = await chrome.storage.local.get(KEY);
-  const s = Object.assign(fresh(), o[KEY] || {});
-  // 꾸미기→강아지 마이그레이션: owned를 강아지 id만 남기고 보정
-  s.owned = Array.isArray(s.owned) ? s.owned.filter((x) => DOGIDS.includes(x)) : [];
-  if (!s.owned.includes("cheese")) s.owned.unshift("cheese");
-  if (!DOGIDS.includes(s.selDog)) s.selDog = "cheese";
-  delete s.equipped; // 옛 꾸미기 필드 제거
-  return s;
+  return normalize(o[KEY]); // 미지 필드(예: 옛 equipped)는 화이트리스트로 자동 탈락
 }
 
 async function save(s) {
@@ -68,12 +91,13 @@ async function reconcile() {
       chrome.storage.local.get(KEY),
       chrome.storage.sync.get(KEY),
     ]);
-    const local = l[KEY],
-      remote = sy[KEY];
-    const lt = (local && local.taps) || 0,
-      rt = (remote && remote.taps) || 0;
-    if (remote && rt > lt) await chrome.storage.local.set({ [KEY]: remote });
-    else if (local && lt > rt) await chrome.storage.sync.set({ [KEY]: local }).catch(() => {});
+    // ⚠️ 양쪽 다 정규화 후 비교/채택 — 오염된 원격을 날것으로 받아들이지 않는다.
+    const local = l[KEY] ? normalize(l[KEY]) : null;
+    const remote = sy[KEY] ? normalize(sy[KEY]) : null;
+    const lt = local ? local.taps : -1; // 레코드 없음=-1(taps 0인 정상 레코드와 구분)
+    const rt = remote ? remote.taps : -1;
+    if (remote && rt > lt) await chrome.storage.local.set({ [KEY]: remote }); // 원격 채택(정규화본)
+    else if (local && lt > rt) await chrome.storage.sync.set({ [KEY]: local }).catch(() => {}); // 로컬을 sync로(정규화본=오염 정리)
   } catch (_) {}
 }
 
@@ -117,7 +141,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     return;
   }
   if (t === "key" || t === "taps") {
-    pending += t === "taps" ? Math.max(0, msg.n | 0) : 1;
+    pending += t === "taps" ? num(msg.n, 0, 0, MAX_NUM) : 1; // |0(32비트 절단) 대신 안전 정수 강제
     if (!flushTimer) {
       flushTimer = setTimeout(() => {
         flushTimer = null;
