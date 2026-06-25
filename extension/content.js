@@ -58,9 +58,9 @@
   }
 
   // 임베드 대응: 강아지는 TOP에만 있으므로, 자식 프레임(iframe)은 자기 영상 상태를
-  // window.top으로 보고하고 TOP이 자기 것 + 모든 자식 보고를 합산해 숨긴다.
-  const FRAME_TOKEN = TOP ? "top" : Math.random().toString(36).slice(2);
-  const childPlaying = new Map(); // TOP만 사용: frameToken -> bool
+  // chrome.runtime으로 background에 보고 → background가 같은 탭의 TOP 프레임에만 중계한다.
+  // (웹페이지는 chrome.runtime을 못 써서 위·변조 불가 + 키=실제 frameId라 무한 증가 없음.)
+  const childPlaying = new Map(); // TOP만 사용: frameId(number) -> bool
   let lastReported = null; // 자식 보고 디듀프
   function anyChildPlaying() {
     for (const v of childPlaying.values()) if (v) return true;
@@ -74,12 +74,9 @@
       vidHide = next;
       applyVisibility(); // 숨김/등장(걸음·위치 상태는 그대로 보존)
     } else if (local !== lastReported) {
-      lastReported = local; // 내 영상 상태가 바뀔 때만 최상위로 보고
+      lastReported = local; // 내 영상 상태가 바뀔 때만 background로 보고
       try {
-        window.top.postMessage(
-          { __ainganVid: true, id: FRAME_TOKEN, playing: local },
-          "*"
-        );
+        chrome.runtime.sendMessage({ type: "vid", playing: local });
       } catch (_) {}
     }
   }
@@ -182,6 +179,7 @@
   window.addEventListener(
     "keydown",
     (e) => {
+      if (!e.isTrusted) return; // 실제 사용자 입력만(스크립트 합성 이벤트로 걸음 조작 차단)
       if (e.repeat) return; // 꾹 누름 자동연타 제외
       signalStep();
     },
@@ -192,6 +190,7 @@
   window.addEventListener(
     "mousedown",
     (e) => {
+      if (!e.isTrusted) return; // 실제 사용자 입력만
       if (e.button !== 0) return;
       signalStep();
     },
@@ -210,21 +209,19 @@
   );
 
   if (TOP) {
-    // 자식 프레임(iframe) 영상 보고 수신 → 합산 후 숨김 재계산
-    window.addEventListener("message", (e) => {
-      const d = e.data;
-      if (!d || d.__ainganVid !== true || typeof d.id !== "string") return;
-      childPlaying.set(d.id, !!d.playing);
-      recalcHide();
+    // background가 중계한 자식 프레임 영상 보고 수신 → 합산 후 숨김 재계산.
+    // (웹페이지가 못 끼어드는 신뢰 채널 + 키는 실제 frameId라 엔트리 수가 프레임 수로 제한됨)
+    chrome.runtime.onMessage.addListener((m) => {
+      if (m && m.type === "vidFrame" && typeof m.frameId === "number") {
+        childPlaying.set(m.frameId, !!m.playing);
+        recalcHide();
+      }
     });
   } else {
     // 자식이 떠나면(닫힘/이동) '재생 중' 보고가 영영 남아 강아지가 계속 숨지 않도록 false 통지
     window.addEventListener("pagehide", () => {
       try {
-        window.top.postMessage(
-          { __ainganVid: true, id: FRAME_TOKEN, playing: false },
-          "*"
-        );
+        chrome.runtime.sendMessage({ type: "vid", playing: false });
       } catch (_) {}
     });
   }
