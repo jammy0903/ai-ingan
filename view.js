@@ -285,7 +285,7 @@ function openNode(n, firstMeet){
     const page = (i)=> fillModal({
       badge: i===0?"하나의 감정을 만나다":"…",
       emo:`『 ${pp.name} 』`, lv:(i===0 && firstMeet)?`⚡ 탭 +1`:"",
-      situ: i===0?pp.situ:"", log: lines[i], closeText:"…",
+      situ: i===0?pp.situ:"", log: lines[i], closeText:"다음대사",
       next: (i<lines.length-1) ? ()=>page(i+1) : last });
     page(0);
     return;
@@ -379,7 +379,7 @@ function bodyStoryModal(key){   // 구매 직후 그 몸의 5단 이야기를 �
     emo:`〔 ${bd.name} 〕`, lv:(i===0?`⚡ 탭 +1`:""),
     situ:i===0?bd.situ:"", log:lines[i],
     reward:(i===last)?[`🫀 몸조각 +1 (${bodyCount()}/${BODY_TOTAL})`,`⚡ 탭 +1`,`사람에 한 걸음 더`]:[],
-    closeText:(i<last)?"…":"다음 길로",
+    closeText:(i<last)?"다음대사":"다음 길로",
     next:(i<last)?()=>page(i+1):null });
   page(0);
 }
