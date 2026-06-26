@@ -339,9 +339,9 @@ const NODES = [
     intro:"확 타오르는\n뜨거운 마음들." },
   { id:"cat_calm",    type:"category", parent:"start", cost:760, w:520, gen:0, icon:"🌊", name:"잔잔·시림",
     intro:"고요하고\n시린 마음들." },
-  // ▸ 긍정·흥미 (10) — 밝고 끌리는 (기쁨=대표 먼저 싸게 → 애틋함·재미·설렘 순으로 간격 ↑)
-  { id:"adore",   type:"person", key:"adore",   parent:"cat_pos", cost:16,  w:110, gen:0.35, icon:"❀" },
+  // ▸ 긍정·흥미 (10) — 밝고 끌리는. ⚠️ NODES 순서 = '순차 완성' 공개 순서(2026-06-26). 기쁨=대표 첫 감정(온보딩 튜토리얼이 가리킴).
   { id:"joy",     type:"person", key:"joy",     parent:"cat_pos", cost:18,  w:40,  gen:0.40, icon:"❀" },
+  { id:"adore",   type:"person", key:"adore",   parent:"cat_pos", cost:16,  w:110, gen:0.35, icon:"❀" },
   { id:"amuse",   type:"person", key:"amuse",   parent:"cat_pos", cost:22,  w:250, gen:0.70, icon:"❀" },
   { id:"flutter", type:"person", key:"flutter", parent:"cat_pos", cost:28,  w:320, gen:0.80, icon:"❀" },
   { id:"curious", type:"person", key:"curious", parent:"cat_pos", cost:34,  w:380, gen:0.55, icon:"❀" },

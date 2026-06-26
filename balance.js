@@ -7,21 +7,11 @@ const TAP_GAIN = 1;                // 탭 최소 이득(초반 = 1걸음)
 const TAP_FRAC = 1.0;             // 탭 이득 = 현재 걸음/초 × 이 비율. 1.0 = "1탭=1초어치" → 죽은 구간 없이 rate와 함께 성장(gap-analysis ③)
 // 연타 콤보 + 크리(Phase 1.2, gap-analysis ⑤ 변동보상 일부)
 const COMBO_WINDOW = 600;        // ms — 이 안에 또 누르면 콤보 유지(끊기면 리셋)
-const COMBO_STEP   = 0.15;       // 콤보 1당 탭 배율 증가분 (배율 = 1 + STEP×min(combo,MAX))
-const COMBO_MAX    = 40;         // 콤보 상한 → 최대 탭 배율 1 + 0.15×40 = ×7
+const COMBO_STEP   = 0.10;       // 콤보 1당 탭 배율 증가분 (배율 = 1 + STEP×min(combo,MAX))
+const COMBO_MAX    = 40;         // 콤보 상한 → 최대 탭 배율 1 + 0.10×40 = ×5 (2026-06-26 ×7→×5 완만화: 빨리 눌러야 한다는 압박↓, 힐링 톤)
 const CRIT_CHANCE  = 0.12;       // 탭 크리티컬 확률
-const CRIT_MULT    = 6;          // 크리 시 탭 ×
-const UP_BASE = { person: 30 };   // (레거시) 옛 재회 고정 기준 — 아래 upCost는 '발견 비용 추종'으로 교체됨(세이브/디버그 호환 위해 상수만 보존)
-// 🆕 재회 비용 = '그 시점 발견 비용' 추종 + 프리미엄 (2026-06-24, 유저 지시: 재회는 감정노드 첫 발견보다 비싸야 함).
-//   upCost(lv) = discoverCostRaw() × REUNION_PREMIUM × REUNION_GROWTH^(lv-1).
-//   REUNION_PREMIUM>1 이라 가장 싼 첫 재회(lv2)도 발견 비용보다 비쌈 → '재회 > 발견' 항상 보장.
-const REUNION_PREMIUM = 1.5;      // 재회 기본 프리미엄(발견 비용 대비 배수)
-const REUNION_GROWTH  = 1.15;     // 재회 레벨마다 ×(점증) — 5레벨당 ≈×2
-const upCost = (node, lv) => {
-  const disc = (typeof discoverCostRaw==='function') ? discoverCostRaw() : DISCOVER_COST_BASE;  // 로드순서 가드(평소엔 engine.js 정의)
-  return Math.round(disc * REUNION_PREMIUM * Math.pow(REUNION_GROWTH, Math.max(0, lv-1)));
-};
-const MAX_LV = 50;                // 재회 심화 상한 — 끝없는 sink(거지 알바식). 5레벨마다 ×2 달성보너스(achieveMult)
+const CRIT_MULT    = 5;          // 크리 시 탭 × (2026-06-26 6→5 중간값)
+// 🆕 재회 폐기(2026-06-26): UP_BASE·REUNION_*·upCost·MAX_LV 제거 — 만남이 5단 한 번에 끝나 레벨업(재회)이 없음.
 // 발견(이동) 비용 = '내 걸음 속도 추종' + '순번별 목표 탭수 곡선'.
 // 비용 = effRate(걸음/초) × TAP_CURVE[순번]. TAP_FRAC=1.0라 "목표 탭수 = 목표 초"(가만 두면 그 초만큼 idle로도 도달).
 // income이 K/M/B로 폭발해도 비용이 income추종이라 다음 발견은 늘 "목표 탭수" 거리 → 탭("다음 이야기 당겨오기")이 영원히 의미를 가짐.
@@ -34,33 +24,19 @@ const W_MULT = 5;                 // 발견(이동) 비용 전역 배율 — 진
 // effTap이 이 기준을 넘는 '후반'(마일스톤으로 income 폭발)부턴 income추종으로 커짐(후반 공짜/벽 방지).
 // 6 = 자연경로상 긍정 갈래(호기심까지, effTap≤6)가 전부 정확값으로 뜨는 경계.
 const DISCOVER_BASE = 6;
-// 🆕 발견(걸음) 비용 = 지수곡선 (2026-06-24). 비용 = DISCOVER_COST_BASE × DISCOVER_COST_GROWTH^costN.
-//   costN = 비용 '지수'(engine.js costN()). 4대분류 마스터 기반·상한 N_MAX. 노드별 w·W_MULT·TAP_CURVE는 비용에서 폐기.
-//   ⚠️ costN은 '탭 파워(1+감정+재회)'와 별개 — 통일하면 행동당 +1 도파민이 상한에 뭉개지므로 분리(engine.js 주석 참고).
-//   곡선 의도: 진행(costN) 0→40을 따라 비용이 매끄럽게 지수 상승. costN이 40에서 상한이라 비용도 천장(10×1.25^40≈75k)에서 멈춤 → 후반 무한폭발 방지(탭 파워는 계속 커져 이 천장을 순삭).
-const DISCOVER_COST_BASE   = 100;   // costN=0일 때 발견 비용(첫 노드). 2026-06-24 ×10(가격 0 하나 더): 10→100 → 곡선 전체 ×10(100→752k)
-const DISCOVER_COST_GROWTH = 1.25;  // n이 1 오를 때마다 비용 ×이 비율 (재회식 base×r^n과 동형)
-// 🆕 n(탭당 걸음수 = 비용 지수) 곡선 — 4대분류 마스터 기반·상한.
-//   4대분류(긍정→강한자극→불안불편→잔잔시림)를 각각 '완전 마스터'할 때마다 n += N_PER_CAT, 상한 N_MAX.
-//   갈래당 +10 = 감정수집 5(그 갈래 감정 전부 수집) + 재회깊이 5(감정당 RN_FULL_LV 레벨에서 saturate). 50:50.
-const N_MAX      = 40;   // n 상한 = 4대분류 × N_PER_CAT
-const N_PER_CAT  = 10;   // 대분류 하나 완전 마스터 시 n 기여
-const RN_FULL_LV = 5;    // 재회 깊이 만점 레벨 — 감정당 이 레벨에서 재회 기여가 꽉 참(MAX_LV=50은 그대로, n은 5에서 saturate)
-const OFFLINE_RATE = 0.1;         // 앱 끈 동안 걸음 적립 배율(1/10). base 1걸음/초 → 오프라인 0.1걸음/초 = 1분에 6걸음. 켜고 놀 유인(접속 유도).
-const TIER = {
-  joy:"big", adore:"mid", amuse:"mid", flutter:"mid", curious:"small", beauty:"small", admire:"small", awe:"small", trance:"small", satisfy:"small",
-  fear:"big", confuse:"mid", bored:"mid", awkward:"mid", anxiety:"small", disgust:"small", horror:"small",
-  excite:"big", relief:"mid", attract:"mid", crave:"small", triumph:"small",
-  sorrow:"big", empathy:"mid", longing:"mid", compassion:"small", calm:"small",
-};
+// 🆕 발견(걸음) 비용 = 지수곡선 (2026-06-26 재회 제거판). 비용 = DISCOVER_COST_BASE × DISCOVER_COST_GROWTH^costN.
+//   costN = engine.js costN() = '모은 감정 수'(0~27). 재회가 없으니 곡선은 순수 감정 수집 진행만 따라간다.
+//   탭 파워(1+감정+몸)는 별개 — 후반 ~39/탭이라 콤보 ×5와 합쳐 몇 번만 눌러도 비용을 순삭(탭 피로 0).
+//   🍃 잔잔 페이스: 첫 감정 25걸음(~25초 idle) … 막 감정 ~1,187걸음(~20분 idle) … 전체 ~8,500걸음(~2.4h 순수 idle). cap 불필요(감정 27에서 끝).
+const DISCOVER_COST_BASE   = 25;    // costN=0(첫 감정) 발견 비용 = ~25초 idle (2026-06-26 100→25)
+const DISCOVER_COST_GROWTH = 1.16;  // 감정 하나 끝낼 때마다 다음 발견 비용 ×이 비율 (2026-06-26 1.25→1.16, 잔잔)
+const OFFLINE_RATE = 0.1;         // (사문화) 옛 오프라인 배율 — 실제 오프라인은 save-auth.js의 1걸음/초·상한 OFFLINE_CAP_STEPS
 const LOOKBACK_COST = 2;                            // 기억 한 조각 재해석 비용(마음의 깊이)
-// 🆕 몸 온기 상점 — 몸 11을 그래프에서 빼고 자루에서 ✨온기로 구매/단련(5단 이야기). (economy-redesign 후속)
-// ⚠️ §4 보장: 첫 구매 11개 합 ≤ 감정 27코인(무재회·무광고 최소 플레이어도 인간 달성). 합 = 25.
+// 🆕 몸 온기 상점 — 몸 11을 그래프에서 빼고 자루에서 ✨온기로 '구매'(한 번, 5단 이야기). 단련(반복) 폐기(2026-06-26 재회 제거와 일관).
+// ⚠️ §4 보장: 구매 11개 합 ≤ 감정 27코인(무광고 최소 플레이어도 인간 달성). 합 = 25.
 const BODY_ORDER = ["skin","bone","muscle","nerve","endocrine","heart","lymph","lung","stomach","kidney","repro"];
-const BODY_BUY   = [1,1,2,2,2,2,3,3,3,3,3];   // 부위별 '첫 구매' 온기(BODY_ORDER 순서). 합 25.
-const BODY_TRAIN_BASE = 3;                    // '단련' 1회(Lv1→2) 기본 온기 — 깊은 이야기(2~5단)+탭 +1. 진짜 큰 소비처(선택).
-const BODY_TRAIN_GROW = 1.6;                  // 단련 레벨마다 ×(점증). Lv1→2=3·2→3=5·3→4=8·4→5=13…
-const OFFLINE_CAP_H = 4;            // 오프라인 적립 상한(시간)
+const BODY_BUY   = [1,1,2,2,2,2,3,3,3,3,3];   // 부위별 구매 온기(BODY_ORDER 순서). 합 25.
+const OFFLINE_CAP_H = 4;            // (사문화) 옛 오프라인 상한(시간)
 // 수집(감정+몸) 누적 개수가 at를 넘을 때마다 전역 걸음/초 ×mult 점프.
 // cells 근거: 제너레이터 '랭크 돌파마다 ×3' — 선형 덧셈이 아니라 '돌파=배율'로 자릿수 점프(gap-analysis Phase 3 ①).
 // 점증 배율(거지키우기 달성보너스 +600%→+5000% 모사): 후반 문턱일수록 세게 → income이 K→M→B로 폭발.

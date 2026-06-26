@@ -66,8 +66,7 @@ const S = {
   cycle: 0,              // 걸어온 회차 수 (0=첫 생)
   lookback: 0,           // '기억 재해석'으로 되돌아본 기억 수 (마음의 깊이로 구매, §3)
   seenIntro: false,      // 시작 게이트/온보딩을 한 번이라도 지났는가 (이후 강제 재노출 안 함)
-  seenReunionHint: false, // 재회(다음 티어 해금) 안내를 한 번이라도 봤는가
-  seenMapTut: false,      // 🆕 지도 스포트라이트 튜토리얼(긍정→기쁨→재회→가방)을 한 번이라도 봤는가
+  seenMapTut: false,      // 🆕 지도 스포트라이트 튜토리얼을 한 번이라도 봤는가
 };
 NODES.forEach(n => S.levels[n.id] = n.completed ? 1 : 0);
 
@@ -85,35 +84,14 @@ function nextMilestone(){                          // 다음 속도업까지 남
   return null;
 }
 function rateMult(){ return milestoneMult(); }     // 전역 산출 배율(추후 프레스티지 배율도 여기 곱)
-// 걸음/초 base를 levels에서 '계산'(누적 S.rate 폐기) — 노드별 산출에 달성보너스 등 얹기 쉬움(C단계).
-function achieveMult(lv){ return Math.pow(2, Math.floor(lv/5)); }   // (레거시) — 재회 곡선이 nodeSps로 이동, 미사용
-// 재회 = '초/걸음' 곡선(관리자 튜닝). 초/걸음 = 시작값 × 배율^재회횟수, 걸음/초 = 1/(초/걸음). (시작0.1·배율0.5 → 10·20·40 걸음/초)
-let REUNION_START_SPS = 1.0;   // 재회0(첫만남) 초/걸음 — 1 = 1걸음/초/노드(옛 baseline 수준, 폭발 방지)
-let REUNION_FACTOR    = 0.88;  // 재회당 배율(<1, 작을수록 빨라짐) — 0.88 ≈ 재회당 1.14배(2026-06-22 후반 폭발 완화: 0.85→0.88, 노드당 최대 ×2860→×525). 관리자 슬라이더로 조절
-function nodeSps(lv){ return REUNION_START_SPS * Math.pow(REUNION_FACTOR, Math.max(0,(lv||1)-1)); }   // lv의 초/걸음
-function fmtSps(lv){ const v=nodeSps(lv); return (v>=0.001 ? +v.toFixed(3) : v.toExponential(1)) + "초/걸음"; }
-function nodeOut(n, lv){ if(lv==null) lv=S.levels[n.id]; return (lv>0 && n.gen) ? 1/nodeSps(lv) : 0; }   // 걸음/초 = 1 / (초/걸음)
-function baseRate(){ let r=1; for(const n of NODES) r+=nodeOut(n); return r; }   // (레거시) 옛 idle 곡선 — 미사용, 디버그/세이브 호환 보존
+// 🆕 재회 폐기(2026-06-26): 옛 '초/걸음' 재회 곡선(achieveMult·REUNION_*·nodeSps·nodeOut·baseRate) 제거 — idle은 effRate()=1 고정.
 // 🆕 경제 재설계(2026-06-22, economy-redesign.md): 걷기(idle)=1걸음/초 고정, 성장(number-go-up)은 '탭'으로 이동.
-// 🆕 costN = 발견(걸음) 비용 지수 (2026-06-24). 4대분류 각 완전 마스터마다 +N_PER_CAT(상한 N_MAX).
-//   갈래당 +10 = 감정수집 5(그 갈래 감정 전부 수집) + 재회깊이 5(감정당 RN_FULL_LV 레벨에서 saturate). 50:50.
-//   ⚠️ 탭 파워와는 '별개의 값' — 통일하면 행동당 +1 도파민이 40상한에 뭉개져 재회 '탭 +1' 약속이 거짓이 됨. 그래서 분리.
-//   ※ CAT_ORDER는 파일 후반에 정의 — costN은 런타임에만 호출되므로 그때 이미 초기화돼 있어 안전.
-function costN(){
-  let n=0;
-  for(const cat of CAT_ORDER){
-    const ps=NODES.filter(x=>x.type==="person" && x.parent===cat);
-    if(!ps.length) continue;
-    let collected=0, reuFull=0;
-    for(const p of ps){
-      const lv=S.levels[p.id]||0;
-      if(lv>=1){ collected++; reuFull += Math.min(Math.max(lv-1,0), RN_FULL_LV-1)/(RN_FULL_LV-1); }  // 재회 충만도: 수집(lv1)=0 … lv=RN_FULL_LV → 1
-    }
-    n += (N_PER_CAT/2)*(collected/ps.length) + (N_PER_CAT/2)*(reuFull/ps.length);  // 감정수집 절반 + 재회깊이 절반
-  }
-  return Math.min(n, N_MAX);
-}
-function tapPower(){ let p=1; for(const n of NODES){ const lv=S.levels[n.id]||0; if(n.gen&&lv>0) p+=lv; } return p; }  // 탭 파워 = 1 + (모은 감정 수 + 재회 레벨 합). 감정 1줍기 +1, 재회 1레벨 +1. (무상한 — 행동당 +1 도파민·재회 무한 sink·모달 약속 유지)
+// 🆕 costN = 발견(걸음) 비용 지수 (2026-06-26 재회 제거판). 비용 = DISCOVER_COST_BASE × DISCOVER_COST_GROWTH^costN.
+//   재회가 없으니 곡선은 순수 '모은 감정 수'(0~27)를 따라간다 — 감정 하나 끝낼 때마다 다음 발견이 한 단계 비싸진다.
+//   잔잔 페이스(BASE 25·GROWTH 1.16): 첫 25걸음(~25초) … 막 ~1,187걸음(~20분) … 전체 ~8,500걸음(~2.4h idle). cap 불필요(27에서 끝).
+function costN(){ return NODES.filter(n=>n.type==="person" && (S.levels[n.id]||0)>0).length; }  // 모은 감정 수(=발견 비용 지수)
+// 탭 파워 = 1 + 모은 감정 수(+몸). 감정/몸 하나 얻을 때마다 +1(레벨 0/1). 무상한 → 후반 ~39/탭이라 몇 번만 눌러도 발견 비용을 순삭(탭 피로 0).
+function tapPower(){ let p=1; for(const n of NODES){ if(n.gen && (S.levels[n.id]||0)>0) p++; } return p; }
 function effRate(){ return 1; }                              // 걷기(idle) = 끝까지 고정 1걸음/초 (마일스톤·재회 idle가속 폐기)
 function effTap(){ return Math.max(TAP_GAIN, tapPower()); }  // 탭 1번 기본 이득 = 탭 파워(콤보·크리는 addWalk에서 곱)
 
@@ -201,9 +179,14 @@ function reachCost(id){ // 🆕 발견(이동) 비용 = 지수곡선(2026-06-24)
   // costN()(비용 지수, 상한 40 — 탭 파워와 별개). 모든 후보가 같은 costN → 비용 동일 → updateDiscovered '최소비용'은 NODES 순서.
   return Math.round(discoverCostRaw());
 }
-// 갈래 안 대/중/소 티어 (대=대표 1 / 중=다음 / 소=깊은 마지막). 갈래 안에서 단계적으로 공개.
-// 한 갈래에서 '재회' 누적 횟수(레벨2 이상으로 다시 만난 만큼)
-function regionReunions(catId){ let r=0; NODES.forEach(n=>{ if(n.type==="person"&&n.parent===catId) r+=Math.max(0,(S.levels[n.id]||0)-1); }); return r; }
+// 🆕 갈래 안 감정 = NODES 순서대로 1개씩 '순차 완성'(2026-06-26, 재회 폐기). 직전 형제 감정을 끝내야 다음이 열린다.
+//   (옛 大中小 TIER + regionReunions 게이트 폐기 — 재회가 없으니 그걸로는 中·小가 영영 안 열려 클리어 불능이 됨.)
+function prevPersonDone(n){
+  const sibs = NODES.filter(x=>x.type==="person" && x.parent===n.parent);  // 같은 갈래 감정들(NODES 순서 = 의도된 공개 순서)
+  const i = sibs.indexOf(n);
+  if(i<=0) return true;                  // 갈래 첫 감정(대표) = 허브 완료 + 걸음이면 열림
+  return S.levels[sibs[i-1].id]>0;       // 직전 형제 감정을 완료(끝)해야 이 감정이 열림
+}
 // 노드는 '걸음을 그 비용만큼 모은' 순간 처음 희미하게 발견된다(이후 계속 보임).
 // 대분류 갈래 순서(긍정→강한자극→불안·불편→잔잔·시림) — 한 갈래를 '다 끝내야' 다음 갈래가 열린다(순차).
 const CAT_ORDER = ["cat_pos","cat_intense","cat_unease","cat_calm"];
@@ -219,12 +202,7 @@ function gateOk(n){                                 // 챕터 게이트
     if(i<=0) return true;                           // 긍정(첫 갈래)은 항상 열림
     return categoryComplete(CAT_ORDER[i-1]);        // 이전 갈래를 다 끝내야 이 갈래가 열림
   }
-  if(n.type==="person"){                           // 갈래 안 단계 공개: 대 → (재회) → 중 → (재회) → 소
-    const tier=TIER[n.key];
-    if(tier==="mid")   return regionReunions(n.parent)>=1;   // 중: 그 갈래에서 재회 1회 이상
-    if(tier==="small") return regionReunions(n.parent)>=2;   // 소: 재회 2회 이상
-    return true;                                   // 대(대표 감정): 평소대로(허브 완료 + 걸음)
-  }
+  if(n.type==="person") return prevPersonDone(n);  // 🆕 갈래 안 순차 완성 — 직전 형제 감정을 끝내야 열림(TIER 폐기)
   if(n.type==="body") return false;   // 🆕 몸은 그래프에서 제거 — 자루(기억 약장)에서 온기로 구매(graph 발견 대상 아님)
   return true;
 }

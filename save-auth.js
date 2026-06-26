@@ -2,7 +2,7 @@
    ⚠️ 전역 스크립트(모듈 아님) — 전역 스코프 공유, 로드 순서 = 원본 순서. sw.js CORE/정규식 등재. ===== */
 /* ---------- 세이브 (localStorage 즉시 + 새 Supabase 키 넣으면 클라우드 동기화) ---------- */
 const SAVE_KEY = "aingan_save_v1";   // localStorage 키 이름(레거시 — 바꾸면 기존 미러를 못 읽으니 고정)
-const SAVE_VERSION = 3;              // 세이브 '데이터' 스키마 버전(SAVE_KEY와 별개). 필드/노드id/규칙을 바꾸면 +1 하고 migrate()에 변환 한 칸 추가. (v2: 비용곡선 개편 — 전 유저 1회 강제 리셋 / v3: ✨온기 조각 추가 — 추가형, 리셋 없음)
+const SAVE_VERSION = 4;              // 세이브 '데이터' 스키마 버전(SAVE_KEY와 별개). 필드/노드id/규칙을 바꾸면 +1 하고 migrate()에 변환 한 칸 추가. (v2: 비용곡선 개편 — 전 유저 1회 강제 리셋 / v3: ✨온기 조각 추가 — 추가형, 리셋 없음 / v4: 재회 제거·감정 순차 완성 — levels 0/1 의미 변경 → 전 유저 1회 강제 리셋)
 // 강철의 인간술사 전용 Supabase 프로젝트. publishable 키는 클라 공개용(안전·RLS 보호).
 const SUPA = { url:"https://irpavlciywhjnigqsjxn.supabase.co", anon:"sb_publishable_SNr6tjf-JX5-4NhLBo8oEg_mNqoClDf" };
 
@@ -13,7 +13,7 @@ function saveKey(){ return authUser ? ("u_"+authUser.id) : null; }
 const ROBOT_NAMES=["삐삐","또르","깡통이","녹슬이","별이","콩이","또롱","삐릭","깡총","또또","모리","단추","나사","볼트","깜빡이","또각","삐약","동그리","네모","철이","구리","뚜뚜","링링","찌릿","오백","뽀삐","고철이","반짝","덜컹","깡깡"];
 function ensureRobotName(){ if(!S.robotName) S.robotName = ROBOT_NAMES[Math.floor(Math.random()*ROBOT_NAMES.length)]; }
 
-function snapshot(){ return { v:SAVE_VERSION, walks:S.walks, rate:S.rate, current:S.current, levels:S.levels, discovered:S.discovered, robotName:S.robotName, named:S.named, depth:S.depth, coins:S.coins, cycle:S.cycle, lookback:S.lookback, seenIntro:S.seenIntro, seenReunionHint:S.seenReunionHint, seenMapTut:S.seenMapTut, t:Date.now() }; }
+function snapshot(){ return { v:SAVE_VERSION, walks:S.walks, rate:S.rate, current:S.current, levels:S.levels, discovered:S.discovered, robotName:S.robotName, named:S.named, depth:S.depth, coins:S.coins, cycle:S.cycle, lookback:S.lookback, seenIntro:S.seenIntro, seenMapTut:S.seenMapTut, t:Date.now() }; }
 function loadLocal(){ try{ const r=localStorage.getItem(SAVE_KEY); return r?JSON.parse(r):null; }catch(e){ return null; } }
 // 옛 세이브를 현재 스키마로 끌어올린다. v 필드 없으면 버전 도입 이전(레거시) = v1로 간주.
 // 스키마 바꿀 때: SAVE_VERSION +1 하고 아래 체인에 `if(v<N){ /* 변환 */ v=N; }` 한 칸 추가(순서대로 누적 적용).
@@ -22,6 +22,7 @@ function migrate(d){
   let v = d.v || 1;
   if(v<2){ d = { v:2 };  v=2; }      // v2: 비용곡선(경제) 개편 → 기존 진행 전체 폐기, 처음부터. 진행 필드 제거 → applyState가 새 게임 기본값으로 채움(걸음0·레벨초기화·온보딩 재등장). t 빼서 오프라인 적립도 0.
   if(v<3){ v=3; }                    // v3: ✨온기 조각 추가 — 추가형(coins 없으면 applyState가 0). 리셋 없음.
+  if(v<4){ d = { v:4 };  v=4; }      // v4: 재회 제거·감정 순차 완성 → levels 0/1 의미 변경(옛 재회 레벨 무효) → 진행 전체 폐기, 처음부터. t 빼서 오프라인 적립 0.
   d.v = Math.min(v, SAVE_VERSION);   // 미래 버전 세이브(다운그레이드 케이스)는 현재로 클램프 → 알 수 없는 스키마로 크래시 방지
   return d;
 }
@@ -38,7 +39,6 @@ function applyState(d){
   S.depth = d.depth || 0; S.cycle = d.cycle || 0; S.lookback = d.lookback || 0;
   S.coins = d.coins || 0;            // ✨ 온기 조각(없는 옛 세이브=0)
   S.seenIntro = !!(d.seenIntro || d.named);   // 기존 이름지은 유저는 자동으로 '봤음' 처리(게이트 안 띄움)
-  S.seenReunionHint = !!d.seenReunionHint;     // 재회 안내 1회 표시 플래그
   S.seenMapTut = !!d.seenMapTut;               // 🆕 지도 튜토리얼 1회 표시 플래그
   // 🆕 오프라인 = 1걸음/초(온라인 idle과 동일), 누적 상한 OFFLINE_CAP_STEPS(=1000걸음, 2026-06-24). economy-redesign.md
   let off=0; if(d.t){ const sec=Math.max(0,(Date.now()-d.t)/1000); off=Math.min(sec, OFFLINE_CAP_STEPS); S.walks+=off; }
@@ -64,7 +64,7 @@ async function supaLoad(){ if(!authUser || !SUPA.url || !SUPA.anon) return null;
 function resetState(){                                   // 메모리 상태를 새 게임으로 초기화
   S.walks=0; S.rate=1.0; S.current="start"; S.discovered={};
   NODES.forEach(n=>S.levels[n.id]= n.completed?1:0);
-  S.robotName=""; S.named=false; S.depth=0; S.cycle=0; S.lookback=0; S.seenIntro=false; S.seenReunionHint=false; S.seenMapTut=false;
+  S.robotName=""; S.named=false; S.depth=0; S.cycle=0; S.lookback=0; S.seenIntro=false; S.seenMapTut=false;
   wholeWalks=0; worldX=0;
 }
 function bootSave(){
@@ -255,7 +255,7 @@ function adminWarp(id, withScene){
 let _balDefaults=null;
 function adminBuildTuning(){
   const box=document.getElementById('adminTuning'); if(!box) return;
-  if(!_balDefaults) _balDefaults={ up:UP_BASE.person, dm:DISCOVER_MULT };
+  if(!_balDefaults) _balDefaults={ dm:DISCOVER_MULT };
   const row=(label,id,val,step,hint)=>'<label style="display:flex;align-items:center;gap:8px;margin:7px 0;font-size:13px">'
     +`<span style="width:150px;color:#7a5f33">${label}</span>`
     +`<input id="${id}" type="number" step="${step}" value="${val}" style="width:88px;padding:4px 6px;border:1px solid #d8cdb6;border-radius:6px">`
@@ -263,7 +263,6 @@ function adminBuildTuning(){
     +'</label>';
   const btn='border:1px solid #d8cdb6;border-radius:8px;padding:7px 12px;cursor:pointer;font:13px sans-serif';
   box.innerHTML = row('🦶 발견 비용 ×배율','tuneDm',DISCOVER_MULT,0.1,'전체 진행 속도 · 1=기본, ↑느리게')
-    + row('🔁 재회 첫 비용(걸음)','tuneUp',UP_BASE.person,1,'재회 1레벨 비용 · 이후 레벨마다 ×1.15')
     + `<div style="display:flex;gap:8px;margin-top:8px"><button type="button" id="tuneApply" style="${btn};background:#ece3d0;color:#5a4d34">적용</button>`
     + `<button type="button" id="tuneReset" style="${btn};background:#fff;color:#9a7b4a">기본값</button></div>`
     + '<div id="tuneMsg" style="font-size:12px;color:#9a7b4a;margin-top:6px"></div>';
@@ -272,15 +271,13 @@ function adminBuildTuning(){
 }
 function adminApplyTuning(){
   const dm=parseFloat(document.getElementById('tuneDm').value);
-  const up=parseFloat(document.getElementById('tuneUp').value);
   if(dm>0) DISCOVER_MULT=dm;
-  if(up>0) UP_BASE.person=up;
   if(typeof refreshHUD==='function') refreshHUD();
   if(typeof renderAll==='function' && typeof curPage!=='undefined' && curPage==='map') renderAll();  // 발견 비용 바뀌면 지도 도달표시 갱신
   const m=document.getElementById('tuneMsg'); if(m) m.textContent='적용됨 (이 세션만 · 새로고침 시 원복)';
 }
 function adminResetTuning(){
-  if(_balDefaults){ UP_BASE.person=_balDefaults.up; DISCOVER_MULT=_balDefaults.dm; }
+  if(_balDefaults){ DISCOVER_MULT=_balDefaults.dm; }
   if(typeof refreshHUD==='function') refreshHUD();
   if(typeof renderAll==='function' && typeof curPage!=='undefined' && curPage==='map') renderAll();
   adminBuildTuning();
