@@ -1,5 +1,5 @@
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  html,body { height:100%; overflow:hidden; color-scheme:only light; }
+  html,body { height:100%; height:100dvh; overflow:hidden; color-scheme:only light; }   /* 🆕 dvh = 모바일 동적 뷰포트(URL바 변동에도 하단 탭바 안 가림). 미지원 브라우저는 앞 100%로 폴백 */
   body {
     font-family:'Nanum Myeongjo','Apple SD Gothic Neo','Batang',serif;
     background:#e9e3ef; display:flex; justify-content:center; align-items:center;
@@ -22,8 +22,9 @@
   /* ---------- HUD ---------- */
   .hud { position:relative; z-index:6; padding:calc(7px + env(safe-area-inset-top)) 16px 6px; flex:0 0 auto;   /* 상단 안전영역(카메라 펀치홀·상태바) 회피 — 노치 없으면 env()=0이라 무해 */
     background:linear-gradient(#f7f2fa, #fbf8f3); border-bottom:1px solid rgba(150,130,170,.18); }
-  .titlebar { display:flex; justify-content:space-between; align-items:baseline; }
-  .title { font-weight:700; font-size:14px; color:#54514a; letter-spacing:0; white-space:nowrap; }
+  .titlebar { display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
+  .title { font-weight:700; font-size:14px; color:#54514a; letter-spacing:0; white-space:nowrap;
+    min-width:0; overflow:hidden; text-overflow:ellipsis; }   /* 🆕 좁은 폰에서 긴 이름+버전이 넘쳐 줄 깨짐 방지 — 말줄임 */
   .tag { font-size:10px; color:#8a857a; border:1px solid #c9c2b3; padding:2px 7px; border-radius:3px; }
   .rn { font-size:13px; color:#9a7b4a; font-family:'Gaegu',cursive; cursor:pointer; }
   .rn:hover { text-decoration:underline; opacity:.85; }
