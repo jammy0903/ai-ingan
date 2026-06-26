@@ -40,7 +40,6 @@ function renderNodes(){
     const el=document.createElement("div");
     el.className="node "+n.type+(done?" done":(n.type!=="teaser"?" reachable":" empty"));
     if(n.type==="teaser") el.className="node teaser empty";
-    if(n.type==="person" && TIER[n.key]) el.classList.add("tier-"+TIER[n.key]);   // 대/중/소 크기
     el.dataset.id=n.id;
     el.style.left=p.x+"px"; el.style.top=p.y+"px";
     let name = n.type==="person"?PEOPLE[n.key].name
@@ -50,27 +49,12 @@ function renderNodes(){
     const reach = !done && n.type!=="teaser";
     const cost = reach ? reachCost(n.id) : null;
     el.innerHTML =
-      `<div class="ring"><span class="ic">${n.type==="teaser"?"?":n.icon}</span>${done&&n.gen?`<span class="lv">Lv${lv}</span>`:""}</div>`+
+      `<div class="ring"><span class="ic">${n.type==="teaser"?"?":n.icon}</span></div>`+
       `<div class="label">${n.type==="teaser"?"안갯속 무언가":name}</div>`+
-      (reach?`<div class="cost">${fmt(cost)} 걸음</div>`
-       : (done && isReunionable(n)?`<div class="cost reune" data-reune="${n.id}">🔁 ${fmt(upCost(n,lv+1))}</div>`   // 🆕 꽁지: 재회까지 몇 걸음(아래서 실시간 카운트다운)
-       : (done && n.gen?`<div class="cost reune done">🔁 최대</div>`:"")));
+      (reach?`<div class="cost">${fmt(cost)} 걸음</div>`:"");
     if(reach) el.onclick = ()=>tryUnlock(n);
-    else if(done && n.gen) el.onclick = ()=>meetNode(n,false);   // 완료 노드 = 재회(meetNode가 이동 보장)
+    else if(done && n.type==="person") el.onclick = ()=>meetNode(n,false);   // 🆕 완료 감정 클릭 = 다시 읽기(회상). 재회 폐기.
     world.appendChild(el);
-  });
-  updateMapCounters();   // 방금 그린 꽁지를 현재 걸음 기준 '남은 걸음'으로 즉시 갱신(렌더 직후 깜빡임 방지)
-}
-// 🆕 재회 꽁지 실시간 카운트다운: 노드 옆 '🔁 N 더'가 걸음 쌓일수록 줄어들고, 충분하면 '🔁 지금!'.
-//   idle 틱에서 호출 — 전체 재렌더 없이 라벨만 갱신(가볍게).
-function updateMapCounters(){
-  if(curPage!=="map") return;
-  const w=Math.floor(S.walks);
-  document.querySelectorAll('.node .cost.reune[data-reune]').forEach(el=>{
-    const id=el.dataset.reune, n=NODES.find(x=>x.id===id); if(!n) return;
-    const cost=upCost(n,(S.levels[id]||0)+1), need=cost-w;
-    el.textContent = need>0 ? `🔁 ${fmt(need)} 더` : `🔁 지금!`;
-    el.classList.toggle('ready', need<=0);
   });
 }
 function safeCurrentId(){   // 좌초 복구용: 가장 깊이 진행한(레벨 높은) '보이는' 노드, 없으면 start
@@ -82,26 +66,7 @@ function placeRobot(animate){
   if(!NODES.find(x=>x.id===S.current) || !isRevealed(S.current)) S.current=safeCurrentId();  // 안 보이는 노드(워프 잔재 등)면 진행한 노드로 스냅
   const n=NODES.find(x=>x.id===S.current), p=px(n);
   robot.style.left=p.x+"px"; robot.style.top=p.y+"px";
-  updateReunionBtn();   // 로봇이 선 노드가 재회 가능하면 '다시 만나기' 버튼 노출(로봇이 노드 가려도 재회 가능)
 }
-// 지금 서 있는 노드를 재회할 수 있나 (완료·생성기·상한 미만 / 허브·시작 제외)
-function isReunionable(n){ return !!(n && n.type!=="start" && n.type!=="category" && S.levels[n.id]>0 && n.gen>0 && S.levels[n.id]<MAX_LV); }
-function updateReunionBtn(){
-  const btn=$("#reunionBtn"); if(!btn) return;
-  const n=NODES.find(x=>x.id===S.current);
-  if(curPage==="map" && isReunionable(n)){
-    const nm = n.type==="person"?PEOPLE[n.key].name : (n.type==="body"?BODY[n.key].name : "");
-    $("#reunionName").textContent=nm;
-    btn.classList.add("show");
-    const cost = upCost(n, S.levels[n.id]+1);
-    const can = S.walks >= cost;                          // 걸음수가 재회 비용만큼 차야 활성화
-    const need = $("#reunionNeed");
-    if(need) need.textContent = can ? "" : ` · ${fmt(cost-Math.floor(S.walks))}걸음 더!`;  // 🆕 비활성 이유 = 부족 걸음 실시간 표시(카운트다운)
-    btn.classList.toggle("off", !can);
-    btn.disabled = !can;
-  } else { btn.classList.remove("show"); btn.disabled=false; }
-}
-$("#reunionBtn").onclick=()=>{ const n=NODES.find(x=>x.id===S.current); if(isReunionable(n) && S.walks>=upCost(n,S.levels[n.id]+1)) meetNode(n,false); };  // 로봇이 선 노드 = 즉시(meetNode 일관)
 
 /* ---------- 자루(인벤토리) — 기억 약장: 감정=유리병, 로봇 오류코드 라벨 ---------- */
 function openSack(){
@@ -141,9 +106,8 @@ function openSack(){
     if(!ns.length) return;
     html+=`<div class="sackshelf"><div class="sackcat">${cat.label}</div><div class="sackbottles">${ns.map(n=>btl(n,PEOPLE[n.key])).join("")}</div></div>`;
   });
-  html+=bodyShopHtml();   // 🆕 몸 = 그래프 대신 자루에서 온기로 구매/단련(5단 이야기)
+  // 🆕 몸 구매는 자루에서 빼 전용 「🫀 몸」 탭으로 이동(2026-06-26). 자루 = 감정 수집 진열만.
   $("#sackBody").innerHTML=html||`<div class="sackempty">약장이 비어 있다.<br><span style="font-size:11px;opacity:.5">길에서 만나야 채워진다</span></div>`;
-  $("#sackBody").querySelectorAll("[data-body]").forEach(b=> b.onclick=()=>buyBody(b.dataset.body));   // 🆕 몸 구매/단련 버튼
   renderSackEx();                       // ✨온기 → 걸음 환전 바 갱신
   $("#sackModal").classList.add("show");
 }
@@ -194,6 +158,7 @@ function refreshHUD(){
   app.style.setProperty("--p",p);   // 두 로봇 공유(상속) — 빈 코어→하트 채움(엔딩 페이오프)
   renderSituFig();                  // 노드/재회 바뀌면 상황 figure 교체(sig 가드로 변화 시에만)
   app.classList.toggle("coreEmpty", learned===0);   // 첫 감정 전엔 가슴 코어 = 빈 구멍(결핍). 첫 조각부터 --p가 채움
+  updateBodyTabDot();               // 🆕 온기가 차면 「몸」 탭에 점(살 수 있는 부위 알림)
   renderMind();
 }
 // 하늘엔 진행도(감정/몸 조각 수)만 — 감정 이름 나열은 하지 않는다(하늘은 로그용 비움)
@@ -286,7 +251,6 @@ function objParticle(word){
   return ((c-0xAC00)%28)!==0 ? "을" : "를";
 }
 function openNode(n, firstMeet){
-  const lv=S.levels[n.id];
   busyMeet=false;   // 모달이 떴다 = 만남 도착 완료(closeModal 안 거치는 엔딩/허브 케이스 안전망)
   if(n.type==="ending" || n.type==="human"){   // 샘 재회 + 반전 = 한 편의 시네마틱(끝나면 프레스티지)
     startEnding();
@@ -298,86 +262,38 @@ function openNode(n, firstMeet){
       reward:["🌿 새 갈래가 열렸다", `🌫️ ${n.name}의 감정들이 안갯속에서 드러난다`], closeText:"감정을 만나러" });
     return;
   }
-  const maxed = !firstMeet && lv>=MAX_LV;        // 재회 상한 도달
-  if(n.type==="body"){
-    const bd=BODY[n.key]; const lineIdx=Math.min(lv-1, bd.lines.length-1);
-    const rw = firstMeet?[`🫀 몸조각 +1 (${bodyCount()}/${BODY_TOTAL})`,`⚡ 탭 +1`,`사람에 한 걸음 더`]
-             :(maxed?[`📖 ${bd.name} — 더없이 단단해졌다`,`⚡ 탭 파워 최대 Lv${MAX_LV}`]
-                    :[`📖 ${bd.name}이(가) 더 깊어진다`,`⚡ 탭 +1`]);
-    fillModal({ badge:firstMeet?"몸의 한 부분을 얻다":(maxed?"가장 단단해졌다":"몸이 더 단단해진다"),
-      emo:`〔 ${bd.name} 〕`, lv:firstMeet?`⚡ 탭 +1`:(maxed?`Lv${lv} · 더없이 단단하다 (최대)`:`Lv${lv} · ⚡ 탭 +1`),
-      situ: firstMeet?bd.situ:"", log: firstMeet?bd.lines[0]:bd.lines[lineIdx],
-      reward: rw, closeText:"다음 길로",
-      onPrev: firstMeet?null:()=>showPrevLines(n),
-      upText: (firstMeet||maxed)?null:`🔨 단련 ${fmt(upCost(n,lv+1))}`, onUp:()=>upgrade(n) });
-    return;
-  }
+  // 🆕 몸(body)은 그래프에서 빠져 자루 상점에서만 처리(buyBody→bodyStoryModal) — openNode로는 안 옴(옛 단련 분기 제거).
   {
     const pp=PEOPLE[n.key];
     if(typeof tutActive==='undefined' || !tutActive) bgmTo(EMO_BGM[n.key]||"main");   // 이 감정의 곡으로 전환(없으면 main) — 다음 감정 만날 때까지 이어짐. ⚠️ 튜토리얼 중엔 바탕음악(main) 고정(전환 안 함)
-    const lineIdx=Math.min(lv-1, pp.lines.length-1);
-    if(firstMeet){
-      afterClose = ()=>maybeTeachReunion(n);   // 첫 감정 닫은 뒤, 재회로만 다음이 열리는 상황이면 1회 안내
-      // 1페이지: 상황 + 만남 장면 → 2페이지: "○○을 알게 됐다" 해금 + 그 감정 곱씹기(mem)
-      fillModal({ badge:"하나의 감정을 만나다",
-        emo:`『 ${pp.name} 』`, lv:`⚡ 탭 +1`,
-        situ: pp.situ, log: pp.lines[0], closeText:"…",
-        next: ()=> fillModal({
-          badge:"새로운 마음, 해금",
-          emo:`『 ${pp.name} 』`, lv:`${objParticle(pp.name)} 알게 됐다`, situ:"",
-          log: pp.mem,
-          reward:[`🧩 감정조각 +1 (${learnedCount()}/${FRAG_TOTAL})`,`🎨 회색 세계에 ${pp.name}의 색이 번진다`,`🧩 마음이 한 조각 또렷해진다`],
-          closeText:"다음 길로" })
-      });
-      return;
-    }
-    const rw = (maxed?[`📖 ${pp.name} — 마음 끝까지 닿았다`,`⚡ 탭 파워 최대 Lv${MAX_LV}`,`(이 인연은 더없이 깊어졌다)`]
-                    :[`📖 ${pp.name}의 더 깊은 이야기`,`⚡ 다시 만날수록 탭 +1`,`(재회 = 탭이 더 세진다)`]);
-    fillModal({ badge:(maxed?"마음 끝까지 닿았다":"다시 만나, 더 깊이"),
-      emo:`『 ${pp.name} 』`, lv:(maxed?`재회 ${lv-1}회 · 마음 끝까지 (최대)`:`재회 ${lv-1}회 · ⚡ 탭 +1`),
-      situ:"", log: pp.lines[lineIdx],
-      reward: rw,
-      closeText:"다음 길로",
-      onPrev:()=>showPrevLines(n),
-      upText: maxed?null:`🔁 재회 ${fmt(upCost(n,lv+1))}`, onUp:()=>upgrade(n) });
+    // 🆕 순차 완성(2026-06-26, 재회 폐기): 만나면 5단 이야기(관찰→자기→심화→더 깊은 자기→순진한 재정의)를
+    //   한 자리에서 페이지로 쭉 보고 → 마지막에 해금. 이야기가 안 끊긴다(힐링 톤). 레벨은 0/1뿐(재회 없음).
+    const lines = pp.lines;
+    // 마지막(해금) 페이지: "○○을 알게 됐다" + 곱씹기(mem) + 4중 보상
+    const unlockPage = ()=> fillModal({
+      badge:"새로운 마음, 해금",
+      emo:`『 ${pp.name} 』`, lv:`${objParticle(pp.name)} 알게 됐다`, situ:"",
+      log: pp.mem,
+      reward:[`🧩 감정조각 +1 (${learnedCount()}/${FRAG_TOTAL})`,`🎨 회색 세계에 ${pp.name}의 색이 번진다`,`🧩 마음이 한 조각 또렷해진다`],
+      closeText:"다음 길로" });
+    // 다시 찾은 감정(완료 노드 클릭): 새 보상 없이 5단을 다시 읽고 곱씹는다(힐링 재방문)
+    const recapPage = ()=> fillModal({
+      badge:"이미 마음에 담은 감정", emo:`『 ${pp.name} 』`, lv:"다시 마음에 담는다", situ:"",
+      log: pp.mem, reward:[`💭 ${(pp.mem||'').replace(/\n/g,' ')}`], closeText:"다음 길로" });
+    const last = firstMeet ? unlockPage : recapPage;
+    // 이야기 페이지 i(0..len-1) → 다음 페이지, 마지막이면 해금/회상
+    const page = (i)=> fillModal({
+      badge: i===0?"하나의 감정을 만나다":"…",
+      emo:`『 ${pp.name} 』`, lv:(i===0 && firstMeet)?`⚡ 탭 +1`:"",
+      situ: i===0?pp.situ:"", log: lines[i], closeText:"…",
+      next: (i<lines.length-1) ? ()=>page(i+1) : last });
+    page(0);
+    return;
   }
 }
-// '이전 대사' — 지금까지 본 대사를 구분선으로 이어 다시 보여준다(읽기 전용). 닫으면 직전 모달로 복귀.
-function showPrevLines(n){
-  const isP=n.type==="person";
-  const d=isP?PEOPLE[n.key]:BODY[n.key];
-  const lv=S.levels[n.id];
-  const seenIdx=Math.min(lv-1, d.lines.length-1);          // 지금 레벨까지 본 마지막 컷
-  const seen=d.lines.slice(0, seenIdx+1);
-  const tag=isP?(lv>1?`재회 ${lv-1}회`:"첫 만남"):(lv>1?`Lv${lv}`:"처음 얻음");
-  fillModal({
-    badge:"지난 이야기",
-    emo:isP?`『 ${d.name} 』`:`〔 ${d.name} 〕`,
-    lv:`${tag} · ${seen.length}/${d.lines.length}컷`,
-    situ:d.situ,
-    log:seen.join("\n\n·  ·  ·\n\n"),
-    reward:(isP && seenIdx>=d.lines.length-1 && d.mem)?[`💭 ${d.mem.replace(/\n/g,' ')}`]:[],
-    closeText:"← 돌아가기",
-    next:()=>openNode(n,false)                              // 버튼/배경 클릭 → 방금 보던 재회 모달로 매끄럽게 복귀
-  });
-}
-function nextUpLabel(n){
-  const cost=upCost(n,S.levels[n.id]+1);
-  return `재회해 더 깊이 — ${cost} 걸음`;
-}
-function upgrade(n){
-  if(S.levels[n.id]>=MAX_LV){ nudge(`이미 끝까지 깊어졌다 (최대 Lv${MAX_LV})`); return false; }
-  const cost=upCost(n, S.levels[n.id]+1);
-  if(S.walks<cost){ nudge(`${cost-Math.floor(S.walks)|0} 걸음 더`); return false; }
-  S.walks-=cost; syncSteps(); S.levels[n.id]++;   // rate는 levels에서 계산(baseRate)
-  track("reunion",{key:n.key, type:n.type, lv:S.levels[n.id], anon:_anon()});
-  if(n.type==="person") awardCoins(S.levels[n.id]-1, "reunion:"+n.key);   // ✨ N번째 재회 = +N (재회3번째=+3). level1=첫만남이라 level-1=재회횟수
-  spark(); openNode(n,false);   // 이미 노드 위에 서 있으니 travelTo(1.1초 대기) 생략 → 재회 즉시 반응
-  renderAll();
-  return true;
-}
+// 🆕 재회 폐기(2026-06-26): showPrevLines/nextUpLabel/upgrade 제거 — 만남이 5단 한 번에 끝나 '이전 대사'·'재회 레벨업'이 불필요.
 
-/* ✨ 온기 조각 — 통화 코어. 획득: 감정 해금 +1 · N번째 재회 +N · 광고 +10. (2단계: 몸 구매 소비처) */
+/* ✨ 온기 조각 — 통화 코어. 획득: 감정 해금 +1(감정 27=27코인) · 광고 +10. 소비처 = 몸 11 구매(합 25). (2026-06-26 재회 코인 폐기) */
 function awardCoins(amount, reason){
   amount=Math.floor(amount)||0; if(amount<=0) return;
   S.coins=(S.coins||0)+amount;
@@ -427,44 +343,55 @@ function renderSackEx(){
   if(ba) ba.onclick=()=>convertCoins(S.coins);
 }
 
-/* 🆕 몸 온기 상점 — 자루 안. 몸을 그래프에서 빼고 온기로 구매(첫) + 단련(반복, 깊은 이야기 2~5단). 인간 게이트=11개 '구매'. */
-function bodyBuyCost(key){ const i=BODY_ORDER.indexOf(key); return (i>=0 && BODY_BUY[i]!=null)?BODY_BUY[i]:3; }   // 첫 구매 온기
-function bodyTrainCost(lv){ return Math.max(1, Math.round(BODY_TRAIN_BASE*Math.pow(BODY_TRAIN_GROW, Math.max(0,lv-1)))); }  // 단련(Lv lv→lv+1) 온기
-function bodyShopHtml(){
-  const unlocked = learnedCount()>=FRAG_TOTAL;     // 몸은 감정 27 다 모은 뒤(맨 마지막)
+/* 🆕 몸 온기 상점 = 전용 「🫀 몸」 탭(2026-06-26). 감정과 '병렬' — 온기가 차는 대로 중간중간 구매(27 잠금 없음).
+   살 수 있는(온기≥값·미보유) 부위는 반짝(.buyable) + 탭에 점(bodyTabDot). 구매=그 몸 5단 이야기 한 번에. */
+function bodyBuyCost(key){ const i=BODY_ORDER.indexOf(key); return (i>=0 && BODY_BUY[i]!=null)?BODY_BUY[i]:3; }   // 구매 온기
+function bodyAffordable(){ return BODY_ORDER.some(k=>!(S.levels[k]>0) && (S.coins||0)>=bodyBuyCost(k)); }  // 지금 살 수 있는 미보유 부위가 있나(탭 점·하이라이트)
+function renderBodyPage(){
+  const box=document.getElementById("pageBody"); if(!box) return;
   const rows = BODY_ORDER.map(key=>{
     const bd=BODY[key], node=NODES.find(n=>n.id===key), icon=node?node.icon:"🫀";
-    const lv=S.levels[key]||0, has=lv>0;
-    const cost=has?bodyTrainCost(lv):bodyBuyCost(key);
-    const can=unlocked && (S.coins||0)>=cost;
-    return `<div class="bshoprow${has?' has':''}">`
+    const has=(S.levels[key]||0)>0;
+    const cost=bodyBuyCost(key);
+    const can=!has && (S.coins||0)>=cost;
+    return `<div class="bshoprow${has?' has':''}${can?' buyable':''}">`
       +`<span class="bshopname">${icon} ${bd.name}</span>`
-      +`<span class="bshoplv">${has?('Lv'+lv):'—'}</span>`
-      +`<button class="bshopbtn" data-body="${key}" ${can?'':'disabled'}>${has?'단련':'구매'} ✨${cost}</button>`
+      +`<span class="bshoplv">${has?'✓ 담음':(can?'✨ 살 수 있어!':'—')}</span>`
+      +`<button class="bshopbtn" data-body="${key}" ${(has||!can)?'disabled':''}>${has?'담음 ✓':('구매 ✨'+cost)}</button>`
       +`</div>`;
   }).join("");
-  const lock = unlocked?'':`<div class="bshoplock">🔒 감정 27을 다 모은 뒤 열려요 (${learnedCount()}/${FRAG_TOTAL})</div>`;
-  return `<div class="sackshelf bshop"><div class="sackcat">🫀 몸 만들기 · ${bodyCount()}/${BODY_TOTAL}</div>${lock}${rows}</div>`;
+  box.innerHTML = `<div class="bodypage">`
+    +`<div class="bodyhead">🫀 몸 만들기 · <b>${bodyCount()}/${BODY_TOTAL}</b> <span class="bodycoin">✨ ${fmt(S.coins||0)}</span></div>`
+    +`<div class="bodyhint">감정을 만나면 ✨온기가 모여요. 온기로 몸을 한 부분씩 — <b>감정과 동시에, 중간중간</b> 만들 수 있어요. 살 수 있으면 ✨반짝!</div>`
+    +`<div class="bodylist">${rows}</div>`
+    +`<div class="bodyfoot">마음 27 + 몸 11을 다 채우면 길 끝에서 샘을 만나요.</div>`
+    +`</div>`;
+  box.querySelectorAll("[data-body]").forEach(b=> b.onclick=()=>buyBody(b.dataset.body));
 }
-function bodyStoryModal(key, lv){   // 구매/단련 직후 그 몸의 이야기 한 컷(자루 위 모달)
-  const bd=BODY[key]; const idx=Math.min(lv-1, bd.lines.length-1); const first=lv===1;
-  fillModal({
-    badge: first?"몸의 한 부분을 얻다":"몸이 더 단단해진다",
-    emo:`〔 ${bd.name} 〕`, lv: first?'⚡ 탭 +1':`Lv${lv} · ⚡ 탭 +1`,
-    situ: first?bd.situ:"", log: bd.lines[idx],
-    reward: first?[`🫀 몸조각 +1 (${bodyCount()}/${BODY_TOTAL})`,'⚡ 탭 +1']:[`📖 ${bd.name}이(가) 더 깊어진다`,'⚡ 탭 +1'],
-    closeText:"…", onPrev: (!first)?()=>showPrevLines({type:"body", key, id:key}):null
-  });
+function updateBodyTabDot(){   // 탭에 '살 수 있는 몸 있음' 점 표시(중간중간 구매 유도)
+  const dot=document.getElementById("bodyTabDot"); if(!dot) return;
+  dot.style.display = (bodyAffordable() && bodyCount()<BODY_TOTAL) ? "" : "none";
+}
+function bodyStoryModal(key){   // 구매 직후 그 몸의 5단 이야기를 한 자리에서 쭉 → 얻음(마지막 페이지에 보상)
+  const bd=BODY[key], lines=bd.lines, last=lines.length-1;
+  const page=(i)=> fillModal({
+    badge: i===0?"몸의 한 부분을 얻다":(i===last?"몸이 단단해졌다":"…"),
+    emo:`〔 ${bd.name} 〕`, lv:(i===0?`⚡ 탭 +1`:""),
+    situ:i===0?bd.situ:"", log:lines[i],
+    reward:(i===last)?[`🫀 몸조각 +1 (${bodyCount()}/${BODY_TOTAL})`,`⚡ 탭 +1`,`사람에 한 걸음 더`]:[],
+    closeText:(i<last)?"…":"다음 길로",
+    next:(i<last)?()=>page(i+1):null });
+  page(0);
 }
 function buyBody(key){
-  if(learnedCount()<FRAG_TOTAL){ nudge("감정 27을 다 모은 뒤에 몸을 만들 수 있어"); return; }
-  const lv=S.levels[key]||0;
-  const cost=lv>0?bodyTrainCost(lv):bodyBuyCost(key);
+  // 🆕 감정27 잠금 제거(2026-06-26): 온기만 있으면 감정과 병렬로 언제든 구매.
+  if((S.levels[key]||0)>0) return;               // 이미 담은 몸(단련 폐기) — 재구매 없음
+  const cost=bodyBuyCost(key);
   if((S.coins||0)<cost){ nudge(`✨온기 ${fmt(cost-(S.coins||0))} 더 필요해`); return; }
-  S.coins-=cost; S.levels[key]=lv+1;
-  track("body_buy",{key, lv:lv+1, cost, total:bodyCount(), anon:_anon()});
-  saveState(); refreshHUD(); openSack();        // 자루 상점 행·온기 갱신
-  bodyStoryModal(key, lv+1);                     // 이야기 한 컷(자루 위에)
+  S.coins-=cost; S.levels[key]=1;
+  track("body_buy",{key, lv:1, cost, total:bodyCount(), anon:_anon()});
+  saveState(); refreshHUD(); renderBodyPage(); updateBodyTabDot();   // 몸 페이지 행·온기·탭 점 갱신
+  bodyStoryModal(key);                           // 5단 이야기 한 번에
 }
 
 /* ---------- 모달 ---------- */
@@ -495,27 +422,7 @@ modal.addEventListener("click", e=>{ if(e.target!==modal) return;            // 
 function closeModal(){ modal.classList.remove("show"); busyMeet=false; renderAll();   // 다 읽고 닫음 → 이제 다음 노드 생겨도 됨
   const a=afterClose; afterClose=null; if(a) setTimeout(a, 280); }
 
-/* ---------- 안내(코치): "재회해야 다음 감정이 열린다"를 막히기 직전 1회 가르침 ---------- */
-let coachActive=false;
-function maybeTeachReunion(n){
-  if(S.seenReunionHint || n.type!=="person") return;
-  // 이 갈래에 '재회(티어) 게이트로 잠긴' 형제 감정이 있나? (대표는 열렸는데 중/소가 재회 대기 = 막다른 길 직전)
-  const locked = NODES.some(m=> m.type==="person" && m.parent===n.parent
-      && !(S.levels[m.id]>0) && reachCost(m.id)!==Infinity && !gateOk(m));
-  if(!locked) return;
-  S.seenReunionHint=true; saveState();
-  showReunionHint(PEOPLE[n.key].name);
-}
-function showReunionHint(emoName){
-  $("#coachBody").innerHTML =
-    `방금 만난 『${emoName}』을(를) <b>한 번 더 만나보세요.</b><br><br>`+
-    `아래 <b>〈🔁 다시 만나기〉</b> 버튼을 눌러 <b>재회</b>하면 —<br>`+
-    `이 갈래의 <b>다음 감정들이 안갯속에서 드러나요.</b>`;
-  coachActive=true; $("#coach").classList.add("show");   // 화면 멈춤(걸음·탭 정지) + 가림
-}
-function hideCoach(){ coachActive=false; $("#coach").classList.remove("show"); }
-$("#coachBtn").onclick=hideCoach;
-$("#coach").addEventListener("click", e=>{ if(e.target.id==="coach") hideCoach(); });  // 배경 클릭도 닫기
+// 🆕 재회 코치(maybeTeachReunion/showReunionHint/#coach) 제거(2026-06-26) — 순차 완성이라 재회 안내가 필요 없음.
 
 /* ---------- 엔딩 시네마틱 (샘 재회 → 마법 불발 정적 → "넌 이미 사람이었다" 반전) ---------- */
 let endStep=0, endHold=false;
@@ -797,7 +704,6 @@ const REWARD_AD_ID = ADMOB_REWARD_TEST_ANDROID;                               //
 function addWalk(x,y){
   if(intro.phase==="wake"){ wakeTap(x,y); return; }    // 깨우기: 탭=생명 불어넣기
   if(intro.phase==="wakedone") return;                 // 결핍 한 줄/동기화 실패 비트 — 잠깐 손맛 멈춤
-  if(coachActive) return;                              // 안내(코치) 표시 중엔 탭 무시(화면 멈춤)
   if(sceneActive){ advanceScene(); return; }           // 대화 중엔 탭=다음 대사
   ensureBgmStarted();                                  // 걷기 첫 탭 = 음악 시동(autoplay 잠금해제, 켜질 때까지 매 탭 재시도)
   const now=Date.now();

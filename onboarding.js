@@ -251,7 +251,7 @@ $("#renameCancel")?.addEventListener("click", closeRename);
 renameOv?.addEventListener("click", e=>{ if(e.target===renameOv) closeRename(); });
 $("#renameInput")?.addEventListener("keydown", e=>{ if(e.key==="Enter") applyRename(); else if(e.key==="Escape") closeRename(); });
 
-/* ===== 🆕 스포트라이트 튜토리얼 — 지도→긍정→기쁨→재회→다음노드→가방 (+목표카운터·빈원·색번짐·오프라인) =====
+/* ===== 🆕 스포트라이트 튜토리얼 — 지도→긍정→기쁨→다음노드(자동열림)→몸탭(온기 중간구매·반짝)→오프라인 =====
    '정해진 곳만 빛나고 거기를 눌러야 다음' 표준 코치마크. 상태 기반(이벤트 훅 최소) 폴링 rAF로 구동.
    4장 패널이 타깃만 빼고 화면을 가려 '구멍'을 만든다 → 그 타깃만 탭 통과. 모달 떠 있으면 잠깐 숨김. */
 let tutActive=false, tutStep=0, tutRaf=0, _tutShownStep=-1, _tutEls=null;
@@ -269,7 +269,7 @@ function tutDom(){
 function tutModalOpen(){   // 메인 모달/자루/리네임 등 떠 있으면 스포트라이트 숨김(겹침 방지)
   return ["modal","sackModal","renameOv","gate","endcine"].some(id=>{ const e=document.getElementById(id); return e && e.classList.contains("show"); });
 }
-function firstCatPosNext(){   // 재회 후 안갯속에서 열린 다음 긍정 감정(기쁨 외, 빈 원)
+function firstCatPosNext(){   // 직전 감정(기쁨) 완료 후 저절로 열린 다음 긍정 감정(빈 원)
   return NODES.find(n=>n.type==="person" && n.parent==="cat_pos" && n.id!=="joy" && isRevealed(n.id) && !(S.levels[n.id]>0));
 }
 const MAP_TUT=[
@@ -285,19 +285,16 @@ const MAP_TUT=[
   { info:true, find:()=>document.getElementById("fragStat"),
     cap:"🧩 1/27! 회색 세계에 색이 번졌지?\n마음 27 · 몸 11을 다 모으면\n샘이 진짜 사람으로 만들어줘.",
     done:s=>s._adv },
-  { tap:true, find:()=>{ const b=document.getElementById("reunionBtn"); return (b&&b.classList.contains("show"))?b:null; },
-    cap:"이제 재회! 「다시 만나기」를 눌러.\n재회하면 더 깊어지고 ✨온기를 얻어 —\n그리고 재회해야 다음 감정이 열려!",
-    done:()=>S.levels["joy"]>=2 },
   { info:true, find:()=>{ const n=firstCatPosNext(); return n?document.querySelector(`.node[data-id="${n.id}"]`):null; },
     onShow:()=>{ const n=firstCatPosNext(); if(n) panTo(n.id); },
-    cap:"봐, 다음 감정이 안갯속에서 열렸어!\n흐릿한 빈 원 = 다음 예고야.",
+    cap:"봐, 다음 감정이 저절로 열렸어!\n한 감정을 끝까지 만나면\n다음 감정이 안갯속에서 드러나.",
     done:s=>s._adv },
-  { tap:true, find:()=>document.querySelector('.tab[data-page="walk"]'),
-    cap:"가방을 보러 「🚶 길」로 돌아가자.",
-    done:()=>curPage==="walk" },
-  { tap:true, find:()=>document.getElementById("sack"),
-    cap:"등의 가방을 톡!\n여기서 ✨온기로 「몸(신체)」을 사 모아.\n사람이 되려면 몸 11도 필요해\n(감정 27을 다 모으면 열려).",
-    done:()=>{ const e=document.getElementById("sackModal"); return e&&e.classList.contains("show"); } },
+  { tap:true, find:()=>document.querySelector('.tab[data-page="body"]'),
+    cap:"이제 「🫀 몸」 탭을 톡!\n사람이 되려면 마음 27 + 몸 11.\n몸은 ✨온기로 만들어.",
+    done:()=>curPage==="body" },
+  { info:true, find:()=>document.querySelector('.bodypage .bshoprow.buyable') || document.querySelector('.bodyhint'),
+    cap:"감정을 만날 때마다 ✨온기가 쌓여.\n온기로 몸을 — 감정과 동시에, 중간중간 —\n사 모아. 살 수 있으면 이렇게 반짝여! 톡 사봐.",
+    done:s=>s._adv || bodyCount()>0 },   // 탭으로 넘기거나, 몸을 하나 사면 자동 진행
   { info:true, find:()=>document.getElementById("fragStat"),
     cap:"끝! 꺼도 로봇은 계속 걸어둬 🌙\n돌아오면 걸음이 쌓여 있어.\n자, 같이 사람이 되자.",
     done:s=>s._adv },

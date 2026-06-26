@@ -1,12 +1,10 @@
 /* ===== main.js — index.html에서 분리(구조 분리 2026-06-22). idle루프·줌입력·페이지전환·부팅.
    ⚠️ 전역 스크립트(모듈 아님) — 전역 스코프 공유, 로드 순서 = 원본 순서. sw.js CORE/정규식 등재. ===== */
 /* ---------- idle 루프 (기본 1초 1걸음 → 1초 1보) ---------- */
-setInterval(()=>{ if(sceneActive||coachActive||intro.phase!=="play") return;   // 샘 대화/안내(코치)/깨우기 중엔 걷지 않음(걸음 정지)
+setInterval(()=>{ if(sceneActive||intro.phase!=="play") return;   // 샘 대화/깨우기 중엔 걷지 않음(걸음 정지)
   S.walks += effRate()*0.1; elWalks.textContent=fmt(S.walks); syncSteps();
-  updateReunionBtn();   // 걸음 쌓일수록 재회 버튼 활성/비활성 실시간 갱신
-  updateMapCounters();  // 🆕 노드 옆 '재회까지 N걸음' 꽁지 실시간 카운트다운
-  // ⚠️ 만남/재회 모달(글 읽는 중)·코치 등 오버레이가 떠 있으면 '발견'도 '포커스'도 둘 다 보류 → 다 읽고 닫은 뒤에 비로소 다음 노드가 생긴다.
-  const _ov = ['modal','coach','sackModal','prestige','endcine'].some(id=>{const e=document.getElementById(id); return e&&e.classList.contains('show');});
+  // ⚠️ 만남 모달(글 읽는 중) 등 오버레이가 떠 있으면 '발견'도 '포커스'도 둘 다 보류 → 다 읽고 닫은 뒤에 비로소 다음 노드가 생긴다.
+  const _ov = ['modal','sackModal','prestige','endcine'].some(id=>{const e=document.getElementById(id); return e&&e.classList.contains('show');});
   if(_ov || busyMeet) return;     // 만남 진행 중(이동~모달)·오버레이 떠 있으면 다음 노드 발견·포커스 보류
   updateDiscovered();                                 // 다음 노드 1개를 '열림'(도달가능)이면 발견 → focusQueue 설정
   if(focusQueue && curPage==="map"){ const id=focusQueue; focusQueue=null; renderEdges(); renderNodes(); placeRobot(); panTo(id); } }, 100);  // 노드가 '열리는' 순간 그곳으로 포커스
@@ -32,8 +30,8 @@ function showPage(name){
   document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active", t.dataset.page===name));
   if(name==="map"){ renderAll(); centerOn(S.current); }   // 숨어있던 지도 → 표시될 때 치수 잡고 렌더
   else if(name==="walk"){ setTimeout(emitSys, 400); }     // 길로 돌아오면 곧 상태 로그 한 줄
+  else if(name==="body"){ renderBodyPage(); }             // 🆕 몸 탭 — 온기 상점 렌더
   else if(name==="admin"){ adminRenderPage(); }           // 관리자 탭 — 콘솔 렌더
-  updateReunionBtn();                                     // 페이지 전환 시 '다시 만나기' 버튼 노출/숨김 재평가
   renderSituFig();                                        // 길 화면이면 현재 노드의 상황 figure 표시(스르륵)
 }
 document.querySelectorAll(".tab").forEach(t=> t.addEventListener("click", ()=>showPage(t.dataset.page)) );
