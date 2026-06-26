@@ -426,7 +426,9 @@ function closeModal(){ modal.classList.remove("show"); busyMeet=false; renderAll
 
 /* ---------- 엔딩 시네마틱 (샘 재회 → 마법 불발 정적 → "넌 이미 사람이었다" 반전) ---------- */
 let endStep=0, endHold=false;
-function startEnding(){
+let _endPreview=false;   // 🆕 관리자 '엔딩 보기' = 비파괴 미리보기(끝나도 프레스티지 안 함)
+function startEnding(preview){
+  _endPreview = !!preview;
   endStep=0; endHold=false;
   const ec=$("#endcine");
   ec.classList.remove("warm"); ec.classList.add("show");
@@ -453,7 +455,11 @@ function advanceEnding(){
   $("#eText").classList.remove("in");                 // 페이드아웃 → 다음 컷
   setTimeout(renderEndStep, 600);
 }
-function finishEnding(){ $("#endcine").classList.remove("show"); openPrestige(); }
+function finishEnding(){
+  $("#endcine").classList.remove("show");
+  if(_endPreview){ _endPreview=false; try{ syncBgmToCurrent(); }catch(_){} return; }   // 🆕 관리자 미리보기 = 프레스티지 생략(진행 보존)
+  openPrestige();
+}
 $("#endcine").addEventListener("click", e=>{ if(e.target.id==="eBtn"){ finishEnding(); return; } advanceEnding(); });
 
 /* ---------- 회차 정산 (프레스티지) — 한 생을 마치고 마음의 깊이를 얻어 다시 걷는다 ---------- */

@@ -159,11 +159,15 @@ function adminRenderPage(){
         +'</section>'
         +'<section style="margin-bottom:22px">'
           +'<h3 style="margin:0 0 8px;font-size:15px">🧪 테스트</h3>'
-          +'<button type="button" id="admReplay" style="border:1px solid #d8cdb6;border-radius:8px;background:#fff;padding:7px 12px;cursor:pointer;font:13px sans-serif;color:#5a4d34">온보딩 다시보기 (비파괴)</button>'
-          +'<div style="font-size:12px;color:#9a7b4a;margin-top:6px">샘 튜토리얼(깨우기→샘→이름→규칙)을 진행도 안 지우고 재생. 끝나면 원래 게임으로.</div>'
+          +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
+            +'<button type="button" id="admReplay" style="border:1px solid #d8cdb6;border-radius:8px;background:#fff;padding:7px 12px;cursor:pointer;font:13px sans-serif;color:#5a4d34">온보딩 다시보기 (비파괴)</button>'
+            +'<button type="button" id="admEnding" style="border:1px solid #d8cdb6;border-radius:8px;background:#fff;padding:7px 12px;cursor:pointer;font:13px sans-serif;color:#5a4d34">🕊 엔딩 보기 (비파괴)</button>'
+          +'</div>'
+          +'<div style="font-size:12px;color:#9a7b4a;margin-top:6px">온보딩=샘 튜토리얼 재생 · 엔딩=완결 시네마틱 재생(BGM \'아름다움\'). 둘 다 진행도 안 지움 — 끝나면 원래 게임으로.</div>'
         +'</section>'
       +'</div>';
     p.querySelector('#admReplay').onclick=adminReplayOnboarding;
+    p.querySelector('#admEnding').onclick=()=>{ try{ startEnding(true); }catch(_){} };   // 🆕 비파괴 엔딩 미리보기
     p.querySelector('#admUsersLoad').onclick=adminLoadUsers;
     p.dataset.built='1';
   }
