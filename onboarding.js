@@ -49,7 +49,7 @@ function finishWake(){
   walkRobot.style.opacity=""; walkRobot.style.filter=""; walkRobot.style.transform="";  // 기립 완료(coreEmpty는 #app에 유지)
   showWakePrompt("…여기만, 비어 있다.", true);          // 결핍 한 줄 — 조용히
   // 가드: 도중에 dismissOnboarding(세이브 늦게 도착)이 phase를 바꾸면 비트 취소
-  setTimeout(()=>{ if(intro.phase==="wakedone") showWakePrompt("[ERROR: 창조주 동기화 실패]", false, true); }, 1700);
+  setTimeout(()=>{ if(intro.phase==="wakedone") showWakePrompt("[ERROR: 코어 응답 없음]", false, true); }, 1700);
   setTimeout(()=>{ if(intro.phase!=="wakedone") return; hideWakePrompt(); intro.phase="play"; startSamScene(); }, 3700);  // → 길 위 샘 등장(퀘스트)
 }
 function showWakePrompt(text, deficit, cold){
