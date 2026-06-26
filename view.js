@@ -275,11 +275,11 @@ function openNode(n, firstMeet){
       emo:`『 ${pp.name} 』`, lv:`${objParticle(pp.name)} 알게 됐다`, situ:"",
       log: pp.mem,
       reward:[`🧩 감정조각 +1 (${learnedCount()}/${FRAG_TOTAL})`,`🎨 회색 세계에 ${pp.name}의 색이 번진다`,`🧩 마음이 한 조각 또렷해진다`],
-      closeText:"다음 길로" });
+      closeText:"다음 감정을 찾아서" });
     // 다시 찾은 감정(완료 노드 클릭): 새 보상 없이 5단을 다시 읽고 곱씹는다(힐링 재방문)
     const recapPage = ()=> fillModal({
       badge:"이미 마음에 담은 감정", emo:`『 ${pp.name} 』`, lv:"다시 마음에 담는다", situ:"",
-      log: pp.mem, reward:[`💭 ${(pp.mem||'').replace(/\n/g,' ')}`], closeText:"다음 길로" });
+      log: pp.mem, reward:[`💭 ${(pp.mem||'').replace(/\n/g,' ')}`], closeText:"다음 감정을 찾아서" });
     const last = firstMeet ? unlockPage : recapPage;
     // 이야기 페이지 i(0..len-1) → 다음 페이지, 마지막이면 해금/회상
     const page = (i)=> fillModal({
@@ -379,7 +379,7 @@ function bodyStoryModal(key){   // 구매 직후 그 몸의 5단 이야기를 �
     emo:`〔 ${bd.name} 〕`, lv:(i===0?`⚡ 탭 +1`:""),
     situ:i===0?bd.situ:"", log:lines[i],
     reward:(i===last)?[`🫀 몸조각 +1 (${bodyCount()}/${BODY_TOTAL})`,`⚡ 탭 +1`,`사람에 한 걸음 더`]:[],
-    closeText:(i<last)?"다음대사":"다음 길로",
+    closeText:(i<last)?"다음대사":"다음 감정을 찾아서",
     next:(i<last)?()=>page(i+1):null });
   page(0);
 }
@@ -403,7 +403,7 @@ function fillModal(o){
   $("#mLv").textContent=o.lv||""; $("#mSitu").innerHTML=o.situ||""; $("#mSitu").style.display=o.situ?"block":"none";
   $("#mLog").textContent=o.log;
   $("#mReward").innerHTML=(o.reward||[]).map(r=>`<span class="r">${r}</span>`).join("");
-  $("#mBtn").textContent=o.closeText||"다음 길로";
+  $("#mBtn").textContent=o.closeText||"다음 감정을 찾아서";
   modalNext = o.next || null;                      // 다음 페이지 콜백(있으면 주 버튼이 그걸 호출)
   const b2=$("#mBtn2"), bp=$("#mPrev");
   if(o.upText){ b2.style.display="block"; b2.textContent=o.upText; modalUp=o.onUp; }
