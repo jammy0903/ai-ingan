@@ -17,7 +17,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Gowun+Batang:wght@400;700&family=Nanum+Myeongjo:wght@400;700&family=Nanum+Pen+Script&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=1.3.9">
+<link rel="stylesheet" href="styles.css?v=1.4.0">
 </head>
 <body>
 <div id="app">
@@ -51,7 +51,7 @@
 
   <div class="hud">
     <div class="titlebar">
-      <div class="title">마음을 줍는 로봇 <span id="robotName" class="rn" title="이름 바꾸기"></span><span id="appVer" style="font-size:11px;opacity:.42;font-weight:400;margin-left:6px">v1.3.9</span></div>
+      <div class="title">마음을 줍는 로봇 <span id="robotName" class="rn" title="이름 바꾸기"></span><span id="appVer" style="font-size:11px;opacity:.42;font-weight:400;margin-left:6px">v1.4.0</span></div>
       <button id="muteBtn" title="소리 끄기" style="background:none;border:none;font-size:18px;cursor:pointer;padding:2px 6px;line-height:1;opacity:.8">🔊</button>
       <button id="authBtn" class="authbtn">구글 로그인</button>
     </div>
@@ -383,81 +383,7 @@
   <div class="endcine" id="endcine">
     <!-- 사람이 된 모습: 코어→가슴의 하트, 안테나→삐친 머리, 기쁘고 슬픈 눈물 -->
     <div class="efigure" id="eFigure">
-      <svg viewBox="0 0 120 170">
-        <ellipse cx="60" cy="163" rx="28" ry="5" fill="#7f8681" opacity=".15"/>
-        <!-- 다리 + 신발 -->
-        <rect x="49" y="122" width="11" height="22" rx="5.5" fill="url(#hSkinArm)"/>
-        <rect x="60" y="122" width="11" height="22" rx="5.5" fill="url(#hSkinArm)"/>
-        <ellipse cx="53.5" cy="147" rx="8" ry="4.3" fill="#cf8e6a"/>
-        <ellipse cx="66.5" cy="147" rx="8" ry="4.3" fill="#bd7e5c"/>
-        <path d="M47 146 q6.5 3 13 0" stroke="#a8694a" stroke-width="1" fill="none" opacity=".45"/>
-        <!-- 원피스 -->
-        <path d="M60 63 C 46 63 41 73 39 85 C 36 100 33 119 32 130 C 45 136 75 136 88 130 C 87 119 84 100 81 85 C 79 73 74 63 60 63 Z" fill="url(#hDress)" stroke="#d78468" stroke-width="1.3"/>
-        <!-- 소매 퍼프 -->
-        <ellipse cx="41" cy="73" rx="7.5" ry="6" fill="url(#hDress)" stroke="#d78468" stroke-width=".9"/>
-        <ellipse cx="79" cy="73" rx="7.5" ry="6" fill="url(#hDress)" stroke="#d78468" stroke-width=".9"/>
-        <!-- 칼라 -->
-        <path d="M52 66 q8 6 16 0 l-3 6 q-5 3 -10 0 z" fill="#f9c8b5" opacity=".85"/>
-        <!-- 옷주름 -->
-        <path d="M46 100 q14 6 28 0" stroke="#d2795f" stroke-width="1" fill="none" opacity=".4"/>
-        <path d="M40 118 q20 8 40 0" stroke="#d2795f" stroke-width="1" fill="none" opacity=".4"/>
-        <path d="M35 129 q25 7 50 0" stroke="#d2795f" stroke-width="1.2" fill="none" opacity=".5"/>
-        <!-- 가슴 하트 + 글로우 + 하이라이트 -->
-        <circle cx="60" cy="98" r="13" fill="url(#hHeartGlow)"/>
-        <path class="eheart" d="M60 92 c -3 -4.5 -11 -3.5 -11 2.3 c 0 4.8 7 8.3 11 11.2 c 4 -2.9 11 -6.4 11 -11.2 c 0 -5.8 -8 -6.8 -11 -2.3 z" fill="url(#hHeart)"/>
-        <path d="M54.5 95 q-1 3 1 5.5" stroke="#fff" stroke-width="1.3" fill="none" opacity=".55" stroke-linecap="round"/>
-        <!-- 팔 + 손 -->
-        <path d="M42 73 C 34 79 31 90 32 99 C 32.5 103 37 103 37.5 99 C 37 90 40 81 47 77 Z" fill="url(#hSkinArm)"/>
-        <path d="M78 73 C 86 79 89 90 88 99 C 87.5 103 83 103 82.5 99 C 83 90 80 81 73 77 Z" fill="url(#hSkinArm)"/>
-        <circle cx="34.7" cy="101" r="5" fill="url(#hSkin)"/>
-        <circle cx="85.3" cy="101" r="5" fill="url(#hSkin)"/>
-        <!-- 목 -->
-        <rect x="54" y="53" width="12" height="14" rx="5" fill="#ecbf9a"/>
-        <!-- 귀 -->
-        <circle cx="33.5" cy="42" r="4.5" fill="url(#hSkin)"/>
-        <circle cx="86.5" cy="42" r="4.5" fill="url(#hSkin)"/>
-        <!-- 머리 (치비) -->
-        <circle cx="60" cy="39" r="27.5" fill="url(#hSkin)" stroke="#dcab84" stroke-width="1.1"/>
-        <!-- 머리카락: 비대칭 스웹 앞머리 + 얼굴 감싸는 옆 로크 + 가르마·여러 결 (풍성하게) -->
-        <path d="M32 52 C 29 24 45 10 60 10 C 75 10 91 24 88 52 C 85 38 79 33 73 34 C 67 27 50 28 47 34 C 40 33 35 40 32 52 Z" fill="url(#hHair)"/>
-        <!-- 비대칭 스웹 앞머리(오른쪽으로 흐름) -->
-        <path d="M47 34 C 50 25 65 23 76 30 C 68 28 60 30 56 35 C 53 31 50 32 47 34 Z" fill="#6a5040"/>
-        <path d="M73 34 C 79 29 84 31 87 38 C 83 34 79 35 75 38 Z" fill="#6a5040"/>
-        <!-- 양옆 긴 로크(볼을 감싼다) -->
-        <path d="M33 50 C 30 41 31 33 37 30 C 33 42 35 56 41 63 C 36 61 34 56 33 50 Z" fill="#5b4434"/>
-        <path d="M87 50 C 90 41 89 33 83 30 C 87 42 85 56 79 63 C 84 61 86 56 87 50 Z" fill="#5b4434"/>
-        <!-- 삐친머리(ahoge) -->
-        <path d="M57 11 q-3 -9 2.5 -11.5 q3.5 4 1 11.5 z" fill="url(#hHair)"/>
-        <!-- 가르마 + 결/하이라이트 (윤기) -->
-        <path d="M60 12 q-2 6 -3 11" stroke="#523d2e" stroke-width="1.2" fill="none" opacity=".45" stroke-linecap="round"/>
-        <path d="M42 21 q13 -8 27 -4" stroke="#a8866a" stroke-width="2.2" fill="none" opacity=".5" stroke-linecap="round"/>
-        <path d="M48 16 q10 -4 19 -1" stroke="#b9977a" stroke-width="1.3" fill="none" opacity=".4" stroke-linecap="round"/>
-        <path d="M37 30 q-3 7 -1 14" stroke="#8c6c52" stroke-width="1.2" fill="none" opacity=".45" stroke-linecap="round"/>
-        <path d="M83 30 q3 7 1 14" stroke="#8c6c52" stroke-width="1.2" fill="none" opacity=".45" stroke-linecap="round"/>
-        <!-- 볼 홍조 -->
-        <ellipse cx="42" cy="47" rx="6.5" ry="4.3" fill="url(#hCheek)"/>
-        <ellipse cx="78" cy="47" rx="6.5" ry="4.3" fill="url(#hCheek)"/>
-        <!-- 눈: 속눈썹 + 홍채 + 캐치라이트 -->
-        <ellipse cx="50" cy="40" rx="4.8" ry="5.6" fill="#3a2c22"/>
-        <ellipse cx="70" cy="40" rx="4.8" ry="5.6" fill="#3a2c22"/>
-        <ellipse cx="50" cy="42" rx="3.5" ry="3.8" fill="#6e4d34"/>
-        <ellipse cx="70" cy="42" rx="3.5" ry="3.8" fill="#6e4d34"/>
-        <circle cx="48" cy="37.6" r="1.9" fill="#fff"/>
-        <circle cx="68" cy="37.6" r="1.9" fill="#fff"/>
-        <circle cx="52" cy="42.6" r="1" fill="#fff" opacity=".8"/>
-        <circle cx="72" cy="42.6" r="1" fill="#fff" opacity=".8"/>
-        <!-- 눈썹은 앞머리에 자연스레 가려 생략(귀여운 톤) -->
-
-        <!-- 코 -->
-        <path d="M59 45 q1.4 1.6 1.8 3" stroke="#d59f76" stroke-width="1.3" fill="none" stroke-linecap="round" opacity=".7"/>
-        <!-- 눈물 (기뻐서, 슬퍼서) -->
-        <path d="M50 47 q-2.5 7 -0.5 12.5" stroke="url(#hTear)" stroke-width="2.6" fill="none" stroke-linecap="round"/>
-        <path d="M70 47 q2.5 7 0.5 12.5" stroke="url(#hTear)" stroke-width="2.6" fill="none" stroke-linecap="round"/>
-        <ellipse cx="49.4" cy="60.5" rx="2" ry="2.7" fill="url(#hTear)"/>
-        <ellipse cx="70.6" cy="60.5" rx="2" ry="2.7" fill="url(#hTear)"/>
-        <!-- 울먹이며 웃는 입 -->
-        <path d="M53 50 Q60 57.5 67 50" stroke="#b06a48" stroke-width="2.2" fill="none" stroke-linecap="round"/>
-      </svg>
+      <img src="art/ending-human.webp" alt="사람이 된 로봇" class="ehuman" />
     </div>
     <div class="etext" id="eText"></div>
     <button class="ebtn" id="eBtn" type="button">…그리고, 다시 길 위에</button>
@@ -469,17 +395,17 @@
      index.html은 항상 신선(max-age=0)하니, 버전을 올린 새 URL을 참조하면 캐시 안 탄 새 JS를 받는다.
      🔢 코드 수정 시 버전 범프할 때 이 ?v=값도 sw.js CACHE·manifest·#appVer와 함께 1.1.N으로 올릴 것. -->
 <script src="vendor/supabase.js"></script>
-<script src="data.js?v=1.3.9"></script>
-<script src="balance.js?v=1.3.9"></script>
-<script src="engine.js?v=1.3.9"></script>
-<script src="view.js?v=1.3.9"></script>
-<script src="save-auth.js?v=1.3.9"></script>
-<script src="onboarding.js?v=1.3.9"></script>
-<script src="main.js?v=1.3.9"></script>
+<script src="data.js?v=1.4.0"></script>
+<script src="balance.js?v=1.4.0"></script>
+<script src="engine.js?v=1.4.0"></script>
+<script src="view.js?v=1.4.0"></script>
+<script src="save-auth.js?v=1.4.0"></script>
+<script src="onboarding.js?v=1.4.0"></script>
+<script src="main.js?v=1.4.0"></script>
 <script>
   /* PWA 서비스워커 등록 (오프라인 플레이 + 설치 가능) */
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=1.3.9").catch(()=>{}));  // ?v= 캐시버스터로 새 SW 강제 픽업(엣지 4시간 캐시 우회)
+    window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=1.4.0").catch(()=>{}));  // ?v= 캐시버스터로 새 SW 강제 픽업(엣지 4시간 캐시 우회)
   }
 </script>
 </body>
