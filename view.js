@@ -430,7 +430,7 @@ function startEnding(){
   endStep=0; endHold=false;
   const ec=$("#endcine");
   ec.classList.remove("warm"); ec.classList.add("show");
-  bgmTo("end");                                       // 엔딩 곡(The Long Dark)으로 전환
+  bgmTo("beauty");                                    // 엔딩 곡 = '아름다움'(beauty) 트랙으로 (2026-06-26 교체)
   $("#eBtn").classList.remove("in"); $("#eText").classList.remove("in","climax"); $("#eHint").classList.remove("in");
   $("#eFigure").classList.remove("in");               // 사람이 된 모습은 깨달음(warm)에서 등장
   setTimeout(renderEndStep, 800);                     // 암전 뒤 첫 컷
