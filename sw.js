@@ -2,7 +2,7 @@
 // ⚠️ 버전 = 앱 버전(semver). data.js·balance.js·index.html 등 '캐시 자산'을 고치면 반드시 올려라(1.0.6→1.0.7…).
 // SW가 스크립트를 '캐시 우선'으로 서빙하므로, 안 올리면 고쳐도 옛 캐시가 나간다(stale). plan.md ④
 // 🔢 버전 올릴 때 3곳 동기화: 이 CACHE · manifest.json "version" · index.html #appVer 표시.
-const CACHE = "aingan-1.3.9";
+const CACHE = "aingan-1.4.0";
 const CORE = [
   "./", "./index.html", "./styles.css", "./manifest.json",
   "./data.js", "./balance.js",            // 전역 데이터·밸런스(인라인보다 먼저 로드) — 오프라인 프리캐시
@@ -17,7 +17,8 @@ const CORE = [
   "./art/emo/triumph.webp","./art/emo/fear.webp","./art/emo/anxiety.webp","./art/emo/awkward.webp",
   "./art/emo/disgust.webp","./art/emo/horror.webp","./art/emo/confuse.webp","./art/emo/bored.webp",
   "./art/emo/sorrow.webp","./art/emo/empathy.webp","./art/emo/longing.webp","./art/emo/compassion.webp",
-  "./art/emo/calm.webp","./art/emo/satisfy.webp","./art/emo/trance.webp"
+  "./art/emo/calm.webp","./art/emo/satisfy.webp","./art/emo/trance.webp",
+  "./art/ending-human.webp"            // 🆕 엔딩: 사람이 된 모습(수채 일러스트, SVG 교체)
 ];
 
 self.addEventListener("install", e => {

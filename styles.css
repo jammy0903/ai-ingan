@@ -386,10 +386,11 @@
     padding:36px; text-align:center; background:linear-gradient(160deg,#e8e9e5,#dcd9d1); transition:background 2.4s ease; cursor:pointer; }
   .endcine.show { display:flex; animation:fade 1.3s ease; }
   .endcine.warm { background:linear-gradient(160deg,#fbf3e6,#f3e2cd); }      /* 깨달음에서 따뜻해진다 */
-  .endcine .efigure { width:128px; margin-bottom:20px; opacity:0; transform:translateY(16px) scale(.9);
+  .endcine .efigure { width:172px; margin-bottom:20px; opacity:0; transform:translateY(16px) scale(.9);
     transition:opacity 1.4s ease, transform 1.4s ease; }
   .endcine .efigure.in { opacity:1; transform:none; }
-  .endcine .efigure svg { width:100%; filter:url(#paintSoft) drop-shadow(0 5px 7px rgba(70,66,60,.16)); animation:bob 4s ease-in-out infinite; }
+  /* 🆕 사람=수채화 일러스트(art/ending-human.webp). 이미 회화풍이라 paintSoft 미적용, 부드러운 그림자+둥실 연출만 */
+  .endcine .efigure img.ehuman { width:100%; display:block; filter:drop-shadow(0 6px 10px rgba(70,66,60,.20)); animation:bob 4s ease-in-out infinite; }
   .endcine .eheart { transform-box:fill-box; transform-origin:center; animation:heartbeat 1.5s ease-in-out infinite; }
   @keyframes heartbeat { 0%,100%{transform:scale(1)} 14%{transform:scale(1.18)} 28%{transform:scale(1)} 42%{transform:scale(1.1)} 56%{transform:scale(1)} }
   .endcine .etext { font-family:'Gaegu',cursive; font-size:27px; line-height:1.75; color:#4d443a; white-space:pre-line;
