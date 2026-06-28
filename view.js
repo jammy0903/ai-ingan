@@ -200,7 +200,7 @@ function tryUnlock(n){
   if(S.walks < cost){ nudge(`걸음이 ${fmt(cost-Math.floor(S.walks))} 더 필요해`); return; }
   S.walks -= cost; syncSteps();
   travelTo(n, ()=>{
-    S.levels[n.id]=1; spark(); sfxMeet();   // rate는 baseRate()가 levels에서 계산(누적 안 함) / 게임필: 만남 차임
+    S.levels[n.id]=1; spark(); sfxMeet(); focusArmed=true;   // rate는 baseRate()가 levels에서 계산 / 게임필: 만남 차임 / focusArmed: 실제 만남 후부터 '발견=카메라 이동' 허용(부팅 포커스 도용 차단)
     if(n.type==="person"){ const lc=learnedCount(); track("meeting",{key:n.key, count:lc, anon:_anon()}); if(lc===1) track("first_emotion",{anon:_anon()}); awardCoins(1, "emotion:"+n.key); }  // 활성화 북극성(로그인 코호트만) + ✨온기 +1(감정 하나 열 때마다)
     else if(n.type==="body"){ track("body_meet",{key:n.key, count:bodyCount(), anon:_anon()}); }
     trackMilestone();
