@@ -605,6 +605,8 @@
   #situFig img { height:160px; width:auto; display:block; filter:drop-shadow(0 4px 5px rgba(70,66,60,.18)); }
   /* 무지개(아름다움)는 가로형(945×600)이라 height:160px면 폭이 ~251px로 뻗어 로봇(left:44%)을 덮음 → 폭으로 제한해 우하단 코너에만 머물게(2026-06-22) */
   #situFig img.emoFig-beauty { height:auto; width:140px; }
+  /* 뿌듯함(satisfy)은 세로 좁은 형(350×600)이라 기본 160px면 폭 ~93px로 작아 보임 → 키움 */
+  #situFig img.emoFig-satisfy { height:220px; }
   #situFig .dogFig { width:33%; margin:0 auto; }
   @keyframes dgBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
   @keyframes dgJump{0%,100%{transform:translateY(0)}38%{transform:translateY(-13px)}54%{transform:translateY(-13px)}}
