@@ -65,7 +65,7 @@ const S = {
   coins: 0,              // ✨ 온기 조각 — 감정 해금(+1)·N번째 재회(+N)·광고(+10)로 모음. 2단계: 몸 구매에 사용
   cycle: 0,              // 걸어온 회차 수 (0=첫 생)
   lookback: 0,           // '기억 재해석'으로 되돌아본 기억 수 (마음의 깊이로 구매, §3)
-  seenIntro: false,      // 시작 게이트/온보딩을 한 번이라도 지났는가 (이후 강제 재노출 안 함)
+  seenIntro: false,      // 튜토리얼(온보딩)을 '완료'했는가 = 새세션(복귀) 판정 기준. beginAdventure에서만 true. (시작만 하고 이탈=false → 다음 세션 재노출)
   seenMapTut: false,      // 🆕 지도 스포트라이트 튜토리얼을 한 번이라도 봤는가
 };
 NODES.forEach(n => S.levels[n.id] = n.completed ? 1 : 0);
