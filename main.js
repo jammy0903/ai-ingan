@@ -43,3 +43,9 @@ window.addEventListener("resize", ()=>{ if(curPage==="map"){ renderAll(); center
 bootSave();             // 세이브 불러오기(+오프라인 적립)
 refreshHUD();           // 길 페이지 먼저 보이므로 HUD/온도만 갱신 (지도는 진입 시 렌더)
 initAuth();             // 구글 로그인 초기화(세션 복원/버튼)
+
+// 🆕 부팅 페이드인 — 위 동기 부팅(세이브 복원·HUD·첫 decideEntry)이 끝나 화면이 자리잡은 뒤 한 프레임 쉬고 스르륵 켠다.
+//    rAF 2겹 = 레이아웃 확정 후 페인트 → 숫자 튐/툭 등장 안 보임. setTimeout = rAF가 안 도는 백그라운드 탭 등에서도 절대 빈 화면으로 안 멈추게 하는 폴백.
+function markBooted(){ document.getElementById("app")?.classList.add("booted"); }
+requestAnimationFrame(()=>requestAnimationFrame(markBooted));
+setTimeout(markBooted, 700);
