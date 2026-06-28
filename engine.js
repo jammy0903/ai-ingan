@@ -207,6 +207,8 @@ function gateOk(n){                                 // 챕터 게이트
   return true;
 }
 let focusQueue=null;                               // 새로 열린(발견된) 노드 — 다음 맵 틱에서 그곳으로 카메라 포커스
+let focusArmed=false;                               // 🆕 '발견=카메라 이동'은 이 세션에서 실제 만남(tryUnlock)이 한 번이라도 일어난 뒤부터.
+                                                   //    부팅/재로그인 직후 기본상태(start)에서 잡히는 발견(긍정·흥미 등)이 로봇 현재 노드 포커스를 뺏던 버그 차단.
 function updateDiscovered(){
   // 🔒 한 번에 하나씩: 아직 안 연(발견됐지만 미해제) 노드가 있으면 새로 더 열지 않는다.
   for(const n of NODES){ if(n.type==="body") continue; if(n.id!=="start" && !(S.levels[n.id]>0) && S.discovered[n.id]) return null; }   // 🆕 몸은 그래프 발견 대상 아님(자루 구매)

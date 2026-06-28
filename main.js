@@ -7,7 +7,9 @@ setInterval(()=>{ if(sceneActive||intro.phase!=="play") return;   // 샘 대화/
   const _ov = ['modal','sackModal','prestige','endcine'].some(id=>{const e=document.getElementById(id); return e&&e.classList.contains('show');});
   if(_ov || busyMeet) return;     // 만남 진행 중(이동~모달)·오버레이 떠 있으면 다음 노드 발견·포커스 보류
   updateDiscovered();                                 // 다음 노드 1개를 '열림'(도달가능)이면 발견 → focusQueue 설정
-  if(focusQueue && curPage==="map"){ const id=focusQueue; focusQueue=null; renderEdges(); renderNodes(); placeRobot(); panTo(id); } }, 100);  // 노드가 '열리는' 순간 그곳으로 포커스
+  if(focusQueue && curPage==="map"){ const id=focusQueue; focusQueue=null; renderEdges(); renderNodes(); placeRobot();
+    if(focusArmed) panTo(id);              // 플레이 중 진짜 해금 발견 → 그곳으로 포커스 연출
+    else centerOn(S.current); } }, 100);   // 🆕 부팅/복원 시의 발견 → 카메라 안 뺏고 로봇 현재 노드 유지
 
 /* ---------- 줌 입력 ---------- */
 document.getElementById('zin').addEventListener('click', ()=>setZoom(zoom*1.25));

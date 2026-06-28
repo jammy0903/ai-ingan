@@ -137,7 +137,7 @@ function onAuthChanged(){
     markReturningDevice();
     saveState();                                           // 채택된 최신본을 클라우드·로컬 양쪽에 재동기화(클라우드 catch-up)
     decideEntry();                                         // seenIntro(완료)면 게임 / 미완료(로그인했지만 튜토리얼 안 함)면 startWake=튜토리얼
-    refreshHUD(); if(curPage==="map") renderAll();
+    refreshHUD(); if(curPage==="map"){ renderAll(); centerOn(S.current); }   // 🆕 클라우드 도착으로 S.current 갱신되면 지도를 로봇 현재 노드로 재센터링(start로 어긋난 채 남지 않게)
   });
 }
 
