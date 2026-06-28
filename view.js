@@ -412,9 +412,9 @@ function fillModal(o){
   const b2=$("#mBtn2"), bp=$("#mPrev");
   if(o.upText){ b2.style.display="block"; b2.textContent=o.upText; modalUp=o.onUp; }
   else { b2.style.display="none"; modalUp=null; }
-  if(o.onPrev){ bp.style.display="block"; modalPrev=o.onPrev; }   // '이전 대사' = 재회 버튼 옆 반반
+  if(o.onPrev){ bp.style.display="block"; modalPrev=o.onPrev; }   // '이전 대사' = 같은 행(#mRow)에서 다음대사와 2열
   else { bp.style.display="none"; modalPrev=null; }
-  $("#mActions").style.display=(o.upText||o.onPrev)?"flex":"none";
+  $("#mActions").style.display=o.upText?"flex":"none";            // #mActions=재회(현재 미사용)만; '이전 대사'는 #mRow로 이동
   modal.classList.add("show");
 }
 let afterClose=null;                               // 모달 닫은 뒤 이어질 흐름(엔딩→프레스티지)
