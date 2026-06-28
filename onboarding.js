@@ -9,8 +9,8 @@ function hasProgress(){
   return NODES.some(n=> n.id!=="start" && (S.levels[n.id]||0)>0);
 }
 function startIntro(){
-  if(hasProgress()){ S.seenIntro=true; closeGate(); decideEntry(); return; }  // 이미 시작/진행한 유저 — 튜토리얼 강제 안 함
-  S.seenIntro=true; saveState();                       // 온보딩이 시작되면 '봤음' — 이후 강제 재노출 안 함
+  if(hasProgress()){ S.seenIntro=true; closeGate(); decideEntry(); return; }  // 이미 진행한 유저 — 튜토리얼 강제 안 함
+  // 🔴 Bug3 픽스: 여기서 seenIntro를 켜지 않는다(시작=봤음 X). 완료(beginAdventure)에서만 켬 → 중도 이탈자는 다음 세션에 다시 튜토리얼.
   closeGate();
   startWake();                                          // 모달 3컷 대신: 탭으로 깨우기부터(손맛 먼저)
 }
@@ -71,7 +71,21 @@ function dismissOnboarding(){
 }
 
 /* ---------- 시작 게이트 (로그인 권장 — 스킵 가능) ---------- */
-function showGate(){ intro.phase="gate"; document.getElementById('gate')?.classList.add('show'); }   // 🆕 게이트 떠있는 동안 게임 정지(idle 걸음·노드 발견 누적 차단 → 온보딩 오판 방지). 둘러보기/로그인 시 startWake가 phase 전환.
+function showGate(){ intro.phase="gate"; applyGateMode(); document.getElementById('gate')?.classList.add('show'); }   // 🆕 게이트 떠있는 동안 게임 정지(idle 걸음·노드 발견 누적 차단 → 온보딩 오판 방지). 둘러보기/로그인 시 startWake가 phase 전환.
+// 🆕 처음 유저 vs 세션 끝나고 다시 온 복귀 유저(기기 마커)를 게이트 문구로 구별 — '시작하기' ↔ '이어서 하기'
+function applyGateMode(){
+  const ret = (typeof isReturningDevice==="function") && isReturningDevice();
+  const tag=document.querySelector('#gate .gtag'), gg=document.getElementById('gGoogle'), br=document.getElementById('gBrowse');
+  if(ret){
+    if(tag) tag.innerHTML="다시 만나서 반가워요.<br>로그인하면 그 여행이 이어집니다.";
+    if(gg) gg.textContent="구글로 이어서 하기";
+    if(br) br.textContent="새로 둘러보기 ›";
+  }else{
+    if(tag) tag.innerHTML="버려진 고철 로봇이<br>사람을 만나 감정을 배우는 여행.";
+    if(gg) gg.textContent="구글로 시작하기";
+    if(br) br.textContent="로그인 없이 둘러보기 ›";
+  }
+}
 function closeGate(){ document.getElementById('gate')?.classList.remove('show'); }
 // 로컬에 Supabase 세션 토큰이 있으면 = 로그인된 복귀 유저 (인증은 부팅 직후 비동기로 해소됨)
 function hasAuthSession(){
@@ -85,18 +99,18 @@ function authRedirectPending(){
 }
 // 들어올 때 무엇을 보여줄지: 이미 지났으면 바로 게임 / 로그인 상태면 온보딩 / 아니면 게이트
 function decideEntry(){
-  if(S.seenIntro){
-    closeGate(); closeIntro();
+  if(S.seenIntro){                                       // 튜토리얼 완료자 = 새세션(복귀) → 바로 게임
+    closeGate(); closeIntro(); dismissOnboarding();      // 진행 중이던 온보딩 잔여물(샘 씬 등)도 걷어냄(레이스 방지)
     if(!S.named) ensureRobotName();                     // 이름 없이 지나친 경우 자동 이름 부여
     refreshHUD();
     if(typeof syncBgmToCurrent==="function") syncBgmToCurrent();   // 복원된 위치에 맞는 곡으로 BGM 동기화(부팅/세이브 도착)
     return;
   }
-  if(typeof authUser!=="undefined" && authUser){ startIntro(); return; }  // 로그인 했으면 게이트 건너뛰고 온보딩
-  // 아직 authUser 미해소지만 (세션 토큰이 있거나 || 방금 OAuth 리다이렉트로 교환 중)이면 = 로그인 유저
-  // → 게이트 깜빡임 방지, onAuthChanged가 곧 처리. (authRedirectPending이 앱 첫 로그인 후 게이트 재노출 버그 차단)
-  if(hasAuthSession() || authRedirectPending()) return;
-  showGate();
+  if(typeof authUser!=="undefined" && authUser){ startIntro(); return; }  // 로그인 + 튜토리얼 미완료 = 첫시작 → 튜토리얼
+  // 아직 인증 미확정이고 (세션 토큰이 있거나 || 방금 OAuth 교환 중)이면 = 확정될 때까지 게이트 보류(깜빡임 방지, onAuthChanged가 곧 확정).
+  // ⚠️ authResolved가 true(=인증이 null로 확정)면 더 안 기다리고 게이트를 띄운다 — 옛 stuck(토큰 찌꺼기로 영영 보류) 차단.
+  if(!authResolved && (hasAuthSession() || authRedirectPending())) return;
+  showGate();                                            // 비로그인(또는 인증=null 확정) = 게이트
 }
 $("#gGoogle")?.addEventListener("click", ()=>{ if(typeof googleLogin==="function") googleLogin(); });
 $("#gBrowse")?.addEventListener("click", ()=>{ startIntro(); });          // 로그인 없이 둘러보기 → 온보딩
@@ -116,6 +130,7 @@ function openNamingModal(onDone){
   };
 }
 function beginAdventure(){
+  S.seenIntro=true; saveState();                        // 🔴 튜토리얼 완료 = 여기서 비로소 '봤음' 확정(시작 시점 X). 중도 이탈자는 seenIntro 안 켜져 다음 세션에 다시 튜토리얼.
   const h=$("#hint"); h.style.visibility=""; h.textContent=`그렇게, ${S.robotName}의 모험이 시작된다!`;
   setTimeout(()=>{ h.textContent="이 길을 두드릴수록 로봇이 더 빨리 걷는다"; }, 5000);
 }

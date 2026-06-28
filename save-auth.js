@@ -6,6 +6,14 @@ const SAVE_VERSION = 4;              // 세이브 '데이터' 스키마 버전(S
 // 강철의 인간술사 전용 Supabase 프로젝트. publishable 키는 클라 공개용(안전·RLS 보호).
 const SUPA = { url:"https://irpavlciywhjnigqsjxn.supabase.co", anon:"sb_publishable_SNr6tjf-JX5-4NhLBo8oEg_mNqoClDf" };
 
+// 🆕 기기 마커 — '이 기기엔 복귀 유저가 있다'는 불리언 1줄(진행도 아님 → 세이브 정책과 무관: 둘러보기 진행은 여전히 비저장).
+// 로그인 유저가 한 번이라도 클라우드 세이브를 가진 적이 있으면 켜짐. 세션이 풀려도/미러가 지워져도 남아서:
+//   ① 부팅~인증 해소 사이 온보딩 깜빡임 차단(처음 유저로 오인 방지)  ② 게이트를 '복귀(이어서)' 톤으로  ③ 처음/복귀 판별을 클라우드 도착 전에도 확정.
+const DEVICE_KEY = "aingan_device_v1";
+let _devMarked=false;   // 이 load에서 이미 마킹했는지(setItem 스팸 방지)
+function isReturningDevice(){ try{ return localStorage.getItem(DEVICE_KEY)==="1"; }catch(e){ return false; } }
+function markReturningDevice(){ if(_devMarked) return; _devMarked=true; try{ localStorage.setItem(DEVICE_KEY,"1"); }catch(e){} }
+
 // 저장은 '로그인된 계정'에 대해서만. 비로그인(둘러보기)은 임시 플레이 — 익명 로컬/클라우드 db를 만들지 않는다.
 function saveKey(){ return authUser ? ("u_"+authUser.id) : null; }
 
@@ -38,7 +46,7 @@ function applyState(d){
   S.named = !!d.named;
   S.depth = d.depth || 0; S.cycle = d.cycle || 0; S.lookback = d.lookback || 0;
   S.coins = d.coins || 0;            // ✨ 온기 조각(없는 옛 세이브=0)
-  S.seenIntro = !!(d.seenIntro || d.named);   // 기존 이름지은 유저는 자동으로 '봤음' 처리(게이트 안 띄움)
+  S.seenIntro = !!(d.seenIntro || d.named);   // 완료 플래그. 이름까지 지은 유저는 튜토리얼 사실상 다 한 것 → '완료'로 간주(레거시 호환 겸 재-온보딩 마찰 방지)
   S.seenMapTut = !!d.seenMapTut;               // 🆕 지도 튜토리얼 1회 표시 플래그
   // 🆕 오프라인 = 1걸음/초(온라인 idle과 동일), 누적 상한 OFFLINE_CAP_STEPS(=1000걸음, 2026-06-24). economy-redesign.md
   let off=0; if(d.t){ const sec=Math.max(0,(Date.now()-d.t)/1000); off=Math.min(sec, OFFLINE_CAP_STEPS); S.walks+=off; }
@@ -47,12 +55,13 @@ function applyState(d){
 }
 function saveState(){
   if(!authUser) return;                                  // 둘러보기(로그인 X)는 의도적으로 로컬에도 저장 안 함 — 익명=휘발, 로그인 유도(설계). CLAUDE.md 참고
-  const d=snapshot();
-  try{ localStorage.setItem(SAVE_KEY, JSON.stringify(d)); }catch(e){}  // 빠른 부팅용 계정 미러(로그인 유저만)
+  markReturningDevice();                                 // 로그인 유저가 한 번이라도 저장 = 이 기기는 복귀 유저 기기(다음 부팅부터 처음/복귀 즉시 판별)
+  const d=snapshot(); d.uid=authUser.id;                 // 🆕 미러가 어느 계정 것인지 표시(켤 때 '최신 채택' 비교 + 교차계정 클로버 방지)
+  try{ localStorage.setItem(SAVE_KEY, JSON.stringify(d)); }catch(e){}  // 빠른 부팅용 계정 미러(로그인 유저만, 동기=항상 최신)
   supaSave(d);
 }
 async function supaSave(d){ if(!authUser || !SUPA.url || !SUPA.anon) return;
-  try{ await fetch(`${SUPA.url}/rest/v1/saves`, { method:"POST",
+  try{ await fetch(`${SUPA.url}/rest/v1/saves`, { method:"POST", keepalive:true,   // 🆕 keepalive: 앱 종료/백그라운드(beforeunload·pagehide·visibility) 도중에도 요청을 끝까지 보냄 → 모바일 킬에도 마지막 진행이 클라우드에 도달(저장 ≤64KB라 keepalive 한도 안)
     headers:{ apikey:SUPA.anon, Authorization:"Bearer "+SUPA.anon, "Content-Type":"application/json", Prefer:"resolution=merge-duplicates" },
     body: JSON.stringify({ device_id:saveKey(), data:d, updated_at:new Date().toISOString() }) }); }catch(e){}
 }
@@ -76,17 +85,24 @@ function bootSave(){
 }
 setInterval(saveState, 10000);
 window.addEventListener("beforeunload", saveState);
-document.addEventListener("visibilitychange", ()=>{ if(document.hidden) saveState(); });
+window.addEventListener("pagehide", saveState);                                        // 🆕 모바일에선 beforeunload가 잘 안 떨어짐 — pagehide가 가장 믿을 만한 '앱 닫힘' 신호
+document.addEventListener("visibilitychange", ()=>{ if(document.hidden) saveState(); });   // 백그라운드 전환 시(앱 전환·홈버튼) 즉시 저장 — keepalive로 전송 보장
 
 /* ---------- 구글 로그인 (강철의 인간술사 전용 Supabase 프로젝트) ---------- */
 let sb=null, authUser=null, lastKey=null;
+let authResolved=false;   // getSession/onAuthStateChange가 인증을 한 번이라도 '확정'했는가. 확정 전엔 게이트 보류(깜빡임 방지), 확정 후 null이면 게이트 표시(stuck 방지).
 function initAuth(){
-  if(!window.supabase || !SUPA.url || !SUPA.anon){ renderAuth(); return; }
+  if(!window.supabase || !SUPA.url || !SUPA.anon){ renderAuth(); authResolved=true; decideEntry(); return; }   // 라이브러리/키 없음 = 로그인 불가 확정 → 게이트라도 띄움(둘러보기 가능)
   try{ sb = window.supabase.createClient(SUPA.url, SUPA.anon, { auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:true } }); }  // 세션 유지(자동 로그인). 계정 전환은 '로그아웃 후 재로그인' 시 prompt:select_account로
-  catch(e){ renderAuth(); return; }
+  catch(e){ renderAuth(); authResolved=true; decideEntry(); return; }
   sb.auth.onAuthStateChange((_e,s)=>{ authUser = s?.user || null; renderAuth(); onAuthChanged(); });
   sb.auth.getSession().then(({data})=>{ authUser = data?.session?.user || null; renderAuth(); onAuthChanged(); });
+  // 🆕 앱이 다시 보일 때(포커스/탭 복귀) 세션 선제 점검·갱신 → 며칠/몇 주 닫아둬도 JWT 만료 대기 없이 즉시 로그인 유지.
+  //    리프레시 토큰은 기본 만료 없음이라(대시보드 timebox·inactivity만 끄면) 사실상 1년+ 유지. getSession이 만료 임박분을 알아서 갱신.
+  document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) refreshAuthSoon(); });
+  window.addEventListener("focus", refreshAuthSoon);
 }
+function refreshAuthSoon(){ try{ if(sb) sb.auth.getSession(); }catch(e){} }   // 캐시 세션 반환 + 만료 임박 시 자동 갱신(네트워크 강제 X)
 async function googleLogin(){ if(sb) await sb.auth.signInWithOAuth({ provider:"google", options:{ redirectTo: location.origin+location.pathname, queryParams:{ prompt:"select_account" } } }); }  // 항상 구글 계정 선택창
 async function logout(){
   try{ if(sb) await sb.auth.signOut(); }catch(e){}
@@ -103,14 +119,25 @@ function renderAuth(){
   else { b.textContent="구글 로그인"; b.classList.remove('on'); b.onclick=googleLogin; }
 }
 function onAuthChanged(){
-  if(!authUser){ return; }                                // 로그아웃은 logout()에서 게이트로 처리(익명 복원 안 함)
+  authResolved=true;                                      // 인증 확정(세션 유무 무관) — 이제 decideEntry가 게이트를 띄울 수 있음
+  if(!authUser){ decideEntry(); return; }                 // 🔴 Bug1 픽스: 세션이 만료/무효라 null로 풀리면 여기서 게이트 재결정(옛날엔 그냥 return → 게이트도 튜토리얼도 안 떠 stuck)
   checkAdmin();                                            // 어드민 여부 재확인(UI 토글) — 실제 권한은 RLS가 서버에서 강제
   const k=saveKey(); if(k===lastKey) return; lastKey=k;
   supaLoad().then(d=>{
-    track("login",{returning:!!d});                     // 둘러보기→로그인 전환(세이브 정책 핵심 KPI)
-    if(d){ applyState(d); S.seenIntro=true; dismissOnboarding(); closeGate(); }  // 계정에 세이브 있음 = 돌아온 유저 → 진행 중이던 온보딩도 걷어냄
-    saveState();                                          // 신규 계정이면 현재 진행 업로드 / 복귀면 미러 갱신
-    decideEntry(); refreshHUD(); if(curPage==="map") renderAll();
+    // 🔴 클로버 방지(저장 유실 근본픽스): 클라우드와 '이 계정의' 로컬 미러 중 더 최신(t)을 채택.
+    //    클라우드 저장이 앱 킬로 한 번 실패하면 클라우드가 로컬보다 낡는데, 옛 코드는 무조건 클라우드로 덮어써 신선한 로컬 진행을 날렸다.
+    const local = loadLocal();
+    const localMine = (local && (local.uid===authUser.id || local.uid==null)) ? local : null;   // 내 계정(또는 uid 없는 레거시) 미러만 신뢰
+    if(d && (!localMine || (d.t||0) > (localMine.t||0))) applyState(d);   // 클라우드가 더 최신(또는 내 로컬 없음) → 클라우드 채택(다른 기기 진행 동기화)
+    else if(!localMine) resetState();                                      // 클라우드·내 로컬 둘 다 없음 = 이 계정 완전 신규 → 새 게임(남의 미러 누수 차단)
+    // else: 내 로컬이 더(또는 같게) 최신 → 부팅 때 복원된 메모리 유지 (오래된 클라우드가 안 덮음)
+    // Bug2 픽스: '세이브 행 존재'≠복귀. 진짜 복귀(=새세션)는 적용 후 '튜토리얼 완료(seenIntro/named)'로 판정 → 아니면 첫시작=튜토리얼.
+    const done = !!(S.seenIntro || S.named);
+    track("login",{returning:done, dev:isReturningDevice()});   // 새세션(복귀) vs 첫시작 구별 KPI
+    markReturningDevice();
+    saveState();                                           // 채택된 최신본을 클라우드·로컬 양쪽에 재동기화(클라우드 catch-up)
+    decideEntry();                                         // seenIntro(완료)면 게임 / 미완료(로그인했지만 튜토리얼 안 함)면 startWake=튜토리얼
+    refreshHUD(); if(curPage==="map") renderAll();
   });
 }
 
