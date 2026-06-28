@@ -275,23 +275,27 @@ function openNode(n, firstMeet){
       emo:`『 ${pp.name} 』`, lv:`${objParticle(pp.name)} 알게 됐다`, situ:"",
       log: pp.mem,
       reward:[`🧩 감정조각 +1 (${learnedCount()}/${FRAG_TOTAL})`,`🎨 회색 세계에 ${pp.name}의 색이 번진다`,`🧩 마음이 한 조각 또렷해진다`],
+      onPrev: ()=>page(lines.length-1),              // 🆕 '이전 대사' — 마지막 줄로 되돌아가 다시 읽기
       closeText:"다음 감정을 찾아서" });
     // 다시 찾은 감정(완료 노드 클릭): 새 보상 없이 5단을 다시 읽고 곱씹는다(힐링 재방문)
     const recapPage = ()=> fillModal({
       badge:"이미 마음에 담은 감정", emo:`『 ${pp.name} 』`, lv:"다시 마음에 담는다", situ:"",
-      log: pp.mem, reward:[`💭 ${(pp.mem||'').replace(/\n/g,' ')}`], closeText:"다음 감정을 찾아서" });
+      log: pp.mem, reward:[`💭 ${(pp.mem||'').replace(/\n/g,' ')}`],
+      onPrev: ()=>page(lines.length-1),              // 🆕 '이전 대사' — 마지막 줄로 되돌아가 다시 읽기
+      closeText:"다음 감정을 찾아서" });
     const last = firstMeet ? unlockPage : recapPage;
-    // 이야기 페이지 i(0..len-1) → 다음 페이지, 마지막이면 해금/회상
+    // 이야기 페이지 i(0..len-1) → 다음 페이지, 마지막이면 해금/회상. 첫 줄(i=0) 빼고 '이전 대사'로 직전 줄 복귀.
     const page = (i)=> fillModal({
       badge: i===0?"하나의 감정을 만나다":"…",
       emo:`『 ${pp.name} 』`, lv:(i===0 && firstMeet)?`⚡ 탭 +1`:"",
       situ: i===0?pp.situ:"", log: lines[i], closeText:"다음대사",
-      next: (i<lines.length-1) ? ()=>page(i+1) : last });
+      next: (i<lines.length-1) ? ()=>page(i+1) : last,
+      onPrev: i>0 ? ()=>page(i-1) : null });          // 🆕 '이전 대사' — 직전 대사로
     page(0);
     return;
   }
 }
-// 🆕 재회 폐기(2026-06-26): showPrevLines/nextUpLabel/upgrade 제거 — 만남이 5단 한 번에 끝나 '이전 대사'·'재회 레벨업'이 불필요.
+// 🆕 재회 폐기(2026-06-26): nextUpLabel/upgrade(재회 레벨업) 제거. '이전 대사'는 옛 showPrevLines 대신 page(i)/해금페이지의 onPrev로 부활 — 5단을 페이지로 보다가 직전 줄로 되돌아가 다시 읽기(modalPrev/#mPrev 재사용).
 
 /* ✨ 온기 조각 — 통화 코어. 획득: 감정 해금 +1(감정 27=27코인) · 광고 +10. 소비처 = 몸 11 구매(합 25). (2026-06-26 재회 코인 폐기) */
 function awardCoins(amount, reason){
