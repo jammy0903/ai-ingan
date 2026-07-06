@@ -508,10 +508,10 @@ $("#lookBuy").onclick=()=>{
   S.depth-=LOOKBACK_COST; S.lookback++; renderLookback(); refreshHUD(); saveState();
 };
 $("#prestigeGo").onclick=()=>{ doPrestige(); };
-function doPrestige(){                               // 리셋: 걸음·rate·진행 초기화 / depth·cycle·lookback·이름 보존
+function doPrestige(){                               // 리셋: 걸음·온기·rate·진행 초기화 / depth·cycle·lookback·이름 보존
   track("prestige",{depth:S.depth, cycle:S.cycle, learned:learnedCount(), body:bodyCount()});  // 리셋 전 캡처
   document.getElementById('prestige').classList.remove('show');
-  S.walks=0; S.rate=1.0; S.current="start"; S.discovered={};
+  S.walks=0; S.coins=0; S.rate=1.0; S.current="start"; S.discovered={};  // 감정(levels)이 리셋되니 그 감정으로 모은 온기도 함께 0
   NODES.forEach(n=>S.levels[n.id]= n.completed?1:0);
   wholeWalks=0; worldX=0;
   showPage("walk"); refreshHUD(); renderAll(); saveState();
