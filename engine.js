@@ -72,18 +72,11 @@ NODES.forEach(n => S.levels[n.id] = n.completed ? 1 : 0);
 
 /* ---------- 유효 산출/탭 (메타 배율 솔기) ----------
    S.rate(걸음/초 누적 base)·탭 이득을 '한 곳'에서 계산한다.
-   지금은 배율 1이라 동작 불변. Phase 1(탭 비례)·3(마일스톤)·4(프레스티지)가
-   여기 rateMult/effTap만 손대면 idle·HUD·탭에 일괄 반영됨. */
-function milestoneMult(){                          // 달성한 수집 마일스톤 배율의 곱(cells식 랭크 돌파 점프)
+   지금은 배율 1이라 동작 불변. 여기 effRate/effTap만 손대면 idle·HUD·탭에 일괄 반영됨. */
+function milestoneMult(){                          // 달성한 수집 마일스톤 배율의 곱(현재는 애널리틱스 trackMilestone 전용)
   const c=learnedCount()+bodyCount();             // learnedCount/bodyCount는 아래에 선언(함수 호이스팅)
   let m=1; for(const ms of MILESTONES) if(c>=ms.at) m*=ms.mult; return m;
 }
-function nextMilestone(){                          // 다음 속도업까지 남은 수집 개수(다 넘었으면 null)
-  const c=learnedCount()+bodyCount();
-  for(const ms of MILESTONES) if(c<ms.at) return {need:ms.at-c, at:ms.at, mult:ms.mult};
-  return null;
-}
-function rateMult(){ return milestoneMult(); }     // 전역 산출 배율(추후 프레스티지 배율도 여기 곱)
 // 🆕 재회 폐기(2026-06-26): 옛 '초/걸음' 재회 곡선(achieveMult·REUNION_*·nodeSps·nodeOut·baseRate) 제거 — idle은 effRate()=1 고정.
 // 🆕 경제 재설계(2026-06-22, economy-redesign.md): 걷기(idle)=1걸음/초 고정, 성장(number-go-up)은 '탭'으로 이동.
 // 🆕 costN = 발견(걸음) 비용 지수 (2026-06-26 재회 제거판). 비용 = DISCOVER_COST_BASE × DISCOVER_COST_GROWTH^costN.
@@ -163,10 +156,6 @@ function neighbors(id){
   EDGES.forEach(([a,b,c])=>{ if(a===id) out.push([b,c]); if(b===id) out.push([a,c]); });
   return out;
 }
-// 지금까지 연 노드 수(start 제외) = 발견 '순번'. TAP_CURVE 인덱스로 쓴다.
-function unlockedCount(){ let c=0; for(const n of NODES){ if(n.id!=="start" && S.levels[n.id]>0) c++; } return c; }
-// 다음 발견의 목표 탭수(=목표 초). 순번이 곡선 길이를 넘으면 끝값(평탄).
-function discoverTaps(){ const C=(typeof TAP_CURVE!=='undefined')?TAP_CURVE:[5,25,42,58,80]; return C[Math.min(unlockedCount(), C.length-1)]; }  // 가드: balance.js 버전 엇갈려 TAP_CURVE 없어도 throw 안 하고 폴백(지도 크래시 방지)
 let DISCOVER_MULT = 1;   // 🆕 발견 비용 전체 배율(관리자 실시간 튜닝용 · 기본 1=무효). reachCost에 곱해 진행 속도 일괄 조절(세이브 무관·새로고침 원복).
 // 🆕 발견 비용 '날값'(반올림·도달성 판정 전) = DISCOVER_COST_BASE × DISCOVER_COST_GROWTH^costN × DISCOVER_MULT.
 //   재회 비용(balance.js upCost)도 이걸 기준으로 잡아 '재회 ≥ 발견'을 보장한다.
