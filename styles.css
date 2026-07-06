@@ -548,6 +548,8 @@
   .sackcount { font-size:10px; color:#b08040; text-align:center; margin:0 0 6px; font-family:monospace; letter-spacing:1px; }
   .sackexchange { display:flex; flex-direction:column; align-items:center; gap:6px; margin:0 0 9px; font-size:11px; color:#9a6a2a; }
   .sackexbal { font-size:12px; } .sackexbal b { color:#c98a2a; } .sackexdot { opacity:.4; margin:0 3px; }
+  .sackexnote { font-size:10px; color:#b07a3a; opacity:.85; text-align:center; line-height:1.35; }
+  .sackexnote b { color:#c98a2a; }
   .sackexrow { display:flex; align-items:center; gap:6px; flex-wrap:wrap; justify-content:center; }
   .sackexarrow { opacity:.55; }
   .sackexbtn { font-family:inherit; font-size:11px; border:1px solid #e0c48a; background:#fbf3e0; color:#9a6a2a; padding:3px 10px; border-radius:11px; cursor:pointer; }

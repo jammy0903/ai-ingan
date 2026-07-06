@@ -326,8 +326,15 @@ function coinPop(n){
 }
 /* ✨온기 → 🦶걸음 환전 (자루 안). 1온기 = 100걸음. (튜닝값 — 추후 balance.js 이전 가능) */
 const COIN_TO_STEPS = 100;
+/* 🔒 엔딩(몸11)에 쓸 온기는 항상 예약 — 아직 안 산 몸 부위값 합만큼은 못 바꾼다.
+   (온기는 몸 11개(합 25)를 사는 유일한 통화인데 한 회차 총수입 27로 마진이 2뿐 →
+    무제한 환전이 몸 예산을 빼가면 몸11 영구 미달성 = 엔딩 소프트락. 남는 온기만 환전해 원천 차단.) */
+function bodyRemainCost(){
+  return BODY_ORDER.reduce((s,k)=> s + ((S.levels[k]||0)>0 ? 0 : bodyBuyCost(k)), 0);
+}
+function coinsConvertible(){ return Math.max(0, (S.coins||0) - bodyRemainCost()); }
 function convertCoins(amount){
-  amount=Math.min(Math.floor(amount)||0, S.coins||0); if(amount<1) return;
+  amount=Math.min(Math.floor(amount)||0, coinsConvertible()); if(amount<1) return;
   S.coins-=amount; S.walks+=amount*COIN_TO_STEPS;
   syncSteps(); saveState();
   track("coins_convert",{amount, steps:amount*COIN_TO_STEPS, anon:_anon()});
@@ -336,15 +343,16 @@ function convertCoins(amount){
 }
 function renderSackEx(){
   const el=document.getElementById("sackEx"); if(!el) return;
-  const c=S.coins||0;
+  const c=S.coins||0, conv=coinsConvertible(), reserved=c-conv;
   el.innerHTML =
     `<div class="sackexbal">✨ <b>${fmt(c)}</b> 온기 <span class="sackexdot">·</span> 🦶 <b>${fmt(S.walks)}</b> 걸음</div>`+
+    (reserved>0?`<div class="sackexnote">🫀 몸에 쓸 <b>✨${fmt(reserved)}</b>는 남겨둬요 · 바꿀 수 있는 온기 <b>✨${fmt(conv)}</b></div>`:``)+
     `<div class="sackexrow"><span class="sackexarrow">1✨ → ${COIN_TO_STEPS}걸음</span>`+
-    `<button class="sackexbtn" id="sackEx1" ${c<1?"disabled":""}>1개 바꾸기</button>`+
-    `<button class="sackexbtn" id="sackExAll" ${c<1?"disabled":""}>전부</button></div>`;
+    `<button class="sackexbtn" id="sackEx1" ${conv<1?"disabled":""}>1개 바꾸기</button>`+
+    `<button class="sackexbtn" id="sackExAll" ${conv<1?"disabled":""}>전부</button></div>`;
   const b1=document.getElementById("sackEx1"), ba=document.getElementById("sackExAll");
   if(b1) b1.onclick=()=>convertCoins(1);
-  if(ba) ba.onclick=()=>convertCoins(S.coins);
+  if(ba) ba.onclick=()=>convertCoins(coinsConvertible());
 }
 
 /* 🆕 몸 온기 상점 = 전용 「🫀 몸」 탭(2026-06-26). 감정과 '병렬' — 온기가 차는 대로 중간중간 구매(27 잠금 없음).
