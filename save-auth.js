@@ -71,7 +71,7 @@ async function supaLoad(){ if(!authUser || !SUPA.url || !SUPA.anon) return null;
     const rows=await r.json(); return (rows&&rows[0])?rows[0].data:null; }catch(e){ return null; }
 }
 function resetState(){                                   // 메모리 상태를 새 게임으로 초기화
-  S.walks=0; S.rate=1.0; S.current="start"; S.discovered={};
+  S.walks=0; S.coins=0; S.rate=1.0; S.current="start"; S.discovered={};   // coins도 초기화(로그아웃 시 통화가 다음/익명 세션으로 누출되던 것 차단)
   NODES.forEach(n=>S.levels[n.id]= n.completed?1:0);
   S.robotName=""; S.named=false; S.depth=0; S.cycle=0; S.lookback=0; S.seenIntro=false; S.seenMapTut=false;
   wholeWalks=0; worldX=0;
