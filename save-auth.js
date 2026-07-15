@@ -93,8 +93,9 @@ let sb=null, authUser=null, lastKey=null;
 let authResolved=false;   // getSession/onAuthStateChange가 인증을 한 번이라도 '확정'했는가. 확정 전엔 게이트 보류(깜빡임 방지), 확정 후 null이면 게이트 표시(stuck 방지).
 function initAuth(){
   if(!window.supabase || !SUPA.url || !SUPA.anon){ renderAuth(); authResolved=true; decideEntry(); return; }   // 라이브러리/키 없음 = 로그인 불가 확정 → 게이트라도 띄움(둘러보기 가능)
-  try{ sb = window.supabase.createClient(SUPA.url, SUPA.anon, { auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:true } }); }  // 세션 유지(자동 로그인). 계정 전환은 '로그아웃 후 재로그인' 시 prompt:select_account로
+  try{ sb = window.supabase.createClient(SUPA.url, SUPA.anon, { auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:true, flowType:"pkce" } }); }  // 세션 유지(자동 로그인). flowType:pkce = 앱 딥링크 복귀에 ?code= 로 오게(쿼리는 커스텀 스킴에서 안 잘림). 웹도 pkce로 정상.
   catch(e){ renderAuth(); authResolved=true; decideEntry(); return; }
+  initNativeAuthDeepLink();   // 앱(Capacitor)일 때만: 커스텀 탭 로그인 후 딥링크 복귀 세션 주입 리스너 (웹은 no-op)
   sb.auth.onAuthStateChange((_e,s)=>{ authUser = s?.user || null; renderAuth(); onAuthChanged(); });
   sb.auth.getSession().then(({data})=>{ authUser = data?.session?.user || null; renderAuth(); onAuthChanged(); });
   // 🆕 앱이 다시 보일 때(포커스/탭 복귀) 세션 선제 점검·갱신 → 며칠/몇 주 닫아둬도 JWT 만료 대기 없이 즉시 로그인 유지.
@@ -103,7 +104,38 @@ function initAuth(){
   window.addEventListener("focus", refreshAuthSoon);
 }
 function refreshAuthSoon(){ try{ if(sb) sb.auth.getSession(); }catch(e){} }   // 캐시 세션 반환 + 만료 임박 시 자동 갱신(네트워크 강제 X)
-async function googleLogin(){ if(sb) await sb.auth.signInWithOAuth({ provider:"google", options:{ redirectTo: location.origin+location.pathname, queryParams:{ prompt:"select_account" } } }); }  // 항상 구글 계정 선택창
+// 앱(Capacitor 네이티브) 여부 — 구글은 앱 내장 webview OAuth를 막으므로(403 disallowed_useragent) 여기서만 커스텀 탭+딥링크로 우회
+function isNativeApp(){ try{ return !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()); }catch(e){ return false; } }
+const NATIVE_REDIRECT = "click.aingan.twa://login";   // AndroidManifest 인텐트 필터 + Supabase 리다이렉트 허용목록에 등록된 딥링크
+
+async function googleLogin(){
+  if(!sb) return;
+  if(isNativeApp()){   // 앱: 커스텀 탭(구글 허용 브라우저)으로 열고 skipBrowserRedirect → 로그인 URL만 받아서 Browser.open
+    try{
+      const { data, error } = await sb.auth.signInWithOAuth({ provider:"google", options:{ redirectTo: NATIVE_REDIRECT, skipBrowserRedirect:true, queryParams:{ prompt:"select_account" } } });
+      if(error){ console.log("[auth] oauth start err", error); return; }
+      if(data && data.url && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser){ await window.Capacitor.Plugins.Browser.open({ url:data.url }); }
+    }catch(e){ console.log("[auth] native login err", e); }
+    return;
+  }
+  await sb.auth.signInWithOAuth({ provider:"google", options:{ redirectTo: location.origin+location.pathname, queryParams:{ prompt:"select_account" } } });  // 웹: 평범한 전체페이지 리다이렉트(항상 계정 선택창)
+}
+
+// 앱 딥링크 복귀: 커스텀 탭에서 로그인 완료 → click.aingan.twa://login?code=... 로 앱 복귀 → 코드 교환해 세션 주입(webview localStorage의 code_verifier 사용)
+function initNativeAuthDeepLink(){
+  if(!isNativeApp() || !(window.Capacitor.Plugins && window.Capacitor.Plugins.App)) return;
+  window.Capacitor.Plugins.App.addListener("appUrlOpen", async (ev)=>{
+    try{
+      const url = ev && ev.url; if(!url || url.indexOf(NATIVE_REDIRECT)!==0) return;
+      try{ if(window.Capacitor.Plugins.Browser) await window.Capacitor.Plugins.Browser.close(); }catch(e){}   // 커스텀 탭 닫고 앱으로
+      const code = new URLSearchParams(url.split("?")[1] || "").get("code");
+      if(code){ const { error } = await sb.auth.exchangeCodeForSession(code); if(error) console.log("[auth] exchange err", error); return; }
+      const hp = new URLSearchParams(url.split("#")[1] || "");   // 폴백(implicit): 토큰이 해시로 온 경우
+      const at=hp.get("access_token"), rt=hp.get("refresh_token");
+      if(at && rt) await sb.auth.setSession({ access_token:at, refresh_token:rt });
+    }catch(e){ console.log("[auth] appUrlOpen err", e); }
+  });
+}
 async function logout(){
   try{ if(sb) await sb.auth.signOut(); }catch(e){}
   authUser=null; lastKey=null; isAdmin=false; renderAdminUI();   // 어드민 UI도 내림
